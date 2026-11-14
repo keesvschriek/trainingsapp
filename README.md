@@ -1,7 +1,7 @@
 # Trainingsapp
 
 Persoonlijke app voor het trainingsschema richting de eerste 50 km trail (10 juli 2027).
-Installeerbaar op Android, werkt offline, haalt Garmin-activiteiten op via intervals.icu en synchroniseert optioneel via Supabase.
+Android-app (APK) en webversie, werkt offline, haalt Garmin-activiteiten op via intervals.icu en synchroniseert optioneel via Supabase.
 
 App: https://keesvschriek.github.io/trainingsapp/
 
@@ -21,13 +21,17 @@ App: https://keesvschriek.github.io/trainingsapp/
 
 Na 1 tot 2 minuten staat de app op https://keesvschriek.github.io/trainingsapp/. Elke push naar `main` publiceert automatisch een nieuwe versie.
 
-## 2. Installeren op Android
+## 2. Android-app installeren
 
-1. Open de link in **Chrome** op je telefoon.
-2. Menu (drie puntjes) > **App installeren** (of **Toevoegen aan startscherm**).
-3. De app staat nu tussen je andere apps en opent zonder browserbalk.
+Bij elke push bouwt GitHub automatisch een nieuwe APK (workflow **Android-app bouwen**, duurt ongeveer 5 minuten).
 
-Updates komen vanzelf binnen als je de app opent.
+1. Open op je telefoon: https://github.com/keesvschriek/trainingsapp/releases/latest/download/trainingsapp.apk
+2. Open het gedownloade bestand. Android vraagt eenmalig of Chrome apps mag installeren: zet dat aan.
+3. Kies **Installeren**. Krijg je een melding van Play Protect, kies dan **Toch installeren**: de app komt niet uit de Play Store, daarom die waarschuwing.
+
+**Updates**: de app meldt bovenaan als er een nieuwe versie is. Tik erop, download en installeer over de oude heen. Je gegevens blijven staan, omdat elke versie met dezelfde sleutel is ondertekend (`android-assets/debug.keystore`).
+
+De webversie op GitHub Pages blijft bestaan, handig op je laptop.
 
 ## 3. Garmin koppelen via intervals.icu
 
@@ -37,7 +41,7 @@ Updates komen vanzelf binnen als je de app opent.
 
 De app haalt bij openen automatisch nieuwe activiteiten op (hooguit eens per uur).
 
-**Meldt de app een CORS-fout?** intervals.icu staat dan geen directe verzoeken vanuit de browser toe. Oplossing (gratis, 5 minuten):
+In de Android-app werkt dit direct. **Alleen in de webversie** kan een CORS-fout komen, omdat intervals.icu geen verzoeken vanuit de browser toestaat. Oplossing (gratis, 5 minuten):
 
 1. Maak een account op dash.cloudflare.com > **Workers & Pages** > **Create** > **Worker**.
 2. Plak de code uit `worker/intervals-proxy.js`, pas `ALLOWED_ORIGIN` aan naar `https://keesvschriek.github.io` en klik **Deploy**.
@@ -64,6 +68,6 @@ npm test         # tests van de schema-logica
 npm run build    # productie-build in dist/
 ```
 
-Techniek: React, TypeScript, Vite, vite-plugin-pwa, Dexie (IndexedDB), Recharts, Supabase.
+Techniek: React, TypeScript, Vite, Capacitor (Android), vite-plugin-pwa, Dexie (IndexedDB), Recharts, Supabase.
 
 Het schema zelf staat in `src/plan.ts`. Weken, minuten en krachtoefeningen pas je daar aan.

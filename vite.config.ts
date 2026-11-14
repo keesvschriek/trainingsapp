@@ -7,7 +7,10 @@ const base = process.env.BASE_PATH || '/';
 
 export default defineConfig({
   base,
-  define: { __APP_VERSION__: JSON.stringify(new Date().toISOString().slice(0, 10)) },
+  define: {
+    __APP_VERSION__: JSON.stringify(new Date().toISOString().slice(0, 10)),
+    __APP_BUILD__: JSON.stringify(Number(process.env.APP_BUILD || 0)),
+  },
   plugins: [
     react(),
     VitePWA({

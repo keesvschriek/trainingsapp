@@ -1,0 +1,67 @@
+name: Android-app bouwen
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - run: npm ci
+      - run: npm test
+
+      - name: Webdeel bouwen
+        run: npm run build
+        env:
+          BASE_PATH: /
+          APP_BUILD: ${{ github.run_number }}
+
+      - name: Android-project maken
+        run: |
+          npx cap add android
+          cp -r android-assets/res/* android/app/src/main/res/
+          sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"1.${{ github.run_number }}\"/" android/app/build.gradle
+          npx cap sync android
+
+      - name: APK bouwen
+        run: |
+          # Vaste sleutel, zodat elke nieuwe versie over de oude heen installeert (je gegevens blijven staan)
+          mkdir -p ~/.android
+          cp android-assets/debug.keystore ~/.android/debug.keystore
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../trainingsapp.apk
+
+      - name: Release maken
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Trainingsapp build ${{ github.run_number }}
+          body: Download trainingsapp.apk op je telefoon en installeer hem.
+          files: trainingsapp.apk
+          make_latest: true

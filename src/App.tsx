@@ -8,6 +8,7 @@ import { currentUser, scheduleSync, sync } from './sync';
 import { getIntervalsSettings, importActivities } from './intervals';
 import { db, getSetting } from './db';
 import { today } from './dates';
+import { APK_URL, checkForUpdate } from './native';
 
 const Progress = lazy(() => import('./screens/Progress').then(m => ({ default: m.Progress })));
 
@@ -28,6 +29,11 @@ function readRoute(): Route {
 export function App() {
   const [route, setRoute] = useState<Route>(readRoute());
   const [syncState, setSyncState] = useState<'off' | 'ok' | 'err'>('off');
+  const [update, setUpdate] = useState<number | null>(null);
+
+  useEffect(() => {
+    void checkForUpdate().then(setUpdate);
+  }, []);
 
   useEffect(() => {
     const onHash = () => setRoute(readRoute());
@@ -87,6 +93,11 @@ export function App() {
           </button>
         </div>
       </div>
+      {update && (
+        <a className="update-bar" href={APK_URL} target="_blank" rel="noreferrer">
+          Nieuwe versie (build {update}) beschikbaar. Tik om te downloaden en installeren.
+        </a>
+      )}
       <main key={route === 'vandaag' ? `vandaag-${today()}` : route}>
         {route === 'vandaag' && <Today />}
         {route === 'schema' && <Schedule />}

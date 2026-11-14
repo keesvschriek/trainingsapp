@@ -168,3 +168,5 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .notice { padding: 10px 12px; border-radius: 8px; background: var(--soft); font-size: 0.9rem; margin: 8px 0; }
 .notice.err { background: #fbeceb; color: var(--danger); }
 .empty { color: var(--muted); text-align: center; padding: 24px 0; }
+
+.update-bar { display: block; background: var(--light); color: var(--accent); padding: 10px 16px; font-size: 0.9rem; text-decoration: none; border-bottom: 1px solid var(--line); }

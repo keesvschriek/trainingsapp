@@ -4,6 +4,7 @@ import { getIntervalsSettings, importActivities, IntervalsError, type IntervalsS
 import { currentUser, getSupabase, sync, type SupabaseSettings } from '../sync';
 import { today } from '../dates';
 import type { Table } from 'dexie';
+import { APK_URL, isNative } from '../native';
 
 export function Settings() {
   return (
@@ -13,8 +14,11 @@ export function Settings() {
       <BackupSection />
       <h2>Over</h2>
       <p className="muted small">
-        Trainingsapp {__APP_VERSION__}. Je gegevens staan op dit apparaat en, als je inlogt, in je eigen Supabase-project.
+        Trainingsapp {__APP_BUILD__ ? `build ${__APP_BUILD__}` : ''} ({__APP_VERSION__}). Je gegevens staan op dit apparaat en, als je inlogt, in je eigen Supabase-project.
         De app werkt ook zonder internet.
+      </p>
+      <p className="small">
+        <a href={APK_URL} target="_blank" rel="noreferrer">{isNative ? 'Nieuwste versie downloaden' : 'Android-app downloaden (APK)'}</a>
       </p>
     </>
   );
@@ -57,7 +61,7 @@ function IntervalsSection() {
           <input value={s.athlete} onChange={e => store({ ...s, athlete: e.target.value.trim() || '0' })} />
         </div>
         <div>
-          <label>Proxy-URL (alleen bij CORS-fout)</label>
+          <label>Proxy-URL (alleen webversie)</label>
           <input value={s.proxy} placeholder="leeg laten" onChange={e => store({ ...s, proxy: e.target.value.trim() })} />
         </div>
       </div>

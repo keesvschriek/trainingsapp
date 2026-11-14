@@ -2,9 +2,12 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import { App } from './App';
+import { isNative, setupBackButton } from './native';
 import './styles.css';
 
-registerSW({ immediate: true });
+// In de Android-app zitten alle bestanden al in de APK; de service worker is alleen voor de webversie.
+if (!isNative) registerSW({ immediate: true });
+setupBackButton();
 
 // Vraag de browser om de database niet op te ruimen bij weinig opslagruimte
 if (navigator.storage?.persist) void navigator.storage.persist();
