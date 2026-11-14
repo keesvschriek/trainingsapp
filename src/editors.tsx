@@ -8,7 +8,9 @@ const KIND_LABEL: Record<WorkoutKind, string> = { run: 'Lopen', strength: 'Krach
 
 /** Oefeningen voor een bestaande krachttraining: uit het schema van die dag, anders uit de gelogde sets. */
 export async function exercisesFor(w: Workout): Promise<Exercise[]> {
-  const planned = planForDay(w.date).items.find(i => i.slotId === w.slotId && i.exercises);
+  const moves = (await db.moves.toArray()).filter(alive);
+  const planned = planForDay(w.date, [], moves).items.find(i => i.slotId === w.slotId && i.exercises)
+    ?? planForDay(w.date).items.find(i => i.slotId === w.slotId && i.exercises);
   if (planned?.exercises) return planned.exercises;
   const sets = (await db.sets.where('workoutId').equals(w.id).toArray()).filter(alive);
   const names = [...new Set(sets.sort((a, b) => a.setNo - b.setNo).map(s => s.exercise))];

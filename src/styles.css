@@ -175,3 +175,11 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .exlist strong { font-weight: 600; }
 .stack { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
 .exsmall { color: var(--muted); font-size: 0.85rem; }
+.recovery .score { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+.recovery .level { font-size: 0.95rem; font-weight: 600; text-transform: none; }
+.recovery.groen .level { color: var(--accent); }
+.recovery.oranje { border-color: var(--warn-line); }
+.recovery.oranje .level { color: #9a6700; }
+.recovery.rood { border-color: #e2b4ad; }
+.recovery.rood .level { color: var(--danger); }
+.recovery td { border-bottom: 0; padding: 3px 0; }

@@ -103,5 +103,32 @@ export async function importActivities(days = 42): Promise<{ added: number; upda
     }
   }
   await db.kv.put({ key: 'intervalsLastImport', value: newest });
+  // Rusthartslag, HRV en slaap (alleen als je horloge dat meet); fouten hier zijn niet erg
+  try {
+    await importWellness(s, addDays(newest, -45), newest);
+  } catch {
+    /* geen wellness-data */
+  }
   return { added, updated };
+}
+
+export interface WellnessDay {
+  date: string;
+  restingHR?: number;
+  hrv?: number;
+  sleepSecs?: number;
+}
+
+async function importWellness(s: IntervalsSettings, oldest: string, newest: string) {
+  const base = (s.proxy || 'https://intervals.icu').replace(/\/$/, '');
+  const url = `${base}/api/v1/athlete/${encodeURIComponent(s.athlete || '0')}/wellness?oldest=${oldest}&newest=${newest}`;
+  const res = await fetch(url, { headers: { Authorization: 'Basic ' + btoa(`API_KEY:${s.key}`), Accept: 'application/json' } });
+  if (!res.ok) return;
+  const list = (await res.json()) as { id: string; restingHR?: number; hrv?: number; sleepSecs?: number }[];
+  const map: Record<string, WellnessDay> = (await getSetting<Record<string, WellnessDay>>('wellness', {})) ?? {};
+  for (const w of list) {
+    if (!w.id) continue;
+    map[w.id] = { date: w.id, restingHR: w.restingHR ?? undefined, hrv: w.hrv ?? undefined, sleepSecs: w.sleepSecs ?? undefined };
+  }
+  await db.kv.put({ key: 'wellness', value: map });
 }

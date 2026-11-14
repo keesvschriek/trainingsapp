@@ -4,7 +4,9 @@ import { db, alive, newId, remove, save, type Block, type BlockKind } from '../d
 import { addDays, dayShort, shortDate, today, minutesToText } from '../dates';
 import { blockOfWeek, isTestWeek, mondayOfWeek, planForWeek, plannedRunMinutes, weekOf, weekInBlock, type PlanBlock } from '../plan';
 import { matchDay } from '../match';
-import { Sheet, useBlocks } from '../ui';
+import { Sheet, useBlocks, useMoves } from '../ui';
+import { MoveSheet } from '../moves';
+import type { Move } from '../db';
 
 const KIND_LABEL: Record<BlockKind, string> = {
   defensie: 'Defensie',
@@ -16,6 +18,7 @@ const KIND_LABEL: Record<BlockKind, string> = {
 
 export function Schedule() {
   const events = useBlocks();
+  const moves = useMoves();
   const current = Math.max(weekOf(today()), 1);
   const [open, setOpen] = useState<number>(current);
   const [form, setForm] = useState<Partial<Block> | null>(null);
@@ -60,7 +63,7 @@ export function Schedule() {
           </div>
           {Array.from({ length: block.lastWeek - block.firstWeek + 1 }, (_, i) => block.firstWeek + i).map(week => (
             <div key={week} ref={week === current ? currentRef : undefined}>
-              <WeekCard week={week} events={events} isCurrent={week === current} open={open === week} onToggle={() => setOpen(open === week ? 0 : week)} />
+              <WeekCard week={week} events={events} moves={moves} isCurrent={week === current} open={open === week} onToggle={() => setOpen(open === week ? 0 : week)} />
             </div>
           ))}
         </div>
@@ -72,12 +75,14 @@ export function Schedule() {
   );
 }
 
-function WeekCard(props: { week: number; events: Block[]; isCurrent: boolean; open: boolean; onToggle: () => void }) {
-  const { week, events } = props;
+function WeekCard(props: { week: number; events: Block[]; moves: Move[]; isCurrent: boolean; open: boolean; onToggle: () => void }) {
+  const { week, events, moves } = props;
+  const [moveDay, setMoveDay] = useState<number | null>(null);
   const start = mondayOfWeek(week);
   const end = addDays(start, 6);
-  const days = planForWeek(week, events);
-  const minutes = plannedRunMinutes(week, events);
+  const days = planForWeek(week, events, moves);
+  const minutes = plannedRunMinutes(week, events, moves);
+  const moved = days.some(d => d.moved);
   const workouts = useLiveQuery(async () => (props.open ? (await db.workouts.where('date').between(start, end, true, true).toArray()).filter(alive) : []), [props.open, start], []);
   const checks = useLiveQuery(async () => (props.open ? (await db.checks.where('date').between(start, end, true, true).toArray()).filter(alive) : []), [props.open, start], []);
   const light = days.some(d => d.lightWeek);
@@ -91,7 +96,7 @@ function WeekCard(props: { week: number; events: Block[]; isCurrent: boolean; op
           <strong>Week {weekInBlock(week)}{test ? ': testweek' : ''}</strong>
           <span className="muted small">{shortDate(start)} t/m {shortDate(end)}</span>
         </div>
-        <div className="muted small">{minutesToText(minutes)} lopen{light ? ', lichte week' : ''}{hasEvent ? ', met afspraak' : ''}</div>
+        <div className="muted small">{minutesToText(minutes)} lopen{light ? ', lichte week' : ''}{hasEvent ? ', met afspraak' : ''}{moved ? ', aangepast' : ''}</div>
       </button>
       {props.open && (
         <div className="body">
@@ -115,7 +120,9 @@ function WeekCard(props: { week: number; events: Block[]; isCurrent: boolean; op
                         </div>
                       ))}
                     </td>
-                    <td className="done" style={{ width: 22 }}>{todo.length > 0 && todo.every(s => s.done) ? '✓' : ''}</td>
+                    <td className="done" style={{ width: 22 }}>
+                      {todo.length > 0 && todo.every(s => s.done) ? '✓' : d.date >= today() && todo.length > 0 ? <button className="btn ghost small" style={{ padding: '0 2px' }} onClick={() => setMoveDay(days.indexOf(d))} aria-label="Verschuiven">⇄</button> : ''}
+                    </td>
                   </tr>
                 );
               })}
@@ -123,6 +130,7 @@ function WeekCard(props: { week: number; events: Block[]; isCurrent: boolean; op
           </table>
         </div>
       )}
+      {moveDay != null && <MoveSheet date={days[moveDay].date} week={week} weekday={moveDay} events={events} moves={moves} onClose={() => setMoveDay(null)} />}
     </div>
   );
 }

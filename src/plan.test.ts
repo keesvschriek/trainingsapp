@@ -89,3 +89,67 @@ describe('kracht', () => {
     }
   });
 });
+
+describe('verschuiven', () => {
+  const mv = (week: number, op: 'shift' | 'swap', a: number, b?: number, at = 1) => ({ id: `${week}-${a}-${at}`, week, op, a, b, at, updatedAt: at });
+
+  it('dinsdag naar woensdag: rest schuift op tot de vrije zondag', () => {
+    const before = planForWeek(2).map(d => d.items[0].title);
+    const after = planForWeek(2, [], [mv(2, 'shift', 1)]).map(d => d.items[0].title);
+    expect(after[1]).toBe('Rust (verschoven)');
+    expect(after[2]).toBe(before[1]); // loop van dinsdag staat nu op woensdag
+    expect(after[3]).toBe(before[2]);
+    expect(after[6]).toBe(before[5]); // lange loop van zaterdag naar zondag, vrije zondag verdwijnt
+  });
+
+  it('ruilen wisselt twee dagen', () => {
+    const before = planForWeek(2).map(d => d.items[0].title);
+    const after = planForWeek(2, [], [mv(2, 'swap', 1, 3)]).map(d => d.items[0].title);
+    expect(after[1]).toBe(before[3]);
+    expect(after[3]).toBe(before[1]);
+  });
+
+  it('als er geen vrije dag meer is, schuift het door naar de week erna', () => {
+    // twee keer schuiven in week 2: eerste gebruikt de vrije zondag, tweede moet doorschuiven
+    const moves = [mv(2, 'shift', 1, undefined, 1), mv(2, 'shift', 2, undefined, 2)];
+    const w2 = planForWeek(2, [], moves).map(d => d.items[0].title);
+    const w3 = planForWeek(3, [], moves).map(d => d.items[0].title);
+    const orig2 = planForWeek(2).map(d => d.items[0].title);
+    expect(w2[6]).toBe(orig2[4]);
+    expect(w3[0]).toBe(orig2[5]); // lange loop staat nu op maandag week 3
+  });
+
+  it('zonder verschuivingen verandert er niks', () => {
+    expect(planForWeek(5, [], []).map(d => d.items[0].title)).toEqual(planForWeek(5).map(d => d.items[0].title));
+  });
+});
+
+import { formScore, loadSeries, recoveryFor } from './recovery';
+
+describe('herstel', () => {
+  it('vorm: licht negatief is normaal, sterk negatief is slecht', () => {
+    expect(formScore(0)).toBe(100);
+    expect(formScore(-10)).toBe(100);
+    expect(formScore(-30)).toBe(50);
+    expect(formScore(-50)).toBeLessThan(20);
+    expect(formScore(null)).toBe(null);
+  });
+
+  it('slechte check-in geeft rood advies', () => {
+    const r = recoveryFor({ checkin: { id: 'c', date: '2026-12-01', sleep: 1, legs: 2, energy: 2, calm: 2, updatedAt: 0 }, formPct: -35, yesterdayLoad: 400 });
+    expect(r.level).toBe('rood');
+  });
+
+  it('goede check-in en normale belasting geeft groen', () => {
+    const r = recoveryFor({ checkin: { id: 'c', date: '2026-12-01', sleep: 4, legs: 4, energy: 5, calm: 4, updatedAt: 0 }, formPct: -5, yesterdayLoad: 100 });
+    expect(r.level).toBe('groen');
+  });
+
+  it('belastingsreeks voorspelt komende dagen met het schema', () => {
+    const workouts = Array.from({ length: 40 }, (_, i) => ({ id: `w${i}`, date: `2026-10-${String((i % 30) + 1).padStart(2, '0')}`, kind: 'run' as const, title: 'Loop', durationMin: 45, source: 'manual' as const, updatedAt: 0 }));
+    const s = loadSeries(workouts, '2026-11-20', '2026-11-27', '2026-11-22');
+    expect(s.length).toBe(8);
+    expect(s.filter(d => d.planned).length).toBe(5);
+    expect(s.find(d => d.date === '2026-11-23')!.load).toBeGreaterThan(0); // maandag: kracht gepland
+  });
+});

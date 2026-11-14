@@ -5,13 +5,15 @@ import { db, alive, remove, type MetricKind } from '../db';
 import { addDays, shortDate, today } from '../dates';
 import { GOALS, blockOfWeek, mondayOfWeek, planForWeek, weekOf } from '../plan';
 import { METRICS, MetricEditor, formatMetric } from '../editors';
-import { useBlocks } from '../ui';
+import { useBlocks, useMoves } from '../ui';
+import { loadSeries } from '../recovery';
 
 const ACCENT = '#1f4e79';
 const GREY = '#9aa5b1';
 
 export function Progress() {
   const blocks = useBlocks();
+  const moves = useMoves();
   const [add, setAdd] = useState<MetricKind | null>(null);
   const [showAll, setShowAll] = useState<MetricKind | null>(null);
 
@@ -29,7 +31,7 @@ export function Progress() {
     const start = mondayOfWeek(w);
     const end = addDays(start, 6);
     const inWeek = runs.filter(r => r.date >= start && r.date <= end);
-    const plan = planForWeek(w, blocks).flatMap(d => d.items);
+    const plan = planForWeek(w, blocks, moves).flatMap(d => d.items);
     const plannedMin = plan.filter(i => (i.kind === 'run' || ((i.kind === 'test' || i.kind === 'race') && i.minutes)) && !i.optional).reduce((s, i) => s + (i.minutes ?? 0), 0);
     const plannedLong = Math.max(0, ...plan.filter(i => i.slotId === 'run-long').map(i => i.minutes ?? 0));
     weekData.push({
@@ -43,6 +45,16 @@ export function Progress() {
       kracht: strength.filter(s => s.date >= start && s.date <= end).length,
     });
   }
+
+  const allWorkouts = [...runs, ...strength];
+  const series = loadSeries(allWorkouts, addDays(today(), -42), addDays(today(), 7), today(), blocks, moves);
+  const formData = series.map(d => ({
+    date: shortDate(d.date),
+    fitheid: !d.planned || d.date === addDays(today(), 1) ? Math.round(d.fitness) : null,
+    vermoeidheid: !d.planned || d.date === addDays(today(), 1) ? Math.round(d.fatigue) : null,
+    fitheidV: d.planned || d.date === today() ? Math.round(d.fitness) : null,
+    vermoeidheidV: d.planned || d.date === today() ? Math.round(d.fatigue) : null,
+  }));
 
   const totalKm = runs.filter(r => r.date >= '2026-11-16').reduce((s, r) => s + (r.distanceKm ?? 0), 0);
   const totalHm = runs.filter(r => r.date >= '2026-11-16').reduce((s, r) => s + (r.elevationM ?? 0), 0);
@@ -87,6 +99,23 @@ export function Progress() {
             <Bar isAnimationActive={false} dataKey="langste" fill={ACCENT} radius={[3, 3, 0, 0]} maxBarSize={22} />
             <Line isAnimationActive={false} dataKey="langstePlan" stroke={GREY} strokeWidth={2} dot={{ r: 2 }} connectNulls />
           </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      <h2>Fitheid en vermoeidheid</h2>
+      <p className="muted small">Blauw: fitheid (6 weken). Grijs: vermoeidheid (1 week). Stippellijn: verwachting voor de komende 7 dagen volgens je schema. Ligt grijs ver boven blauw, dan ben je vermoeid.</p>
+      <div className="chart">
+        <ResponsiveContainer>
+          <LineChart data={formData} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
+            <CartesianGrid stroke="#eef1f4" vertical={false} />
+            <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: '#d8dee6' }} interval={6} />
+            <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+            <Tooltip />
+            <Line isAnimationActive={false} dataKey="fitheid" stroke={ACCENT} strokeWidth={2} dot={false} connectNulls />
+            <Line isAnimationActive={false} dataKey="vermoeidheid" stroke={GREY} strokeWidth={2} dot={false} connectNulls />
+            <Line isAnimationActive={false} dataKey="fitheidV" name="fitheid (verwacht)" stroke={ACCENT} strokeWidth={2} strokeDasharray="4 4" dot={false} connectNulls />
+            <Line isAnimationActive={false} dataKey="vermoeidheidV" name="vermoeidheid (verwacht)" stroke={GREY} strokeWidth={2} strokeDasharray="4 4" dot={false} connectNulls />
+          </LineChart>
         </ResponsiveContainer>
       </div>
 

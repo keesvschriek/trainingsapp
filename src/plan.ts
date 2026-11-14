@@ -1,5 +1,5 @@
 import { addDays, diffDays, inRange, mondayOf, type ISODate } from './dates';
-import type { Block } from './db';
+import type { Block, Move } from './db';
 
 // ---------------------------------------------------------------------------
 // Trainingsschema: de fitste versie van jezelf.
@@ -298,6 +298,68 @@ export function weekSpec(week: number): WeekSpec {
 }
 
 // ---------------------------------------------------------------------------
+// Verschuiven
+// Een shift op dag a zet daar een rustdag neer; alles vanaf a schuift een dag op
+// tot de eerstvolgende rust- of vrije dag, die verdwijnt. Is er geen vrije dag meer
+// in de week, dan schuift de laatste dag door naar de maandag van de week erna.
+// ---------------------------------------------------------------------------
+
+const isEmptyDay = (d: PlannedItem[]) => d.every(i => i.kind === 'rest' || i.kind === 'free' || i.optional);
+
+const shiftedRest = (): PlannedItem => ({ slotId: 'rust', kind: 'rest', title: 'Rust (verschoven)', detail: 'De training van vandaag staat nu op een latere dag.' });
+
+function insertAt(days: PlannedItem[][], a: number, content: PlannedItem[]): PlannedItem[] | null {
+  const j = days.findIndex((d, idx) => idx > a && isEmptyDay(d));
+  if (j >= 0) {
+    days.splice(j, 1);
+    days.splice(a, 0, content);
+    return null;
+  }
+  const overflow = days[6];
+  days.splice(6, 1);
+  days.splice(a, 0, content);
+  return isEmptyDay(overflow) ? null : overflow;
+}
+
+const weekCache = new Map<string, { days: PlannedItem[][]; carry: PlannedItem[] | null; moved: boolean }>();
+
+/** Dagen van een week na verschuivingen, plus wat doorschuift naar de week erna. */
+export function daysOfWeek(week: number, moves: Move[] = [], depth = 0): { days: PlannedItem[][]; carry: PlannedItem[] | null; moved: boolean } {
+  const live = moves.filter(m => !m.deleted);
+  const key = `${week}|${live.map(m => `${m.id}:${m.updatedAt}:${m.op}:${m.week}:${m.a}:${m.b ?? ''}:${m.at}`).join(',')}`;
+  const hit = weekCache.get(key);
+  if (hit) return hit;
+
+  const days = weekSpec(week).days.map(d => d.map(i => ({ ...i })));
+  let carry: PlannedItem[] | null = null;
+  let moved = false;
+
+  // Doorgeschoven training uit de vorige week komt op maandag
+  if (depth < 6 && live.some(m => m.week === week - 1 || m.week < week - 1)) {
+    const prev = daysOfWeek(week - 1, live, depth + 1);
+    if (prev.carry) {
+      carry = insertAt(days, 0, prev.carry);
+      moved = true;
+    }
+  }
+
+  for (const m of live.filter(m => m.week === week).sort((x, y) => x.at - y.at)) {
+    moved = true;
+    if (m.op === 'swap' && m.b != null) {
+      [days[m.a], days[m.b]] = [days[m.b], days[m.a]];
+    } else if (m.op === 'shift') {
+      const out = insertAt(days, m.a, [shiftedRest()]);
+      if (out) carry = carry ? [...carry, ...out] : out;
+    }
+  }
+
+  const result = { days, carry, moved };
+  if (weekCache.size > 500) weekCache.clear();
+  weekCache.set(key, result);
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // Plan voor een dag, rekening houdend met blokken (Defensie, ziek, wedstrijd)
 // ---------------------------------------------------------------------------
 
@@ -311,6 +373,7 @@ export interface DayPlan {
   testWeek: boolean;
   weekNote?: string;
   status: 'voor' | 'actief';
+  moved?: boolean;
 }
 
 const BLOCKING: Block['kind'][] = ['defensie', 'ziek', 'anders'];
@@ -319,7 +382,7 @@ export function eventOn(date: ISODate, events: Block[]): Block | undefined {
   return events.find(b => !b.deleted && inRange(date, b.start, b.end));
 }
 
-export function planForDay(date: ISODate, events: Block[] = []): DayPlan {
+export function planForDay(date: ISODate, events: Block[] = [], moves: Move[] = []): DayPlan {
   const week = weekOf(date);
   const wd = (diffDays(date, mondayOf(date)) + 7) % 7;
   const event = eventOn(date, events);
@@ -329,7 +392,8 @@ export function planForDay(date: ISODate, events: Block[] = []): DayPlan {
   }
 
   const spec = weekSpec(week);
-  let items = spec.days[wd].map(i => ({ ...i }));
+  const weekDays = daysOfWeek(week, moves);
+  let items = weekDays.days[wd].map(i => ({ ...i }));
 
   // Defensieweek telt als lichte week: lopen 30% korter
   const weekStart = mondayOfWeek(week);
@@ -356,17 +420,17 @@ export function planForDay(date: ISODate, events: Block[] = []): DayPlan {
     if (before) items = [easy(20, true)];
   }
 
-  return { date, week, block: blockOfWeek(week), items, event, lightWeek, testWeek: !!spec.test, weekNote, status: 'actief' };
+  return { date, week, block: blockOfWeek(week), items, event, lightWeek, testWeek: !!spec.test, weekNote, status: 'actief', moved: weekDays.moved };
 }
 
-export function planForWeek(week: number, events: Block[] = []): DayPlan[] {
+export function planForWeek(week: number, events: Block[] = [], moves: Move[] = []): DayPlan[] {
   const start = mondayOfWeek(week);
-  return Array.from({ length: 7 }, (_, i) => planForDay(addDays(start, i), events));
+  return Array.from({ length: 7 }, (_, i) => planForDay(addDays(start, i), events, moves));
 }
 
 /** Geplande loopminuten in een week (zonder optionele lopen). */
-export function plannedRunMinutes(week: number, events: Block[] = []): number {
-  return planForWeek(week, events)
+export function plannedRunMinutes(week: number, events: Block[] = [], moves: Move[] = []): number {
+  return planForWeek(week, events, moves)
     .flatMap(d => d.items)
     .filter(i => (i.kind === 'run' || (i.kind === 'test' && i.minutes)) && !i.optional)
     .reduce((s, i) => s + (i.minutes ?? 0), 0);

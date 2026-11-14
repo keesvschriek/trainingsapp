@@ -4,19 +4,23 @@ import { db, alive, save, type Workout, type Metric, type MetricKind } from '../
 import { addDays, diffDays, longDate, mondayOf, today, minutesToText, shortDate, type ISODate } from '../dates';
 import { planForDay, planForWeek, gtgDay, nextTestWeek, weekInBlock, type PlannedItem, type Exercise } from '../plan';
 import { matchDay } from '../match';
-import { Icon, useBlocks, fmt } from '../ui';
+import { Icon, useBlocks, useMoves, fmt } from '../ui';
+import { MoveSheet } from '../moves';
+import { RecoveryCard } from './RecoveryCard';
 import { MetricEditor, StrengthLogger, TEST_METRIC, WorkoutEditor, METRICS, exercisesFor, formatMetric } from '../editors';
 
 type Editor =
   | { type: 'workout'; initial: Partial<Workout> & { date: ISODate; kind: Workout['kind'] }; existing?: Workout; allowKind?: boolean }
   | { type: 'strength'; title: string; exercises: Exercise[]; slotId?: string; existing?: Workout }
-  | { type: 'metric'; kind: MetricKind };
+  | { type: 'metric'; kind: MetricKind }
+  | { type: 'move' };
 
 export function Today() {
   const [date, setDate] = useState<ISODate>(today());
   const [editor, setEditor] = useState<Editor | null>(null);
   const events = useBlocks();
-  const plan = planForDay(date, events);
+  const moves = useMoves();
+  const plan = planForDay(date, events, moves);
 
   const workouts = useLiveQuery(async () => (await db.workouts.where('date').equals(date).toArray()).filter(alive), [date], []);
   const checks = useLiveQuery(async () => (await db.checks.where('date').equals(date).toArray()).filter(alive), [date], []);
@@ -61,7 +65,7 @@ export function Today() {
   }
 
   // Weekcijfers
-  const weekPlan = plan.status === 'actief' ? planForWeek(plan.week, events) : [];
+  const weekPlan = plan.status === 'actief' ? planForWeek(plan.week, events, moves) : [];
   const plannedItems = weekPlan.flatMap(d => d.items);
   const plannedRuns = plannedItems.filter(i => (i.kind === 'run' || i.slotId === 'test-cooper' || i.slotId === 'test-10k' || i.kind === 'race') && !i.optional);
   const plannedStrength = plannedItems.filter(i => i.kind === 'strength');
@@ -88,7 +92,9 @@ export function Today() {
         {!isToday && <> · <button className="btn ghost small" onClick={() => setDate(today())}>naar vandaag</button></>}
       </div>
 
+      {isToday && plan.status === 'actief' && <RecoveryCard />}
       {plan.weekNote && <div className="notice">{plan.weekNote}</div>}
+      {plan.moved && <div className="notice">Deze week is aangepast. Terugzetten kan via Verschuiven.</div>}
       {plan.event?.kind === 'vakantie' && <div className="notice">{plan.event.label}: extra ruimte voor een trailloop.</div>}
 
       <div className={`card${blocking ? ' warn' : ''}`}>
@@ -132,6 +138,11 @@ export function Today() {
             </div>
           );
         })}
+        {plan.status === 'actief' && !blocking && (
+          <div className="row" style={{ justifyContent: 'flex-end', paddingTop: 6 }}>
+            <button className="btn ghost small" onClick={() => setEditor({ type: 'move' })}>Verschuiven</button>
+          </div>
+        )}
       </div>
 
       {gtgDay(date) && !blocking && (
@@ -186,6 +197,9 @@ export function Today() {
         <StrengthLogger date={date} title={editor.title} exercises={editor.exercises} slotId={editor.slotId} existing={editor.existing} onClose={() => setEditor(null)} />
       )}
       {editor?.type === 'metric' && <MetricEditor kind={editor.kind} date={date} onClose={() => setEditor(null)} />}
+      {editor?.type === 'move' && (
+        <MoveSheet date={date} week={plan.week} weekday={(diffDays(date, mondayOf(date)) + 7) % 7} events={events} moves={moves} onClose={() => setEditor(null)} />
+      )}
     </>
   );
 }

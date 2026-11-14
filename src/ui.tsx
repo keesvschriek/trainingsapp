@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, alive, type Block } from './db';
+import { db, alive, type Block, type Move } from './db';
 
 // ---------- Iconen (eenvoudige lijnen) ----------
 const svg = (d: ReactNode) => (
@@ -51,6 +51,10 @@ export function Sheet(props: { title: string; onClose: () => void; children: Rea
 // ---------- Data-hooks ----------
 export function useBlocks(): Block[] {
   return useLiveQuery(async () => (await db.blocks.toArray()).filter(alive).sort((a, b) => a.start.localeCompare(b.start)), [], []);
+}
+
+export function useMoves(): Move[] {
+  return useLiveQuery(async () => (await db.moves.toArray()).filter(alive), [], []);
 }
 
 export function num(v: string): number | undefined {

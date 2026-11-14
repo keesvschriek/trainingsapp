@@ -60,6 +60,24 @@ export interface Block extends Base {
   kind: BlockKind;
 }
 
+/** Verschuiving in het schema. shift: dag a schuift een dag op (rest van de week schuift mee). swap: dag a en b ruilen. */
+export interface Move extends Base {
+  week: number;
+  op: 'shift' | 'swap';
+  a: number; // 0 = maandag
+  b?: number;
+  at: number; // volgorde van toepassen
+}
+
+/** Ochtend-check-in, scores 1-5 (hoger = beter). */
+export interface Checkin extends Base {
+  date: ISODate;
+  sleep: number;
+  legs: number;
+  energy: number;
+  calm: number;
+}
+
 export interface KV {
   key: string;
   value: unknown;
@@ -71,6 +89,8 @@ class TrainingDB extends Dexie {
   metrics!: Table<Metric, string>;
   checks!: Table<Check, string>;
   blocks!: Table<Block, string>;
+  moves!: Table<Move, string>;
+  checkins!: Table<Checkin, string>;
   kv!: Table<KV, string>;
 
   constructor() {
@@ -83,12 +103,16 @@ class TrainingDB extends Dexie {
       blocks: 'id, start, updatedAt',
       kv: 'key',
     });
+    this.version(2).stores({
+      moves: 'id, week, updatedAt',
+      checkins: 'id, date, updatedAt',
+    });
   }
 }
 
 export const db = new TrainingDB();
 
-export const SYNC_TABLES = ['workouts', 'sets', 'metrics', 'checks', 'blocks'] as const;
+export const SYNC_TABLES = ['workouts', 'sets', 'metrics', 'checks', 'blocks', 'moves', 'checkins'] as const;
 export type SyncTable = (typeof SYNC_TABLES)[number];
 
 export function newId(): string {
