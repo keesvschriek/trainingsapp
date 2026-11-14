@@ -1,0 +1,69 @@
+# Trainingsapp
+
+Persoonlijke app voor het trainingsschema richting de eerste 50 km trail (10 juli 2027).
+Installeerbaar op Android, werkt offline, haalt Garmin-activiteiten op via intervals.icu en synchroniseert optioneel via Supabase.
+
+App: https://keesvschriek.github.io/trainingsapp/
+
+## Wat zit erin
+
+- **Vandaag**: training van de dag uit het schema, afvinken, lopen en kracht loggen, teller voor pull-ups tussendoor, weekoverzicht.
+- **Schema**: 34 weken in 4 fases. Blokken voor Defensie, vakantie of ziekte passen het schema automatisch aan.
+- **Logboek**: alle trainingen per week, ophalen uit Garmin, zelf toevoegen en bewerken.
+- **Voortgang**: looptijd en langste loop per week tegen het plan, doelen, metingen (pull-ups, Cooper, press, gewicht).
+- **Instellingen**: intervals.icu, synchronisatie, back-up als JSON.
+
+## 1. Publiceren (eenmalig)
+
+1. Ga in deze repository naar **Settings > Pages**.
+2. Kies bij **Source**: **GitHub Actions**.
+3. Ga naar **Actions** en start de workflow **Publiceren op GitHub Pages** opnieuw als hij al was mislukt.
+
+Na 1 tot 2 minuten staat de app op https://keesvschriek.github.io/trainingsapp/. Elke push naar `main` publiceert automatisch een nieuwe versie.
+
+## 2. Installeren op Android
+
+1. Open de link in **Chrome** op je telefoon.
+2. Menu (drie puntjes) > **App installeren** (of **Toevoegen aan startscherm**).
+3. De app staat nu tussen je andere apps en opent zonder browserbalk.
+
+Updates komen vanzelf binnen als je de app opent.
+
+## 3. Garmin koppelen via intervals.icu
+
+1. Maak een gratis account op intervals.icu en koppel Garmin Connect (Settings > Connections).
+2. Settings > helemaal onderaan **Developer Settings** > maak een API-sleutel.
+3. In de app: **Instellingen > Garmin via intervals.icu**, plak de sleutel, laat Athlete-ID op `0` staan, tik op **Testen en ophalen**.
+
+De app haalt bij openen automatisch nieuwe activiteiten op (hooguit eens per uur).
+
+**Meldt de app een CORS-fout?** intervals.icu staat dan geen directe verzoeken vanuit de browser toe. Oplossing (gratis, 5 minuten):
+
+1. Maak een account op dash.cloudflare.com > **Workers & Pages** > **Create** > **Worker**.
+2. Plak de code uit `worker/intervals-proxy.js`, pas `ALLOWED_ORIGIN` aan naar `https://keesvschriek.github.io` en klik **Deploy**.
+3. Vul de Worker-URL in bij **Proxy-URL** in de app.
+
+## 4. Synchroniseren via Supabase (optioneel)
+
+1. Open je Supabase-project > **SQL Editor** > **New query**, plak de inhoud van `supabase/schema.sql` en klik **Run**.
+2. **Authentication > URL Configuration**: zet **Site URL** op `https://keesvschriek.github.io/trainingsapp/`.
+3. **Project Settings > API** (of **Data API**): kopieer de **Project URL** en de **anon** of **publishable** key.
+4. In de app: **Instellingen > Synchroniseren**, vul beide in, kies **Account aanmaken**, bevestig de mail en log in.
+5. Op je laptop: open dezelfde link, vul dezelfde gegevens in en log in. Alles komt binnen.
+
+De anon/publishable key mag in de app staan: de tabel is afgeschermd met Row Level Security, dus alleen jij ziet je eigen gegevens.
+
+Let op: een gratis Supabase-project wordt gepauzeerd na een week zonder gebruik. Je gegevens blijven bewaard en je zet het project terug met **Resume project** in het dashboard. De app werkt intussen gewoon door op je telefoon.
+
+## Ontwikkelen
+
+```bash
+npm install
+npm run dev      # lokaal op http://localhost:5173
+npm test         # tests van de schema-logica
+npm run build    # productie-build in dist/
+```
+
+Techniek: React, TypeScript, Vite, vite-plugin-pwa, Dexie (IndexedDB), Recharts, Supabase.
+
+Het schema zelf staat in `src/plan.ts`. Weken, minuten en krachtoefeningen pas je daar aan.
