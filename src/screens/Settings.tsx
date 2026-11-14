@@ -5,11 +5,15 @@ import { currentUser, getSupabase, sync, type SupabaseSettings } from '../sync';
 import { today } from '../dates';
 import type { Table } from 'dexie';
 import { APK_URL, isNative } from '../native';
+import { pushToGarmin } from '../garmin';
+import { NotifySection } from './NotifySection';
 
 export function Settings() {
   return (
     <>
       <IntervalsSection />
+      <GarminSection />
+      <NotifySection />
       <SyncSection />
       <BackupSection />
       <h2>Over</h2>
@@ -218,6 +222,59 @@ function BackupSection() {
           Importeren
           <input type="file" accept="application/json" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && importJson(e.target.files[0])} />
         </label>
+      </div>
+      {msg && <div className={`notice${msg.err ? ' err' : ''}`}>{msg.text}</div>}
+    </>
+  );
+}
+
+function GarminSection() {
+  const [on, setOn] = useState<boolean | null>(null);
+  const [last, setLast] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; err?: boolean } | null>(null);
+
+  useEffect(() => {
+    void getSetting('garmin.on', false).then(setOn);
+    void getSetting('garmin.last', 0).then(setLast);
+  }, []);
+  if (on === null) return null;
+
+  async function toggle(v: boolean) {
+    setOn(v);
+    await setSetting('garmin.on', v);
+    if (v) await send();
+  }
+
+  async function send() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await pushToGarmin();
+      setMsg({ text: `${r.sent} lopen in je intervals.icu-agenda gezet${r.removed ? `, ${r.removed} verschoven weggehaald` : ''}.` });
+      setLast(Date.now());
+    } catch (e) {
+      setMsg({ text: e instanceof IntervalsError ? e.message : String(e), err: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <h2>Trainingen naar je Garmin</h2>
+      <p className="muted small">
+        De app zet je lopen van de komende 14 dagen in je intervals.icu-agenda, met hartslagdoelen. intervals.icu stuurt de komende 7 dagen door naar Garmin Connect, en na een sync staan ze op je Fenix. Verschuif je iets, dan gaat dat automatisch mee.
+      </p>
+      <p className="muted small">
+        Eenmalig in intervals.icu: Settings, bij Garmin het vinkje <strong>Upload planned workouts</strong> aan. Controleer ook dat je lactaatdrempel-hartslag (LTHR) bij Hardlopen goed staat.
+      </p>
+      <label className="row" style={{ color: 'var(--ink)', fontSize: '1rem' }}>
+        <input type="checkbox" checked={on} onChange={e => toggle(e.target.checked)} style={{ width: 'auto' }} /> Automatisch versturen
+      </label>
+      <div className="row mt">
+        <button className="btn secondary" onClick={send} disabled={busy}>{busy ? 'Bezig...' : 'Nu versturen'}</button>
+        {last > 0 && <span className="muted small">Laatst: {new Date(last).toLocaleString('nl-NL')}</span>}
       </div>
       {msg && <div className={`notice${msg.err ? ' err' : ''}`}>{msg.text}</div>}
     </>

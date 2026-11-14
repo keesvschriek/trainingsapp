@@ -22,6 +22,7 @@ export interface Exercise {
   reps: string;
   defaultKg: number;
   defaultReps: number;
+  light?: boolean;
 }
 
 export interface PlannedItem {
@@ -134,7 +135,7 @@ const STRENGTH_DAY: Record<StrengthDay, { title: string; list: (l: number) => Ex
   mix: { title: 'Kracht: kort en gemengd', list: mixDay, minutes: 25 },
 };
 
-const lighten = (list: Exercise[]): Exercise[] => list.map(e => ({ ...e, sets: Math.max(1, Math.ceil(e.sets / 2)), reps: e.reps.replace('bijna max', 'rustig, ver van falen') }));
+const lighten = (list: Exercise[]): Exercise[] => list.map(e => ({ ...e, light: true, sets: Math.max(1, Math.ceil(e.sets / 2)), reps: e.reps.replace('bijna max', 'rustig, ver van falen') }));
 
 const strengthItem = (day: StrengthDay, level: number, light = false): PlannedItem => {
   const d = STRENGTH_DAY[day];

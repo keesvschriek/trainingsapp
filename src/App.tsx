@@ -9,6 +9,8 @@ import { getIntervalsSettings, importActivities } from './intervals';
 import { db, getSetting } from './db';
 import { today } from './dates';
 import { APK_URL, checkForUpdate } from './native';
+import { autoPushToGarmin } from './garmin';
+import { scheduleMorning } from './notify';
 
 const Progress = lazy(() => import('./screens/Progress').then(m => ({ default: m.Progress })));
 
@@ -49,7 +51,16 @@ export function App() {
       setSyncState(r.error ? (r.error === 'Offline.' ? 'off' : 'err') : 'ok');
     };
     void run();
-    const onChange = () => scheduleSync();
+    let garminTimer: number | undefined;
+    const onChange = () => {
+      scheduleSync();
+      // Verschuivingen en blokken ook naar Garmin, en meldingen bijwerken
+      window.clearTimeout(garminTimer);
+      garminTimer = window.setTimeout(() => {
+        void autoPushToGarmin();
+        void scheduleMorning();
+      }, 8000);
+    };
     const onOnline = () => void run();
     window.addEventListener('data-changed', onChange);
     window.addEventListener('online', onOnline);
@@ -63,6 +74,8 @@ export function App() {
 
   // Garmin-activiteiten ophalen bij openen, hooguit eens per uur
   useEffect(() => {
+    void scheduleMorning();
+    void autoPushToGarmin();
     (async () => {
       const s = await getIntervalsSettings();
       if (!s.key || !navigator.onLine) return;

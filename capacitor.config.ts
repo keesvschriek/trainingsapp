@@ -11,6 +11,7 @@ const config: CapacitorConfig = {
     // Verzoeken gaan via Android zelf, niet via de browser: geen CORS-gedoe met intervals.icu
     CapacitorHttp: { enabled: true },
     SystemBars: { insetsHandling: 'css', initialViewportFitValueHint: 'cover' },
+    LocalNotifications: { smallIcon: 'ic_stat_training', iconColor: '#1F4E79' },
   },
 };
 

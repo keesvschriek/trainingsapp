@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { db, newId, remove, save, alive, type Workout, type WorkoutKind, type StrengthSet, type Metric, type MetricKind } from './db';
 import { planForDay, type Exercise } from './plan';
+import { progressionHint, type Hint } from './progression';
 import { Icon, Sheet, num } from './ui';
 import { longDate, today, type ISODate } from './dates';
 
@@ -134,11 +135,13 @@ export function StrengthLogger(props: { date: ISODate; title: string; exercises:
   const [notes, setNotes] = useState(props.existing?.notes ?? '');
   const [rpe, setRpe] = useState(props.existing?.rpe?.toString() ?? '');
   const [prevInfo, setPrevInfo] = useState<Record<string, string>>({});
+  const [hints, setHints] = useState<Record<string, Hint>>({});
 
   useEffect(() => {
     (async () => {
       const init: Record<string, SetRow[]> = {};
       const info: Record<string, string> = {};
+      const hintMap: Record<string, Hint> = {};
       const existingSets = props.existing
         ? (await db.sets.where('workoutId').equals(props.existing.id).toArray()).filter(alive)
         : [];
@@ -162,16 +165,19 @@ export function StrengthLogger(props: { date: ISODate; title: string; exercises:
             break;
           }
         }
+        const hint = progressionHint(ex, last);
+        if (hint) hintMap[ex.name] = hint;
         if (mine.length) {
           init[ex.name] = mine.map(s => ({ reps: String(s.reps), kg: s.weightKg ? String(s.weightKg) : '' }));
         } else {
-          const kg = last[0]?.weightKg ?? ex.defaultKg;
-          const reps = last[0]?.reps ?? ex.defaultReps;
+          const kg = hint?.kg ?? last[0]?.weightKg ?? ex.defaultKg;
+          const reps = hint?.reps ?? last[0]?.reps ?? ex.defaultReps;
           init[ex.name] = Array.from({ length: ex.sets }, () => ({ reps: String(reps), kg: kg ? String(kg) : '' }));
         }
       }
       setRows(init);
       setPrevInfo(info);
+      setHints(hintMap);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.existing?.id, props.date, props.slotId]);
@@ -235,7 +241,8 @@ export function StrengthLogger(props: { date: ISODate; title: string; exercises:
             <span className="muted small">{ex.sets} x {ex.reps}</span>
           </div>
           <div className="muted small">{ex.weight}</div>
-          {prevInfo[ex.name] && <div className="small" style={{ color: 'var(--accent)' }}>{prevInfo[ex.name]}</div>}
+          {prevInfo[ex.name] && <div className="small muted">{prevInfo[ex.name]}</div>}
+          {hints[ex.name] && <div className="small" style={{ color: 'var(--accent)', fontWeight: 600 }}>{hints[ex.name].text}</div>}
           <div className="sets">
             <span className="n">set</span><span className="n">herh.</span><span className="n">kg</span><span />
             {rows[ex.name].map((s, i) => (

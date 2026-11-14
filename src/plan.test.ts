@@ -153,3 +153,54 @@ describe('herstel', () => {
     expect(s.find(d => d.date === '2026-11-23')!.load).toBeGreaterThan(0); // maandag: kracht gepland
   });
 });
+
+import { progressionHint, repRange } from './progression';
+
+describe('automatisch zwaarder', () => {
+  const floor = { name: 'Floor press', weight: '20 kg', sets: 3, reps: '8 tot 10 per arm', defaultKg: 20, defaultReps: 8 };
+  it('leest de range', () => {
+    expect(repRange('8 tot 10 per arm')).toEqual({ lo: 8, hi: 10 });
+    expect(repRange('12')).toEqual({ lo: 12, hi: 12 });
+    expect(repRange('bijna max')).toBe(null);
+  });
+  it('alle sets aan de bovenkant: naar 28 kg', () => {
+    const h = progressionHint(floor, [{ reps: 10, weightKg: 20 }, { reps: 10, weightKg: 20 }, { reps: 10, weightKg: 20 }]);
+    expect(h?.kg).toBe(28);
+    expect(h?.reps).toBe(8);
+  });
+  it('nog niet alles gehaald: zelfde gewicht', () => {
+    const h = progressionHint(floor, [{ reps: 10, weightKg: 20 }, { reps: 9, weightKg: 20 }, { reps: 8, weightKg: 20 }]);
+    expect(h?.kg).toBe(20);
+    expect(h?.text).toContain('2 sets');
+  });
+  it('op 28 kg: meer herhalingen of langzamer', () => {
+    const h = progressionHint({ ...floor, weight: '28 kg' }, [{ reps: 10, weightKg: 28 }, { reps: 10, weightKg: 28 }, { reps: 10, weightKg: 28 }]);
+    expect(h?.text).toContain('langzaam');
+  });
+  it('bijna max: totaal omhoog', () => {
+    const h = progressionHint({ ...floor, reps: 'bijna max', weight: 'lichaamsgewicht' }, [{ reps: 8, weightKg: 0 }, { reps: 7, weightKg: 0 }]);
+    expect(h?.text).toContain('17');
+  });
+});
+
+import { workoutText } from './garmin';
+
+describe('Garmin-trainingen', () => {
+  it('tempoloop krijgt inlopen, tempo en uitlopen met hartslagdoelen', () => {
+    const t = workoutText({ slotId: 'run-quality', kind: 'run', title: 'Tempoloop, 25 min tempo', minutes: 50 })!;
+    expect(t).toContain('- 15m 80-88% LTHR');
+    expect(t).toContain('- 25m 90-96% LTHR');
+    expect(t).toContain('- 10m 80-88% LTHR');
+  });
+  it('kracht gaat niet naar Garmin', () => {
+    expect(workoutText({ slotId: 'kracht-rug', kind: 'strength', title: 'Kracht', minutes: 30 })).toBe(null);
+  });
+});
+
+describe('lichte week', () => {
+  it('geen zwaarder-advies in een lichte week', () => {
+    const h = progressionHint({ name: 'Floor press', weight: '20 kg', sets: 2, reps: '8 tot 10', defaultKg: 20, defaultReps: 8, light: true }, [{ reps: 10, weightKg: 20 }, { reps: 10, weightKg: 20 }]);
+    expect(h?.kg).toBe(20);
+    expect(h?.text).toContain('Lichte week');
+  });
+});
