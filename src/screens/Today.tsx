@@ -110,7 +110,7 @@ export function Today() {
                 <div className="title">{item.title}{item.minutes && item.kind !== 'rest' ? <span className="muted"> · {minutesToText(item.minutes)}</span> : null}</div>
                 {item.exercises && (
                   <ul className="exlist">
-                    {item.exercises.map(e => <li key={e.name}><strong>{e.name}</strong> {e.sets} x {e.reps}{e.weight !== 'lichaamsgewicht' ? `, ${e.weight}` : ''}</li>)}
+                    {item.exercises.map(e => <li key={e.name}><strong>{e.name}</strong> {e.sets} x {e.reps}{!['lichaamsgewicht', 'band'].includes(e.weight) ? `, ${e.weight}` : ''}</li>)}
                   </ul>
                 )}
                 {item.detail && <div className="meta">{item.detail}</div>}

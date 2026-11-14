@@ -31,6 +31,8 @@ describe('schema', () => {
     const w = planForWeek(1);
     expect(w[0].items[0].kind).toBe('strength');
     expect(w[0].items[0].exercises!.length).toBe(5);
+    expect(w[4].items[0].kind).toBe('strength');
+    expect(w[6].items[0].kind).toBe('free');
     expect(w[1].items[0].minutes).toBe(35);
     expect(plannedRunMinutes(1)).toBe(165);
   });
@@ -72,5 +74,18 @@ describe('schema', () => {
 
   it('voor de start geen fout', () => {
     expect(planForDay('2026-11-14').status).toBe('voor');
+  });
+});
+
+describe('kracht', () => {
+  it('drie korte trainingen per week, max 30 min, benen alleen squats en kuiten', () => {
+    for (const w of [1, 12, 30]) {
+      const st = planForWeek(w).flatMap(d => d.items).filter(i => i.kind === 'strength');
+      expect(st.length).toBe(3);
+      st.forEach(i => expect(i.minutes!).toBeLessThanOrEqual(30));
+      const names = st.flatMap(i => i.exercises!.map(e => e.name.toLowerCase()));
+      expect(names.some(n => n.includes('push-up'))).toBe(true);
+      expect(names.some(n => /swing|split|step-up|rdl/.test(n))).toBe(false);
+    }
   });
 });

@@ -51,7 +51,7 @@ const BLOCK_WEEKS = 8;
 
 export function blockOfWeek(week: number): PlanBlock {
   if (week <= FIRST_BLOCK_WEEKS) {
-    return { nr: 1, firstWeek: 1, lastWeek: FIRST_BLOCK_WEEKS, name: 'Basis', focus: 'Vaker lopen, alles rustig. Kracht wordt routine. Afsluiten met de eerste testweek.' };
+    return { nr: 1, firstWeek: 1, lastWeek: FIRST_BLOCK_WEEKS, name: 'Basis', focus: 'Vaker lopen, alles rustig. Drie korte krachttrainingen per week worden routine. Afsluiten met de eerste testweek.' };
   }
   const nr = 2 + Math.floor((week - FIRST_BLOCK_WEEKS - 1) / BLOCK_WEEKS);
   const firstWeek = FIRST_BLOCK_WEEKS + 1 + (nr - 2) * BLOCK_WEEKS;
@@ -86,43 +86,67 @@ export function isTestWeek(week: number): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Krachtoefeningen per niveau (niveau 0 = blok 1, daarna zwaarder, max 2)
+// Krachtoefeningen: drie korte trainingen per week, per spiergroep.
+// Niveau 0 = blok 1, daarna zwaarder (max niveau 2).
+// "bijna max" = zoveel als je kunt, met 1 herhaling over.
 // ---------------------------------------------------------------------------
 
 const ex = (name: string, weight: string, sets: number, reps: string, defaultKg: number, defaultReps: number): Exercise => ({ name, weight, sets, reps, defaultKg, defaultReps });
+const pick = <T,>(level: number, options: T[]): T => options[Math.min(level, options.length - 1)];
 
-function legsAndPull(level: number): Exercise[] {
+/** Maandag: rug, biceps en squats */
+function backDay(level: number): Exercise[] {
   return [
-    [ex('Swings', '28 kg', 8, '10, elke minuut starten', 28, 10), ex('Swings', '28 kg', 10, '10, elke minuut starten', 28, 10), ex('Swings', '28 kg', 10, '12, elke minuut starten', 28, 12)][level],
-    [ex('Goblet squat', '28 kg', 3, '8', 28, 8), ex('Goblet squat', '28 kg', 4, '8', 28, 8), ex('Goblet squat', '28 kg', 4, '10', 28, 10)][level],
-    [ex('Bulgarian split squat', '20 kg', 3, '8 per been', 20, 8), ex('Bulgarian split squat', '20 kg', 3, '10 per been', 20, 10), ex('Bulgarian split squat', '28 kg', 3, '8 per been', 28, 8)][level],
-    [ex('Pull-ups', 'lichaamsgewicht', 4, '3 tot 5', 0, 4), ex('Pull-ups', 'lichaamsgewicht', 5, '4 tot 6', 0, 5), ex('Pull-ups', 'lichaamsgewicht', 5, '5 tot 8', 0, 6)][level],
-    [ex('Kuitheffen op 1 been', 'lichaamsgewicht', 3, '15 per been', 0, 15), ex('Kuitheffen op 1 been', 'lichaamsgewicht', 3, '20 per been', 0, 20), ex('Kuitheffen op 1 been', '20 kg', 3, '15 per been', 20, 15)][level],
+    pick(level, [ex('Goblet squat', '28 kg', 3, '10', 28, 10), ex('Goblet squat', '28 kg', 3, '12', 28, 12), ex('Goblet squat, 3 sec zakken', '28 kg', 3, '10', 28, 10)]),
+    pick(level, [ex('Pull-ups', 'lichaamsgewicht', 4, 'bijna max', 0, 5), ex('Pull-ups', 'lichaamsgewicht', 5, 'bijna max', 0, 6), ex('Pull-ups, 3 sec zakken', 'lichaamsgewicht', 5, 'bijna max', 0, 6)]),
+    pick(level, [ex('Eenarmige row', '28 kg', 3, '10 per arm', 28, 10), ex('Eenarmige row', '28 kg', 4, '10 per arm', 28, 10), ex('Eenarmige row', '28 kg', 4, '12 per arm', 28, 12)]),
+    pick(level, [ex('Kettlebell curl', '20 kg', 3, '8 tot 10', 20, 8), ex('Kettlebell curl', '20 kg', 3, '10 tot 12', 20, 10), ex('Kettlebell curl, 3 sec zakken', '20 kg', 3, '8 tot 10', 20, 8)]),
+    ex('Face pulls met band', 'band', 2, '15 tot 20', 0, 15),
   ];
 }
 
-function pushAndCore(level: number): Exercise[] {
+/** Woensdag: borst, schouders en triceps */
+function chestDay(level: number): Exercise[] {
   return [
-    [ex('Clean en press', '20 kg', 5, '5 per arm', 20, 5), ex('Clean en press', '20 kg', 5, '8 per arm', 20, 8), ex('Push press', '28 kg', 5, '3 per arm', 28, 3)][level],
-    [ex('Eenbenige RDL', '20 kg', 3, '8 per been', 20, 8), ex('Eenbenige RDL', '28 kg', 3, '8 per been', 28, 8), ex('Eenbenige RDL', '28 kg', 3, '10 per been', 28, 10)][level],
-    [ex('Step-ups op bank', '20 kg', 3, '10 per been', 20, 10), ex('Step-ups op bank', '20 kg', 3, '12 per been', 20, 12), ex('Step-ups op bank', '28 kg', 3, '8 per been', 28, 8)][level],
-    [ex('Push-ups, 3 sec zakken', 'lichaamsgewicht', 3, '20', 0, 20), ex('Push-ups, 3 sec zakken', 'lichaamsgewicht', 4, '20', 0, 20), ex('Push-ups, voeten verhoogd', 'lichaamsgewicht', 4, '15', 0, 15)][level],
-    [ex('Suitcase carry', '28 kg', 4, '40 m per kant', 28, 40), ex('Suitcase carry', '28 kg', 4, '60 m per kant', 28, 60), ex('Suitcase carry', '28 kg', 4, '80 m per kant', 28, 80)][level],
-    [ex('Hanging knee raises', 'lichaamsgewicht', 3, '10', 0, 10), ex('Hanging knee raises', 'lichaamsgewicht', 3, '12', 0, 12), ex('Hanging leg raises', 'lichaamsgewicht', 3, '8', 0, 8)][level],
+    pick(level, [ex('Push-ups', 'lichaamsgewicht', 4, 'bijna max', 0, 25), ex('Push-ups, voeten verhoogd', 'lichaamsgewicht', 4, 'bijna max', 0, 20), ex('Push-ups, voeten verhoogd, 3 sec zakken', 'lichaamsgewicht', 4, 'bijna max', 0, 15)]),
+    pick(level, [ex('Floor press', '28 kg', 3, '8 tot 10 per arm', 28, 8), ex('Floor press', '28 kg', 3, '10 tot 12 per arm', 28, 10), ex('Floor press, 2 sec pauze onderin', '28 kg', 4, '8 per arm', 28, 8)]),
+    pick(level, [ex('Strikte press', '20 kg', 3, '6 tot 8 per arm', 20, 6), ex('Strikte press', '20 kg', 3, '8 tot 10 per arm', 20, 8), ex('Strikte press', '28 kg', 4, '2 tot 4 per arm', 28, 3)]),
+    ex('Zijwaarts heffen met band', 'band', 3, '15 tot 20', 0, 15),
+    pick(level, [ex('Triceps extensie boven het hoofd', '20 kg', 3, '10 tot 12', 20, 10), ex('Triceps extensie boven het hoofd', '20 kg', 3, '12 tot 15', 20, 12), ex('Diamant push-ups', 'lichaamsgewicht', 3, 'bijna max', 0, 15)]),
   ];
 }
 
-const lighten = (list: Exercise[]): Exercise[] => list.map(e => ({ ...e, sets: Math.max(2, Math.ceil(e.sets / 2)) }));
+/** Vrijdag: kort en gemengd */
+function mixDay(level: number): Exercise[] {
+  return [
+    pick(level, [ex('Goblet squat', '28 kg', 2, '12', 28, 12), ex('Goblet squat', '28 kg', 3, '12', 28, 12), ex('Goblet squat, 3 sec zakken', '28 kg', 3, '12', 28, 12)]),
+    pick(level, [ex('Chin-ups (onderhands)', 'lichaamsgewicht', 3, 'bijna max', 0, 6), ex('Chin-ups (onderhands)', 'lichaamsgewicht', 4, 'bijna max', 0, 7), ex('Chin-ups, 3 sec zakken', 'lichaamsgewicht', 4, 'bijna max', 0, 6)]),
+    pick(level, [ex('Push-ups, brede greep', 'lichaamsgewicht', 3, 'bijna max', 0, 20), ex('Push-ups, brede greep', 'lichaamsgewicht', 4, 'bijna max', 0, 20), ex('Push-ups, 3 sec zakken', 'lichaamsgewicht', 4, 'bijna max', 0, 15)]),
+    pick(level, [ex('Eenarmige row', '20 kg', 3, '15 per arm', 20, 15), ex('Eenarmige row', '28 kg', 3, '12 per arm', 28, 12), ex('Eenarmige row', '28 kg', 3, '15 per arm', 28, 15)]),
+    ex('Kuitheffen op 1 been', 'lichaamsgewicht', 2, '20 per been', 0, 20),
+  ];
+}
 
-const strengthItem = (kind: 'benen' | 'duwen', level: number, light = false, extra?: string): PlannedItem => {
-  const list = kind === 'benen' ? legsAndPull(level) : pushAndCore(level);
+type StrengthDay = 'rug' | 'borst' | 'mix';
+const STRENGTH_DAY: Record<StrengthDay, { title: string; list: (l: number) => Exercise[]; minutes: number }> = {
+  rug: { title: 'Kracht: rug, biceps en squats', list: backDay, minutes: 30 },
+  borst: { title: 'Kracht: borst, schouders en triceps', list: chestDay, minutes: 30 },
+  mix: { title: 'Kracht: kort en gemengd', list: mixDay, minutes: 25 },
+};
+
+const lighten = (list: Exercise[]): Exercise[] => list.map(e => ({ ...e, sets: Math.max(1, Math.ceil(e.sets / 2)), reps: e.reps.replace('bijna max', 'rustig, ver van falen') }));
+
+const strengthItem = (day: StrengthDay, level: number, light = false): PlannedItem => {
+  const d = STRENGTH_DAY[day];
   return {
-    slotId: `kracht-${kind}`,
+    slotId: `kracht-${day}`,
     kind: 'strength',
-    title: kind === 'benen' ? 'Kracht: benen en trekken' : 'Kracht: duwen, eenbenig en romp',
-    minutes: light ? 25 : 40,
-    exercises: light ? lighten(list) : list,
-    detail: [light ? 'Licht: halve sets, ruim binnen je kunnen.' : 'Stop elke set 1 tot 2 herhalingen voor je niet meer kunt.', extra].filter(Boolean).join(' '),
+    title: d.title,
+    minutes: light ? 15 : d.minutes,
+    exercises: light ? lighten(d.list(level)) : d.list(level),
+    detail: light
+      ? 'Licht: halve sets, ruim binnen je kunnen.'
+      : 'Sets dicht bij falen (1 tot 2 herhalingen over). Combineer twee oefeningen om en om om tijd te besparen.',
   };
 };
 
@@ -192,11 +216,11 @@ function testWeek(level: number): PlannedItem[][] {
   return [
     [
       { slotId: 'test-pullups', kind: 'test', title: 'Test: strikte pull-ups', detail: 'Uitgerust, na een korte warming-up. Zoveel mogelijk strikte herhalingen in 1 set.' },
-      strengthItem('benen', level, true),
+      strengthItem('rug', level, true),
     ],
     [{ slotId: 'test-cooper', kind: 'test', title: 'Test: Cooper (12 min)', minutes: 40, detail: '15 min inlopen met een paar versnellingen, dan 12 min zo ver mogelijk, daarna uitlopen. Vlak parcours. Doel: 3000 m.' }],
     [
-      strengthItem('duwen', level, true),
+      strengthItem('borst', level, true),
       { slotId: 'test-press', kind: 'test', title: 'Test: press 28 kg', optional: true, detail: 'Strikte press met 28 kg, zwakste arm telt. Alleen als je fris bent.' },
     ],
     [easy(30)],
@@ -222,11 +246,11 @@ function standard(o: { level: number; tue: PlannedItem; thu: PlannedItem; sat: P
     light: o.light,
     note: o.note,
     days: [
-      [strengthItem('benen', o.level, o.light)],
+      [strengthItem('rug', o.level, o.light)],
       [o.tue],
-      [strengthItem('duwen', o.level, o.light)],
+      [strengthItem('borst', o.level, o.light)],
       [o.thu],
-      [rest()],
+      [strengthItem('mix', o.level, o.light)],
       [o.sat],
       o.sun ?? [free()],
     ],
@@ -245,7 +269,7 @@ function block1Week(w: number): WeekSpec {
     case 8: return {
       light: true,
       note: 'Lichte week.',
-      days: [[easy(40)], [strengthItem('benen', 0, true)], [rest()], [rest()], [rest()], [rest()], [rest('Rust', 'Morgen wandelen of 30 min heel rustig.')]],
+      days: [[easy(40)], [strengthItem('rug', 0, true)], [rest()], [rest()], [rest()], [rest()], [rest('Rust', 'Morgen wandelen of 30 min heel rustig.')]],
     };
     default: return { test: true, note: 'Testweek: meet waar je staat.', days: testWeek(0) };
   }
