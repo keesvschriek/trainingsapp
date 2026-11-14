@@ -52,12 +52,31 @@ jobs:
       - name: APK bouwen
         run: |
           # Vaste sleutel, zodat elke nieuwe versie over de oude heen installeert (je gegevens blijven staan)
-          mkdir -p ~/.android
-          cp android-assets/debug.keystore ~/.android/debug.keystore
+          cat >> android/app/build.gradle <<'GRADLE'
+
+          android {
+              signingConfigs {
+                  vast {
+                      storeFile rootProject.file('../android-assets/debug.keystore')
+                      storePassword 'android'
+                      keyAlias 'androiddebugkey'
+                      keyPassword 'android'
+                  }
+              }
+              buildTypes {
+                  debug { signingConfig signingConfigs.vast }
+              }
+          }
+          GRADLE
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
           cp app/build/outputs/apk/debug/app-debug.apk ../trainingsapp.apk
+
+      - name: Handtekening controleren
+        run: |
+          keytool -exportcert -alias androiddebugkey -keystore android-assets/debug.keystore -storepass android -file vast.der
+          python3 -c "import sys; c=open('vast.der','rb').read(); a=open('trainingsapp.apk','rb').read(); sys.exit(0 if c in a else 'APK is niet met de vaste sleutel ondertekend')"
 
       - name: Release maken
         uses: softprops/action-gh-release@v2
