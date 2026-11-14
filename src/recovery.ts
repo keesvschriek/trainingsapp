@@ -105,6 +105,7 @@ export interface Recovery {
   score: number;
   level: 'groen' | 'oranje' | 'rood';
   advice: string;
+  short: string;
   parts: { label: string; value: string; score: number | null }[];
   enoughData: boolean;
 }
@@ -172,7 +173,8 @@ export function recoveryFor(opts: { checkin?: Checkin; formPct: number | null; p
     : level === 'oranje'
       ? 'Train, maar houd het rustig: een tempoloop wordt een rustige loop, bij kracht 1 set minder per oefening.'
       : 'Neem rust of wandel. Schuif de training van vandaag een dag op.';
-  return { score, level, advice, parts, enoughData: !!opts.checkin || fs != null };
+  const short = level === 'groen' ? 'train zoals gepland' : level === 'oranje' ? 'houd het rustig' : 'rust vandaag';
+  return { score, level, advice, short, parts, enoughData: !!opts.checkin || fs != null };
 }
 
 /** Basislijn: gemiddelde over de afgelopen 30 dagen, zonder vandaag. */

@@ -18,7 +18,28 @@ export const Icon = {
   check: svg(<path d="M5 12.5l4.5 4.5L19 7.5" />),
   plus: svg(<path d="M12 5v14M5 12h14" />),
   trash: svg(<><path d="M4 7h16M10 11v6M14 11v6" /><path d="M6 7l1 13h10l1-13M9 7V4h6v3" /></>),
+  run: svg(<><circle cx="14.5" cy="4.5" r="1.8" /><path d="M10 21l2.5-5.5L15 17v4M7.5 12.5l2-3.5 4 1 2.5 3.5 3 .5" /><path d="M9.5 9L7 8.5 5 11" /></>),
+  kettlebell: svg(<><path d="M8.5 8.5a3.5 3.5 0 1 1 7 0" /><path d="M7 9.5h10l1.5 3.5a6.5 6.5 0 0 1-13 0z" /><path d="M7.5 20.5h9" /></>),
+  flag: svg(<><path d="M5 21V4" /><path d="M5 4h11l-2 4 2 4H5" /></>),
+  moon: svg(<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z" />),
+  down: svg(<path d="M6 9l6 6 6-6" />),
+  dash: svg(<path d="M7 12h10" />),
+  dotc: svg(<circle cx="12" cy="12" r="3.2" />),
 };
+
+/** Hoogtelijnen, als lichte achtergrond. */
+export function Contour(props: { className?: string }) {
+  return (
+    <svg className={props.className} viewBox="0 0 280 220" fill="none" stroke="currentColor" strokeWidth={1.2} aria-hidden="true">
+      {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+        <path key={i} d={`M ${-20 + i * 6} ${200 - i * 4} C ${40 + i * 4} ${150 - i * 14}, ${80 + i * 6} ${190 - i * 22}, ${140} ${120 - i * 12} S ${230 - i * 4} ${60 - i * 6}, ${300} ${70 - i * 9}`} />
+      ))}
+      {[0, 1, 2, 3].map(i => (
+        <ellipse key={`e${i}`} cx={190} cy={70} rx={18 + i * 14} ry={11 + i * 9} transform={`rotate(-18 190 70)`} />
+      ))}
+    </svg>
+  );
+}
 
 // ---------- Volledig-scherm sheet ----------
 export function Sheet(props: { title: string; onClose: () => void; children: ReactNode; footer?: ReactNode; action?: ReactNode }) {

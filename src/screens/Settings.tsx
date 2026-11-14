@@ -7,10 +7,12 @@ import type { Table } from 'dexie';
 import { APK_URL, isNative } from '../native';
 import { pushToGarmin } from '../garmin';
 import { NotifySection } from './NotifySection';
+import { setThemePref, type ThemePref } from '../theme';
 
 export function Settings() {
   return (
     <>
+      <ThemeSection />
       <IntervalsSection />
       <GarminSection />
       <NotifySection />
@@ -55,7 +57,7 @@ function IntervalsSection() {
 
   return (
     <>
-      <h2 style={{ marginTop: 4 }}>Garmin via intervals.icu</h2>
+      <h2>Garmin via intervals.icu</h2>
       <p className="muted small">Koppel in intervals.icu je Garmin Connect. Je API-sleutel staat bij Settings, onderaan bij Developer Settings. De sleutel blijft op dit apparaat en wordt niet gesynchroniseerd.</p>
       <label>API-sleutel</label>
       <input type="password" autoComplete="off" value={s.key} onChange={e => store({ ...s, key: e.target.value.trim() })} />
@@ -277,6 +279,23 @@ function GarminSection() {
         {last > 0 && <span className="muted small">Laatst: {new Date(last).toLocaleString('nl-NL')}</span>}
       </div>
       {msg && <div className={`notice${msg.err ? ' err' : ''}`}>{msg.text}</div>}
+    </>
+  );
+}
+
+function ThemeSection() {
+  const [pref, setPref] = useState<ThemePref | null>(null);
+  useEffect(() => { void getSetting<ThemePref>('theme', 'system').then(setPref); }, []);
+  if (!pref) return null;
+  const opts: [ThemePref, string][] = [['system', 'Zoals telefoon'], ['light', 'Licht'], ['dark', 'Donker']];
+  return (
+    <>
+      <h2 style={{ marginTop: 4 }}>Weergave</h2>
+      <div className="seg">
+        {opts.map(([v, l]) => (
+          <button key={v} className={pref === v ? 'active' : ''} onClick={() => { setPref(v); void setThemePref(v); }}>{l}</button>
+        ))}
+      </div>
     </>
   );
 }

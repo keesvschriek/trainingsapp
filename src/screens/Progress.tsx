@@ -7,11 +7,13 @@ import { GOALS, blockOfWeek, mondayOfWeek, planForWeek, weekOf } from '../plan';
 import { METRICS, MetricEditor, formatMetric } from '../editors';
 import { useBlocks, useMoves } from '../ui';
 import { loadSeries } from '../recovery';
+import { cssColor } from '../theme';
 
-const ACCENT = '#1f4e79';
-const GREY = '#9aa5b1';
 
 export function Progress() {
+  const ACCENT = cssColor('--accent');
+  const GREY = cssColor('--muted');
+  const GRID = cssColor('--line');
   const blocks = useBlocks();
   const moves = useMoves();
   const [add, setAdd] = useState<MetricKind | null>(null);
@@ -78,8 +80,8 @@ export function Progress() {
       <div className="chart">
         <ResponsiveContainer>
           <ComposedChart data={weekData} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
-            <CartesianGrid stroke="#eef1f4" vertical={false} />
-            <XAxis dataKey="week" tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: '#d8dee6' }} />
+            <CartesianGrid stroke={GRID} vertical={false} />
+            <XAxis dataKey="week" tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: GRID }} />
             <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
             <Tooltip formatter={(v, n) => [`${v} min`, n === 'gelopen' ? 'Gelopen' : 'Gepland']} />
             <Bar isAnimationActive={false} dataKey="gelopen" fill={ACCENT} radius={[3, 3, 0, 0]} maxBarSize={22} />
@@ -92,8 +94,8 @@ export function Progress() {
       <div className="chart">
         <ResponsiveContainer>
           <ComposedChart data={weekData} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
-            <CartesianGrid stroke="#eef1f4" vertical={false} />
-            <XAxis dataKey="week" tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: '#d8dee6' }} />
+            <CartesianGrid stroke={GRID} vertical={false} />
+            <XAxis dataKey="week" tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: GRID }} />
             <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
             <Tooltip formatter={(v, n) => [`${v} min`, n === 'langste' ? 'Gelopen' : 'Gepland']} />
             <Bar isAnimationActive={false} dataKey="langste" fill={ACCENT} radius={[3, 3, 0, 0]} maxBarSize={22} />
@@ -107,8 +109,8 @@ export function Progress() {
       <div className="chart">
         <ResponsiveContainer>
           <LineChart data={formData} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
-            <CartesianGrid stroke="#eef1f4" vertical={false} />
-            <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: '#d8dee6' }} interval={6} />
+            <CartesianGrid stroke={GRID} vertical={false} />
+            <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: GRID }} interval={6} />
             <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
             <Tooltip />
             <Line isAnimationActive={false} dataKey="fitheid" stroke={ACCENT} strokeWidth={2} dot={false} connectNulls />
@@ -175,8 +177,8 @@ export function Progress() {
               <div className="chart" style={{ height: 150 }}>
                 <ResponsiveContainer>
                   <LineChart data={data} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
-                    <CartesianGrid stroke="#eef1f4" vertical={false} />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: '#d8dee6' }} />
+                    <CartesianGrid stroke={GRID} vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: GRID }} />
                     <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
                     <Tooltip formatter={v => [mt.time ? `${v} min` : `${v} ${mt.unit}`, mt.label]} />
                     <Line isAnimationActive={false} dataKey="value" stroke={ACCENT} strokeWidth={2} dot={{ r: 3 }} />

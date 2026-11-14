@@ -4,7 +4,7 @@ import { db, alive, getSetting, newId, save, type Checkin } from '../db';
 import { addDays, dayName, diffDays, mondayOf, today as todayFn } from '../dates';
 import { loadSeries, recoveryFor, baseline, type Physio } from '../recovery';
 import { planForDay, weekOf } from '../plan';
-import { useBlocks, useMoves } from '../ui';
+import { Icon, useBlocks, useMoves } from '../ui';
 import type { WellnessDay } from '../intervals';
 
 const QUESTIONS: { key: keyof Pick<Checkin, 'sleep' | 'legs' | 'energy' | 'calm'>; label: string; low: string; high: string }[] = [
@@ -19,6 +19,7 @@ export function RecoveryCard() {
   const events = useBlocks();
   const moves = useMoves();
   const [editing, setEditing] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [answers, setAnswers] = useState<Partial<Record<string, number>>>({});
 
   const checkin = useLiveQuery(async () => {
@@ -62,7 +63,7 @@ export function RecoveryCard() {
   if (!checkin || editing) {
     return (
       <div className="card">
-        <div className="spread"><strong>Hoe voel je je vandaag?</strong><span className="muted small">10 sec</span></div>
+        <div className="spread"><strong>Hoe voel je je vandaag?</strong><span className="muted small">check-in, 10 sec</span></div>
         {QUESTIONS.map(q => (
           <div key={q.key} style={{ marginTop: 10 }}>
             <div className="spread small"><span>{q.label}</span><span className="muted">{q.low} … {q.high}</span></div>
@@ -78,6 +79,20 @@ export function RecoveryCard() {
     );
   }
 
+  if (!expanded) {
+    return (
+      <div className={`rowcard recovery ${rec.level}`} onClick={() => setExpanded(true)} role="button">
+        <span className={`dot ${rec.level}`} />
+        <div className="grow">
+          <div className="lbl">Herstel</div>
+          <div className="val"><span className="level">{rec.level}</span> <span className="muted" style={{ fontWeight: 400 }}>· {rec.short}</span></div>
+        </div>
+        <span className="big">{rec.score}</span>
+        <svg className="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M6 9l6 6 6-6" /></svg>
+      </div>
+    );
+  }
+
   return (
     <div className={`card recovery ${rec.level}`}>
       <div className="spread">
@@ -85,7 +100,10 @@ export function RecoveryCard() {
           <div className="muted small">Herstel</div>
           <div className="score">{rec.score} <span className="level">{rec.level}</span></div>
         </div>
-        <button className="btn ghost small" onClick={() => { setAnswers({ sleep: checkin.sleep, legs: checkin.legs, energy: checkin.energy, calm: checkin.calm }); setEditing(true); }}>Check-in aanpassen</button>
+        <div className="stack">
+          <button className="icon-btn" onClick={() => setExpanded(false)} aria-label="Inklappen" style={{ transform: 'rotate(180deg)' }}>{Icon.down}</button>
+          <button className="btn ghost small" onClick={() => { setAnswers({ sleep: checkin.sleep, legs: checkin.legs, energy: checkin.energy, calm: checkin.calm }); setEditing(true); }}>Check-in aanpassen</button>
+        </div>
       </div>
       <p style={{ marginTop: 6 }}>{rec.advice}</p>
       {rec.level === 'rood' && hasTraining && !todayPlan.moved && (
