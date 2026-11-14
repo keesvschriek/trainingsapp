@@ -4,7 +4,12 @@ import type { ItemKind, PlannedItem } from './plan';
 // Koppelt geplande items van een dag aan gelogde trainingen.
 // Eerst expliciete koppelingen (slotId), daarna ongekoppelde trainingen van hetzelfde soort op volgorde.
 
-const KIND_MAP: Partial<Record<ItemKind, Workout['kind']>> = { run: 'run', race: 'run', strength: 'strength', boxing: 'boxing' };
+const KIND_MAP: Partial<Record<ItemKind, Workout['kind']>> = { run: 'run', race: 'run', strength: 'strength' };
+
+function kindOf(item: PlannedItem): Workout['kind'] | undefined {
+  if (item.slotId === 'test-cooper' || item.slotId === 'test-10k') return 'run';
+  return KIND_MAP[item.kind];
+}
 
 export interface ItemStatus {
   item: PlannedItem;
@@ -24,7 +29,7 @@ export function matchDay(items: PlannedItem[], workouts: Workout[], checks: Chec
 
   for (const st of statuses) {
     if (st.workout) continue;
-    const kind = KIND_MAP[st.item.kind];
+    const kind = kindOf(st.item);
     if (!kind) continue;
     const w = workouts.find(w => w.kind === kind && !w.slotId && !used.has(w.id));
     if (w) {

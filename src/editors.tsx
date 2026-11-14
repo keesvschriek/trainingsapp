@@ -1,13 +1,25 @@
 import { useEffect, useState } from 'react';
-import { db, newId, remove, save, alive, type Workout, type WorkoutKind, type StrengthSet } from './db';
-import { STRENGTH, type StrengthKey } from './plan';
+import { db, newId, remove, save, alive, type Workout, type WorkoutKind, type StrengthSet, type Metric, type MetricKind } from './db';
+import { planForDay, type Exercise } from './plan';
 import { Icon, Sheet, num } from './ui';
-import { longDate, type ISODate } from './dates';
+import { longDate, today, type ISODate } from './dates';
 
 const KIND_LABEL: Record<WorkoutKind, string> = { run: 'Lopen', strength: 'Kracht', boxing: 'Boksen', other: 'Overig' };
 
+/** Oefeningen voor een bestaande krachttraining: uit het schema van die dag, anders uit de gelogde sets. */
+export async function exercisesFor(w: Workout): Promise<Exercise[]> {
+  const planned = planForDay(w.date).items.find(i => i.slotId === w.slotId && i.exercises);
+  if (planned?.exercises) return planned.exercises;
+  const sets = (await db.sets.where('workoutId').equals(w.id).toArray()).filter(alive);
+  const names = [...new Set(sets.sort((a, b) => a.setNo - b.setNo).map(s => s.exercise))];
+  return names.map(name => {
+    const first = sets.find(s => s.exercise === name)!;
+    return { name, weight: first.weightKg ? `${first.weightKg} kg` : 'lichaamsgewicht', sets: sets.filter(s => s.exercise === name).length, reps: String(first.reps), defaultKg: first.weightKg, defaultReps: first.reps };
+  });
+}
+
 // ---------------------------------------------------------------------------
-// Loop, boksen of overige training
+// Loop of overige training
 // ---------------------------------------------------------------------------
 
 export function WorkoutEditor(props: {
@@ -66,7 +78,7 @@ export function WorkoutEditor(props: {
     >
       {props.allowKind && (
         <div className="seg">
-          {(['run', 'boxing', 'other'] as WorkoutKind[]).map(k => (
+          {(['run', 'other'] as WorkoutKind[]).map(k => (
             <button key={k} className={kind === k ? 'active' : ''} onClick={() => setKind(k)}>{KIND_LABEL[k]}</button>
           ))}
         </div>
@@ -114,8 +126,8 @@ export function WorkoutEditor(props: {
 
 interface SetRow { reps: string; kg: string }
 
-export function StrengthLogger(props: { date: ISODate; strength: StrengthKey; slotId?: string; existing?: Workout; onClose: () => void }) {
-  const exercises = STRENGTH[props.strength];
+export function StrengthLogger(props: { date: ISODate; title: string; exercises: Exercise[]; slotId?: string; existing?: Workout; onClose: () => void }) {
+  const exercises = props.exercises;
   const [rows, setRows] = useState<Record<string, SetRow[]> | null>(null);
   const [notes, setNotes] = useState(props.existing?.notes ?? '');
   const [rpe, setRpe] = useState(props.existing?.rpe?.toString() ?? '');
@@ -160,7 +172,7 @@ export function StrengthLogger(props: { date: ISODate; strength: StrengthKey; sl
       setPrevInfo(info);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.existing?.id, props.date, props.strength]);
+  }, [props.existing?.id, props.date, props.slotId]);
 
   function update(name: string, i: number, field: keyof SetRow, v: string) {
     setRows(r => r && { ...r, [name]: r[name].map((s, j) => (j === i ? { ...s, [field]: v } : s)) });
@@ -174,15 +186,14 @@ export function StrengthLogger(props: { date: ISODate; strength: StrengthKey; sl
 
   async function submit() {
     if (!rows) return;
-    const title = props.strength === 'kort' ? 'Kracht kort' : `Kracht ${props.strength}`;
     const workout = await save('workouts', {
       ...(props.existing ?? {}),
       id: props.existing?.id ?? newId(),
       date: props.date,
       kind: 'strength',
       slotId: props.existing?.slotId ?? props.slotId,
-      title,
-      durationMin: props.existing?.durationMin ?? (props.strength === 'kort' ? 30 : 40),
+      title: props.title,
+      durationMin: props.existing?.durationMin ?? 40,
       rpe: num(rpe),
       notes: notes.trim() || undefined,
       source: 'manual',
@@ -207,10 +218,9 @@ export function StrengthLogger(props: { date: ISODate; strength: StrengthKey; sl
     props.onClose();
   }
 
-  const title = props.strength === 'kort' ? 'Kracht kort' : `Kracht ${props.strength}`;
   return (
     <Sheet
-      title={title}
+      title={props.title}
       onClose={props.onClose}
       action={props.existing && <button className="icon-btn" onClick={del} aria-label="Verwijderen">{Icon.trash}</button>}
       footer={<><button className="btn secondary" onClick={props.onClose}>Annuleren</button><button className="btn" onClick={submit} disabled={!rows}>Opslaan</button></>}
@@ -222,7 +232,7 @@ export function StrengthLogger(props: { date: ISODate; strength: StrengthKey; sl
             <h3>{ex.name}</h3>
             <span className="muted small">{ex.sets} x {ex.reps}</span>
           </div>
-          <div className="muted small">{ex.weight}, {ex.why}</div>
+          <div className="muted small">{ex.weight}</div>
           {prevInfo[ex.name] && <div className="small" style={{ color: 'var(--accent)' }}>{prevInfo[ex.name]}</div>}
           <div className="sets">
             <span className="n">set</span><span className="n">herh.</span><span className="n">kg</span><span />
@@ -250,5 +260,64 @@ function Row(props: { i: number; s: SetRow; onChange: (f: keyof SetRow, v: strin
       <input inputMode="decimal" value={props.s.kg} onChange={e => props.onChange('kg', e.target.value)} aria-label="kilo" />
       <button className="icon-btn" onClick={props.onDrop} aria-label="Set verwijderen" style={{ padding: 4 }}>{Icon.close}</button>
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Metingen (testweek en lichaam)
+// ---------------------------------------------------------------------------
+
+export const METRICS: { kind: MetricKind; label: string; unit: string; help: string; time?: boolean }[] = [
+  { kind: 'cooper', label: 'Cooper-test', unit: 'm', help: 'Zoveel mogelijk meters in 12 minuten. Doel: 3000 m.' },
+  { kind: 'tenK', label: '10 km', unit: '', help: 'Tijd als minuten:seconden, bijv. 44:30. Doel: onder 43:00.', time: true },
+  { kind: 'waist', label: 'Buikomtrek', unit: 'cm', help: 'Op navelhoogte, na het opstaan, ontspannen uitademen.' },
+  { kind: 'weight', label: 'Gewicht', unit: 'kg', help: 'Na het opstaan en voor het ontbijt.' },
+  { kind: 'pullupMax', label: 'Strikte pull-ups (max)', unit: 'herh.', help: 'Uitgerust, 1 set zo veel mogelijk.' },
+  { kind: 'pressReps', label: 'Press 28 kg (per arm)', unit: 'herh.', help: 'Strikte press, zwakste arm telt.' },
+];
+
+export const TEST_METRIC: Record<string, MetricKind[]> = {
+  'test-pullups': ['pullupMax'],
+  'test-cooper': ['cooper'],
+  'test-10k': ['tenK'],
+  'test-press': ['pressReps'],
+  'test-meten': ['weight', 'waist'],
+};
+
+export function formatMetric(kind: MetricKind, value: number): string {
+  const def = METRICS.find(m => m.kind === kind);
+  if (def?.time) {
+    const m = Math.floor(value / 60);
+    const s = Math.round(value % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+  return `${value.toLocaleString('nl-NL', { maximumFractionDigits: 1 })} ${def?.unit ?? ''}`.trim();
+}
+
+function parseTime(v: string): number | undefined {
+  const m = v.trim().match(/^(\d{1,3})[:.,](\d{1,2})$/);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  const n = num(v);
+  return n == null ? undefined : Math.round(n * 60);
+}
+
+export function MetricEditor(props: { kind: MetricKind; date?: ISODate; onClose: () => void }) {
+  const def = METRICS.find(m => m.kind === props.kind)!;
+  const [date, setDate] = useState<ISODate>(props.date ?? today());
+  const [value, setValue] = useState('');
+  async function submit() {
+    const v = def.time ? parseTime(value) : num(value);
+    if (v == null) return;
+    await save('metrics', { id: newId(), date, kind: props.kind, value: v } as Metric);
+    props.onClose();
+  }
+  return (
+    <Sheet title={def.label} onClose={props.onClose} footer={<><button className="btn secondary" onClick={props.onClose}>Annuleren</button><button className="btn" onClick={submit}>Opslaan</button></>}>
+      <p className="muted small">{def.help}</p>
+      <div className="grid2">
+        <div><label>Datum</label><input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+        <div><label>{def.time ? 'Tijd (mm:ss)' : `Waarde (${def.unit})`}</label><input inputMode={def.time ? 'text' : 'decimal'} autoFocus value={value} onChange={e => setValue(e.target.value)} placeholder={def.time ? '44:30' : ''} /></div>
+      </div>
+    </Sheet>
   );
 }

@@ -2,18 +2,25 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, alive, type Workout, type WorkoutKind } from '../db';
 import { mondayOf, shortDate, dayShort, today } from '../dates';
-import { weekOf } from '../plan';
+import { weekOf, blockOfWeek } from '../plan';
 import { importActivities, IntervalsError } from '../intervals';
-import { StrengthLogger, WorkoutEditor } from '../editors';
-import { summary, strengthKeyOf } from './Today';
+import { StrengthLogger, WorkoutEditor, exercisesFor } from '../editors';
+import type { Exercise } from '../plan';
+import { summary } from './Today';
 import { fmt } from '../ui';
 
 type Filter = 'all' | WorkoutKind;
-const FILTERS: [Filter, string][] = [['all', 'Alles'], ['run', 'Lopen'], ['strength', 'Kracht'], ['boxing', 'Boksen'], ['other', 'Overig']];
+const FILTERS: [Filter, string][] = [['all', 'Alles'], ['run', 'Lopen'], ['strength', 'Kracht'], ['other', 'Overig']];
 
 export function Log() {
   const [filter, setFilter] = useState<Filter>('all');
   const [edit, setEdit] = useState<Workout | 'new' | null>(null);
+  const [strength, setStrength] = useState<{ w: Workout; exercises: Exercise[] } | null>(null);
+
+  async function openWorkout(w: Workout) {
+    if (w.kind === 'strength' && w.source === 'manual') setStrength({ w, exercises: await exercisesFor(w) });
+    else setEdit(w);
+  }
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; err?: boolean } | null>(null);
   const [limit, setLimit] = useState(60);
@@ -68,12 +75,12 @@ export function Log() {
         return (
           <div key={g.monday}>
             <h2>
-              {wk >= 1 && wk <= 34 ? `Week ${wk}` : `Week van ${shortDate(g.monday)}`}
+              {`Week van ${shortDate(g.monday)}`}{wk >= 1 ? <span className="muted small" style={{ fontWeight: 400 }}> · blok {blockOfWeek(wk).nr}</span> : null}
               {km > 0 && <span className="muted small" style={{ fontWeight: 400 }}> · {fmt.km(km)} gelopen</span>}
             </h2>
             <div className="card">
               {g.items.map(w => (
-                <div className="logrow" key={w.id} onClick={() => setEdit(w)}>
+                <div className="logrow" key={w.id} onClick={() => openWorkout(w)}>
                   <div>
                     <div>{w.title}{w.source === 'intervals' && <span className="tag">Garmin</span>}</div>
                     <div className="muted small">{dayShort(w.date)} {shortDate(w.date)}{w.date === today() ? ', vandaag' : ''}</div>
@@ -88,10 +95,10 @@ export function Log() {
       {list.length > limit && <button className="btn secondary block" onClick={() => setLimit(limit + 60)}>Meer laden</button>}
 
       {edit === 'new' && <WorkoutEditor initial={{ date: today(), kind: 'run' }} allowKind onClose={() => setEdit(null)} />}
-      {edit && edit !== 'new' && edit.kind === 'strength' && edit.source === 'manual' && (
-        <StrengthLogger date={edit.date} strength={strengthKeyOf(edit)} existing={edit} onClose={() => setEdit(null)} />
+      {strength && (
+        <StrengthLogger date={strength.w.date} title={strength.w.title} exercises={strength.exercises} slotId={strength.w.slotId} existing={strength.w} onClose={() => setStrength(null)} />
       )}
-      {edit && edit !== 'new' && !(edit.kind === 'strength' && edit.source === 'manual') && (
+      {edit && edit !== 'new' && (
         <WorkoutEditor initial={edit} existing={edit} onClose={() => setEdit(null)} />
       )}
     </>

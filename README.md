@@ -1,16 +1,16 @@
 # Trainingsapp
 
-Persoonlijke app voor het trainingsschema richting de eerste 50 km trail (10 juli 2027).
+Persoonlijke app voor mijn trainingsschema. Doelen: 3000 m op de Cooper-test, 10 km onder 43 minuten en een fitte bouw.
 Android-app (APK) en webversie, werkt offline, haalt Garmin-activiteiten op via intervals.icu en synchroniseert optioneel via Supabase.
 
 App: https://keesvschriek.github.io/trainingsapp/
 
 ## Wat zit erin
 
-- **Vandaag**: training van de dag uit het schema, afvinken, lopen en kracht loggen, teller voor pull-ups tussendoor, weekoverzicht.
-- **Schema**: 34 weken in 4 fases. Blokken voor Defensie, vakantie of ziekte passen het schema automatisch aan.
+- **Vandaag**: training van de dag met uitgeschreven oefeningen, afvinken, lopen en kracht loggen, testresultaten invullen, teller voor pull-ups tussendoor.
+- **Schema**: blokken van 8 weken (blok 1: 9 weken), elk met een testweek. Loopt door zonder einddatum. Defensie, wedstrijden, vakantie of ziekte passen het schema automatisch aan.
 - **Logboek**: alle trainingen per week, ophalen uit Garmin, zelf toevoegen en bewerken.
-- **Voortgang**: looptijd en langste loop per week tegen het plan, doelen, metingen (pull-ups, Cooper, press, gewicht).
+- **Voortgang**: looptijd en langste loop per week tegen het plan, doelen, metingen (Cooper, 10 km, buikomtrek, gewicht, pull-ups, press).
 - **Instellingen**: intervals.icu, synchronisatie, back-up als JSON.
 
 ## 1. Publiceren (eenmalig)

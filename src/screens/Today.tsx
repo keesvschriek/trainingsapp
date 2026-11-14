@@ -1,27 +1,28 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, alive, save, type Workout, type Metric } from '../db';
-import { addDays, diffDays, longDate, mondayOf, today, minutesToText, type ISODate } from '../dates';
-import { planForDay, planForWeek, gtgDay, TOTAL_WEEKS, RACE_DATE, type PlannedItem } from '../plan';
+import { db, alive, save, type Workout, type Metric, type MetricKind } from '../db';
+import { addDays, diffDays, longDate, mondayOf, today, minutesToText, shortDate, type ISODate } from '../dates';
+import { planForDay, planForWeek, gtgDay, nextTestWeek, weekInBlock, type PlannedItem, type Exercise } from '../plan';
 import { matchDay } from '../match';
 import { Icon, useBlocks, fmt } from '../ui';
-import { StrengthLogger, WorkoutEditor } from '../editors';
+import { MetricEditor, StrengthLogger, TEST_METRIC, WorkoutEditor, METRICS, exercisesFor, formatMetric } from '../editors';
 
 type Editor =
   | { type: 'workout'; initial: Partial<Workout> & { date: ISODate; kind: Workout['kind'] }; existing?: Workout; allowKind?: boolean }
-  | { type: 'strength'; item: PlannedItem; existing?: Workout };
+  | { type: 'strength'; title: string; exercises: Exercise[]; slotId?: string; existing?: Workout }
+  | { type: 'metric'; kind: MetricKind };
 
 export function Today() {
   const [date, setDate] = useState<ISODate>(today());
   const [editor, setEditor] = useState<Editor | null>(null);
-  const blocks = useBlocks();
-  const plan = planForDay(date, blocks);
+  const events = useBlocks();
+  const plan = planForDay(date, events);
 
   const workouts = useLiveQuery(async () => (await db.workouts.where('date').equals(date).toArray()).filter(alive), [date], []);
   const checks = useLiveQuery(async () => (await db.checks.where('date').equals(date).toArray()).filter(alive), [date], []);
-  const gtg = useLiveQuery(() => db.metrics.get(`gtg-${date}`), [date]);
+  const metrics = useLiveQuery(async () => (await db.metrics.where('date').equals(date).toArray()).filter(alive), [date], []);
+  const gtg = metrics.find(m => m.id === `gtg-${date}`);
 
-  // Weekoverzicht
   const monday = mondayOf(date);
   const weekWorkouts = useLiveQuery(
     async () => (await db.workouts.where('date').between(monday, addDays(monday, 6), true, true).toArray()).filter(alive),
@@ -30,34 +31,48 @@ export function Today() {
   );
 
   const { statuses, extra } = matchDay(plan.items, workouts, checks);
+  // Testonderdelen zijn klaar zodra de meting is ingevuld
+  for (const st of statuses) {
+    const kinds = TEST_METRIC[st.item.slotId];
+    if (kinds && kinds.every(k => metrics.some(m => m.kind === k))) st.done = true;
+  }
 
   async function toggleCheck(item: PlannedItem, on: boolean) {
     await save('checks', { id: `${date}:${item.slotId}`, date, slotId: item.slotId, done: on });
   }
 
   async function bumpGtg(delta: number) {
-    const value = Math.max(0, (gtg && !gtg.deleted ? gtg.value : 0) + delta);
+    const value = Math.max(0, (gtg?.value ?? 0) + delta);
     await save('metrics', { id: `gtg-${date}`, date, kind: 'gtg', value } as Metric);
   }
 
   function open(item: PlannedItem, w?: Workout) {
-    if (item.kind === 'strength' && item.strength) return setEditor({ type: 'strength', item, existing: w });
+    if (item.kind === 'strength' && item.exercises) {
+      return setEditor({ type: 'strength', title: item.title, exercises: item.exercises, slotId: item.slotId, existing: w });
+    }
     if (w) return setEditor({ type: 'workout', initial: w, existing: w });
-    const kind = item.kind === 'boxing' ? 'boxing' : 'run';
-    const rounds = item.kind === 'boxing' ? Number(item.title.match(/\d+/)?.[0] ?? 3) : undefined;
-    setEditor({ type: 'workout', initial: { date, kind, slotId: item.slotId, title: item.title, rounds, durationMin: item.kind === 'boxing' ? item.minutes : undefined } });
+    setEditor({ type: 'workout', initial: { date, kind: 'run', slotId: item.slotId, title: item.title } });
+  }
+
+  async function openExtra(w: Workout) {
+    if (w.kind === 'strength') {
+      setEditor({ type: 'strength', title: w.title, exercises: await exercisesFor(w), slotId: w.slotId, existing: w });
+    } else setEditor({ type: 'workout', initial: w, existing: w });
   }
 
   // Weekcijfers
-  const weekPlan = plan.week >= 1 && plan.week <= TOTAL_WEEKS ? planForWeek(plan.week, blocks) : [];
-  const plannedRuns = weekPlan.flatMap(d => d.items).filter(i => (i.kind === 'run' || i.kind === 'race') && !i.optional);
-  const plannedStrength = weekPlan.flatMap(d => d.items).filter(i => i.kind === 'strength' && !i.optional);
+  const weekPlan = plan.status === 'actief' ? planForWeek(plan.week, events) : [];
+  const plannedItems = weekPlan.flatMap(d => d.items);
+  const plannedRuns = plannedItems.filter(i => (i.kind === 'run' || i.slotId === 'test-cooper' || i.slotId === 'test-10k' || i.kind === 'race') && !i.optional);
+  const plannedStrength = plannedItems.filter(i => i.kind === 'strength');
   const runs = weekWorkouts.filter(w => w.kind === 'run');
   const runMin = runs.reduce((s, w) => s + (w.durationMin ?? 0), 0);
   const runKm = runs.reduce((s, w) => s + (w.distanceKm ?? 0), 0);
   const plannedMin = plannedRuns.reduce((s, i) => s + (i.minutes ?? 0), 0);
   const isToday = date === today();
-  const daysToRace = diffDays(RACE_DATE, date);
+  const testMonday = nextTestWeek(date);
+  const daysToTest = diffDays(testMonday, date);
+  const blocking = plan.event && ['defensie', 'ziek', 'anders'].includes(plan.event.kind);
 
   return (
     <>
@@ -67,42 +82,59 @@ export function Today() {
         <button className="icon-btn" onClick={() => setDate(addDays(date, 1))} aria-label="Volgende dag">{Icon.right}</button>
       </div>
       <div className="context">
-        {plan.status === 'actief' && plan.phase
-          ? <>Week {plan.week} van {TOTAL_WEEKS}, fase {plan.phase.nr} {plan.phase.name}{plan.lightWeek ? ', lichte week' : ''}</>
-          : plan.status === 'voor' ? 'Voor de start van het schema' : 'Schema afgerond'}
+        {plan.status === 'actief' && plan.block
+          ? <>Blok {plan.block.nr} ({plan.block.name}), week {weekInBlock(plan.week)} van {plan.block.lastWeek - plan.block.firstWeek + 1}</>
+          : 'Voor de start van het schema'}
         {!isToday && <> · <button className="btn ghost small" onClick={() => setDate(today())}>naar vandaag</button></>}
       </div>
 
       {plan.weekNote && <div className="notice">{plan.weekNote}</div>}
-      {plan.block && plan.block.kind === 'vakantie' && <div className="notice">{plan.block.label}: extra ruimte voor een trailloop.</div>}
+      {plan.event?.kind === 'vakantie' && <div className="notice">{plan.event.label}: extra ruimte voor een trailloop.</div>}
 
-      <div className={`card${plan.block && plan.block.kind !== 'vakantie' ? ' warn' : ''}`}>
-        {statuses.map(({ item, workout, checked, done }) => (
-          <div className={`item${item.optional ? ' optional' : ''}`} key={item.slotId + item.title}>
-            {item.kind === 'rest' || item.kind === 'free'
-              ? <span />
-              : (
-                <button
-                  className={`check${done ? ' done' : ''}`}
-                  onClick={() => (workout ? open(item, workout) : toggleCheck(item, !checked))}
-                  aria-label={done ? 'Gedaan' : 'Afvinken'}
-                >{done && Icon.check}</button>
-              )}
-            <div>
-              <div className="title">{item.title}{item.minutes && item.kind !== 'rest' ? <span className="muted"> · {minutesToText(item.minutes)}</span> : null}</div>
-              {item.detail && <div className="meta">{item.detail}</div>}
-              {workout && <div className="logged">{summary(workout)}</div>}
+      <div className={`card${blocking ? ' warn' : ''}`}>
+        {statuses.map(({ item, workout, checked, done }) => {
+          const metricKinds = TEST_METRIC[item.slotId];
+          const isRunLike = item.kind === 'run' || item.kind === 'race' || item.slotId === 'test-cooper' || item.slotId === 'test-10k';
+          return (
+            <div className={`item${item.optional ? ' optional' : ''}`} key={item.slotId + item.title}>
+              {item.kind === 'rest' || item.kind === 'free'
+                ? <span />
+                : (
+                  <button
+                    className={`check${done ? ' done' : ''}`}
+                    onClick={() => (workout ? open(item, workout) : toggleCheck(item, !checked))}
+                    aria-label={done ? 'Gedaan' : 'Afvinken'}
+                  >{done && Icon.check}</button>
+                )}
+              <div>
+                <div className="title">{item.title}{item.minutes && item.kind !== 'rest' ? <span className="muted"> · {minutesToText(item.minutes)}</span> : null}</div>
+                {item.exercises && (
+                  <ul className="exlist">
+                    {item.exercises.map(e => <li key={e.name}><strong>{e.name}</strong> {e.sets} x {e.reps}{e.weight !== 'lichaamsgewicht' ? `, ${e.weight}` : ''}</li>)}
+                  </ul>
+                )}
+                {item.detail && <div className="meta">{item.detail}</div>}
+                {workout && <div className="logged">{summary(workout)}</div>}
+                {metricKinds && metricKinds.map(k => {
+                  const m = metrics.find(x => x.kind === k);
+                  return m ? <div className="logged" key={k}>{METRICS.find(d => d.kind === k)?.label}: {formatMetric(k, m.value)}</div> : null;
+                })}
+              </div>
+              <div className="stack">
+                {item.kind === 'strength' && <button className="btn secondary small" onClick={() => open(item, workout)}>{workout ? 'Bekijk' : 'Loggen'}</button>}
+                {isRunLike && !metricKinds && <button className="btn secondary small" onClick={() => open(item, workout)}>{workout ? 'Bekijk' : 'Loggen'}</button>}
+                {metricKinds && metricKinds.map(k => (
+                  <button key={k} className="btn secondary small" onClick={() => setEditor({ type: 'metric', kind: k })}>
+                    {metricKinds.length > 1 ? METRICS.find(d => d.kind === k)?.label : 'Resultaat'}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div>
-              {(item.kind === 'run' || item.kind === 'race' || item.kind === 'strength' || item.kind === 'boxing') && (
-                <button className="btn secondary small" onClick={() => open(item, workout)}>{workout ? 'Bekijk' : 'Loggen'}</button>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {gtgDay(date) && !(plan.block && plan.block.kind !== 'vakantie') && (
+      {gtgDay(date) && !blocking && (
         <div className="card">
           <div className="counter">
             <div>
@@ -111,7 +143,7 @@ export function Today() {
             </div>
             <div className="row" style={{ flexWrap: 'nowrap' }}>
               <button className="btn secondary small" onClick={() => bumpGtg(-1)} aria-label="Min 1">−1</button>
-              <span className="num">{gtg && !gtg.deleted ? gtg.value : 0}</span>
+              <span className="num">{gtg?.value ?? 0}</span>
               <button className="btn small" onClick={() => bumpGtg(3)}>+3</button>
             </div>
           </div>
@@ -123,7 +155,7 @@ export function Today() {
           <h2>Ook gedaan</h2>
           <div className="card">
             {extra.map(w => (
-              <div className="logrow" key={w.id} onClick={() => w.kind === 'strength' ? setEditor({ type: 'strength', item: { slotId: w.slotId ?? 'kracht-A', kind: 'strength', title: w.title, strength: strengthKeyOf(w) }, existing: w }) : setEditor({ type: 'workout', initial: w, existing: w })}>
+              <div className="logrow" key={w.id} onClick={() => openExtra(w)}>
                 <div>{w.title}{w.source === 'intervals' && <span className="tag">Garmin</span>}</div>
                 <div className="stats">{summary(w)}</div>
               </div>
@@ -145,31 +177,29 @@ export function Today() {
             <div className="stat"><div className="v">{weekWorkouts.filter(w => w.kind === 'strength').length} / {plannedStrength.length}</div><div className="l">keer kracht</div></div>
           </div>
           {runKm > 0 && <p className="muted small">{fmt.km(runKm)} gelopen deze week.</p>}
+          {!plan.testWeek && daysToTest > 0 && <p className="muted small">Volgende testweek: {shortDate(testMonday)} (over {daysToTest} dagen).</p>}
         </>
       )}
-      {daysToRace > 0 && plan.status === 'actief' && <p className="muted small">Nog {daysToRace} dagen tot de 50 km.</p>}
 
       {editor?.type === 'workout' && <WorkoutEditor initial={editor.initial} existing={editor.existing} allowKind={editor.allowKind} onClose={() => setEditor(null)} />}
-      {editor?.type === 'strength' && editor.item.strength && (
-        <StrengthLogger date={date} strength={editor.item.strength} slotId={editor.item.slotId} existing={editor.existing} onClose={() => setEditor(null)} />
+      {editor?.type === 'strength' && (
+        <StrengthLogger date={date} title={editor.title} exercises={editor.exercises} slotId={editor.slotId} existing={editor.existing} onClose={() => setEditor(null)} />
       )}
+      {editor?.type === 'metric' && <MetricEditor kind={editor.kind} date={date} onClose={() => setEditor(null)} />}
     </>
   );
-}
-
-export function strengthKeyOf(w: Workout): 'A' | 'B' | 'kort' {
-  if (/kort/i.test(w.title) || w.slotId === 'kracht-kort') return 'kort';
-  if (/B$/.test(w.title) || w.slotId === 'kracht-B') return 'B';
-  return 'A';
 }
 
 export function summary(w: Workout): string {
   const parts: string[] = [];
   if (w.distanceKm) parts.push(fmt.km(w.distanceKm));
   if (w.durationMin) parts.push(minutesToText(w.durationMin));
+  if (w.distanceKm && w.durationMin && w.kind === 'run') {
+    const sec = Math.round((w.durationMin * 60) / w.distanceKm);
+    parts.push(`${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}/km`);
+  }
   if (w.elevationM) parts.push(`${w.elevationM} hm`);
   if (w.avgHr) parts.push(`${w.avgHr} bpm`);
-  if (w.rounds) parts.push(`${w.rounds} rondes`);
   if (w.kind === 'strength' && !parts.length) parts.push('gelogd');
   return parts.join(' · ') || 'gedaan';
 }

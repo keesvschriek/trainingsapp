@@ -2,15 +2,27 @@ import { addDays, diffDays, inRange, mondayOf, type ISODate } from './dates';
 import type { Block } from './db';
 
 // ---------------------------------------------------------------------------
-// Trainingsschema richting de eerste 50 km trail.
-// Week 1 begint maandag 16 november 2026, de 50 km staat op zaterdag 10 juli 2027.
+// Trainingsschema: de fitste versie van jezelf.
+// Prioriteit: 1 uithouding, 2 kracht, 3 lichaamssamenstelling.
+// Doelen: 3000 m op de Cooper-test, 10 km onder 43 minuten, fitte bouw.
+//
+// Opbouw in blokken. Blok 1 duurt 9 weken (incl. eindbivak), daarna steeds 8 weken:
+//   week 1-3 opbouwen, week 4 licht, week 5-7 opbouwen, week 8 testweek.
+// Het schema loopt door zonder einddatum.
 // ---------------------------------------------------------------------------
 
 export const PLAN_START: ISODate = '2026-11-16';
-export const TOTAL_WEEKS = 34;
-export const RACE_DATE: ISODate = addDays(PLAN_START, (TOTAL_WEEKS - 1) * 7 + 5);
 
-export type ItemKind = 'run' | 'strength' | 'boxing' | 'rest' | 'free' | 'race';
+export type ItemKind = 'run' | 'strength' | 'rest' | 'free' | 'test' | 'race';
+
+export interface Exercise {
+  name: string;
+  weight: string;
+  sets: number;
+  reps: string;
+  defaultKg: number;
+  defaultReps: number;
+}
 
 export interface PlannedItem {
   slotId: string;
@@ -19,31 +31,43 @@ export interface PlannedItem {
   detail?: string;
   minutes?: number;
   optional?: boolean;
-  strength?: StrengthKey;
+  exercises?: Exercise[];
 }
 
-export type StrengthKey = 'A' | 'B' | 'kort';
+// ---------------------------------------------------------------------------
+// Blokken
+// ---------------------------------------------------------------------------
 
-export interface Phase {
+export interface PlanBlock {
   nr: number;
-  name: string;
   firstWeek: number;
   lastWeek: number;
+  name: string;
   focus: string;
 }
 
-export const PHASES: Phase[] = [
-  { nr: 1, name: 'Basis', firstWeek: 1, lastWeek: 8, focus: 'Vaste routine, alles rustig, kracht 2 keer per week.' },
-  { nr: 2, name: 'Opbouw', firstWeek: 9, lastWeek: 20, focus: 'Tempoloop op dinsdag, heuvels in je trailloop, af en toe teruglopen van werk.' },
-  { nr: 3, name: 'Ultra-specifiek', firstWeek: 21, lastWeek: 32, focus: 'Lange lopen tot 4,5 uur, back-to-back op zondag, eten en drinken onderweg oefenen.' },
-  { nr: 4, name: 'Afbouw', firstWeek: 33, lastWeek: 34, focus: 'Fris aan de start. Minder volume, kracht alleen licht.' },
-];
+const FIRST_BLOCK_WEEKS = 9;
+const BLOCK_WEEKS = 8;
 
-export function phaseOf(week: number): Phase | undefined {
-  return PHASES.find(p => week >= p.firstWeek && week <= p.lastWeek);
+export function blockOfWeek(week: number): PlanBlock {
+  if (week <= FIRST_BLOCK_WEEKS) {
+    return { nr: 1, firstWeek: 1, lastWeek: FIRST_BLOCK_WEEKS, name: 'Basis', focus: 'Vaker lopen, alles rustig. Kracht wordt routine. Afsluiten met de eerste testweek.' };
+  }
+  const nr = 2 + Math.floor((week - FIRST_BLOCK_WEEKS - 1) / BLOCK_WEEKS);
+  const firstWeek = FIRST_BLOCK_WEEKS + 1 + (nr - 2) * BLOCK_WEEKS;
+  const hills = nr % 2 === 1;
+  return {
+    nr,
+    firstWeek,
+    lastWeek: firstWeek + BLOCK_WEEKS - 1,
+    name: hills ? 'Heuvels en tempo' : 'Tempo',
+    focus: hills
+      ? 'Om de week een heuvelloop in plaats van de tempoloop. Kracht zwaarder.'
+      : 'Elke dinsdag een tempoloop die langer wordt. Lange loop tot bijna 2 uur.',
+  };
 }
 
-/** Weeknummer (1..34) voor een datum, 0 voor de start en > 34 erna. */
+/** Weeknummer sinds de start (1 = week van 16 november 2026). */
 export function weekOf(date: ISODate): number {
   return Math.floor(diffDays(date, PLAN_START) / 7) + 1;
 }
@@ -52,8 +76,58 @@ export function mondayOfWeek(week: number): ISODate {
   return addDays(PLAN_START, (week - 1) * 7);
 }
 
+/** Week binnen het blok, 1-based. */
+export function weekInBlock(week: number): number {
+  return week - blockOfWeek(week).firstWeek + 1;
+}
+
+export function isTestWeek(week: number): boolean {
+  return week >= 1 && week === blockOfWeek(week).lastWeek;
+}
+
 // ---------------------------------------------------------------------------
-// Bouwstenen
+// Krachtoefeningen per niveau (niveau 0 = blok 1, daarna zwaarder, max 2)
+// ---------------------------------------------------------------------------
+
+const ex = (name: string, weight: string, sets: number, reps: string, defaultKg: number, defaultReps: number): Exercise => ({ name, weight, sets, reps, defaultKg, defaultReps });
+
+function legsAndPull(level: number): Exercise[] {
+  return [
+    [ex('Swings', '28 kg', 8, '10, elke minuut starten', 28, 10), ex('Swings', '28 kg', 10, '10, elke minuut starten', 28, 10), ex('Swings', '28 kg', 10, '12, elke minuut starten', 28, 12)][level],
+    [ex('Goblet squat', '28 kg', 3, '8', 28, 8), ex('Goblet squat', '28 kg', 4, '8', 28, 8), ex('Goblet squat', '28 kg', 4, '10', 28, 10)][level],
+    [ex('Bulgarian split squat', '20 kg', 3, '8 per been', 20, 8), ex('Bulgarian split squat', '20 kg', 3, '10 per been', 20, 10), ex('Bulgarian split squat', '28 kg', 3, '8 per been', 28, 8)][level],
+    [ex('Pull-ups', 'lichaamsgewicht', 4, '3 tot 5', 0, 4), ex('Pull-ups', 'lichaamsgewicht', 5, '4 tot 6', 0, 5), ex('Pull-ups', 'lichaamsgewicht', 5, '5 tot 8', 0, 6)][level],
+    [ex('Kuitheffen op 1 been', 'lichaamsgewicht', 3, '15 per been', 0, 15), ex('Kuitheffen op 1 been', 'lichaamsgewicht', 3, '20 per been', 0, 20), ex('Kuitheffen op 1 been', '20 kg', 3, '15 per been', 20, 15)][level],
+  ];
+}
+
+function pushAndCore(level: number): Exercise[] {
+  return [
+    [ex('Clean en press', '20 kg', 5, '5 per arm', 20, 5), ex('Clean en press', '20 kg', 5, '8 per arm', 20, 8), ex('Push press', '28 kg', 5, '3 per arm', 28, 3)][level],
+    [ex('Eenbenige RDL', '20 kg', 3, '8 per been', 20, 8), ex('Eenbenige RDL', '28 kg', 3, '8 per been', 28, 8), ex('Eenbenige RDL', '28 kg', 3, '10 per been', 28, 10)][level],
+    [ex('Step-ups op bank', '20 kg', 3, '10 per been', 20, 10), ex('Step-ups op bank', '20 kg', 3, '12 per been', 20, 12), ex('Step-ups op bank', '28 kg', 3, '8 per been', 28, 8)][level],
+    [ex('Push-ups, 3 sec zakken', 'lichaamsgewicht', 3, '20', 0, 20), ex('Push-ups, 3 sec zakken', 'lichaamsgewicht', 4, '20', 0, 20), ex('Push-ups, voeten verhoogd', 'lichaamsgewicht', 4, '15', 0, 15)][level],
+    [ex('Suitcase carry', '28 kg', 4, '40 m per kant', 28, 40), ex('Suitcase carry', '28 kg', 4, '60 m per kant', 28, 60), ex('Suitcase carry', '28 kg', 4, '80 m per kant', 28, 80)][level],
+    [ex('Hanging knee raises', 'lichaamsgewicht', 3, '10', 0, 10), ex('Hanging knee raises', 'lichaamsgewicht', 3, '12', 0, 12), ex('Hanging leg raises', 'lichaamsgewicht', 3, '8', 0, 8)][level],
+  ];
+}
+
+const lighten = (list: Exercise[]): Exercise[] => list.map(e => ({ ...e, sets: Math.max(2, Math.ceil(e.sets / 2)) }));
+
+const strengthItem = (kind: 'benen' | 'duwen', level: number, light = false, extra?: string): PlannedItem => {
+  const list = kind === 'benen' ? legsAndPull(level) : pushAndCore(level);
+  return {
+    slotId: `kracht-${kind}`,
+    kind: 'strength',
+    title: kind === 'benen' ? 'Kracht: benen en trekken' : 'Kracht: duwen, eenbenig en romp',
+    minutes: light ? 25 : 40,
+    exercises: light ? lighten(list) : list,
+    detail: [light ? 'Licht: halve sets, ruim binnen je kunnen.' : 'Stop elke set 1 tot 2 herhalingen voor je niet meer kunt.', extra].filter(Boolean).join(' '),
+  };
+};
+
+// ---------------------------------------------------------------------------
+// Looptrainingen
 // ---------------------------------------------------------------------------
 
 const easy = (minutes: number, strides = false): PlannedItem => ({
@@ -70,325 +144,240 @@ const commute = (): PlannedItem => ({
   slotId: 'run-commute',
   kind: 'run',
   title: 'Teruglopen van werk',
-  minutes: 85,
-  detail: '15 km rustig. Je vriendin neemt de auto mee terug.',
+  minutes: 80,
+  detail: '15 km rustig. De auto gaat met je vriendin mee terug. Lukt het niet, dan een rustige loop van 50 min.',
 });
 
-const tempo = (minutes = 55): PlannedItem => ({
-  slotId: 'run-tempo',
+const progression = (minutes: number): PlannedItem => ({
+  slotId: 'run-quality',
   kind: 'run',
-  title: 'Tempoloop',
+  title: 'Progressieve duurloop',
   minutes,
-  detail: '15 min inlopen, 20 tot 30 min comfortabel hard (losse woorden, geen zinnen), rest uitlopen.',
+  detail: 'Rustig beginnen, de laatste 10 min comfortabel hard (losse woorden, geen zinnen).',
 });
 
-const long = (minutes: number, terrain: 'weg' | 'trail', detail?: string): PlannedItem => ({
+const tempo = (tempoMin: number): PlannedItem => ({
+  slotId: 'run-quality',
+  kind: 'run',
+  title: `Tempoloop, ${tempoMin} min tempo`,
+  minutes: 25 + tempoMin,
+  detail: `15 min inlopen, ${tempoMin} min comfortabel hard aan 1 stuk (rond je 10 km-tempo of iets langzamer), 10 min uitlopen. Geen baan nodig.`,
+});
+
+const hills = (minutes: number): PlannedItem => ({
+  slotId: 'run-quality',
+  kind: 'run',
+  title: 'Heuvelloop',
+  minutes,
+  detail: 'Route met heuvels. Elke klim stevig omhoog, boven rustig herstellen, de rest rustig. Geen vaste herhalingen.',
+});
+
+const long = (minutes: number, terrain: 'weg' | 'trail'): PlannedItem => ({
   slotId: 'run-long',
   kind: 'run',
   title: `Lange loop (${terrain})`,
   minutes,
-  detail: detail ?? (terrain === 'trail'
-    ? 'Rustig. Heuvels omhoog stevig, omlaag rustig. Vanaf 90 min eten en drinken oefenen.'
-    : 'Rustig, je moet kunnen praten. Vanaf 90 min eten en drinken oefenen.'),
+  detail: terrain === 'trail' ? 'Rustig. Heuvels omhoog mag stevig, omlaag rustig.' : 'Rustig, je moet kunnen praten.',
 });
 
-const backToBack = (minutes: number): PlannedItem => ({
-  slotId: 'run-b2b',
-  kind: 'run',
-  title: 'Back-to-back loop',
-  minutes,
-  detail: 'Rustig op vermoeide benen, de dag na je lange loop.',
-});
-
-const strength = (key: StrengthKey, light = false): PlannedItem => ({
-  slotId: `kracht-${key}`,
-  kind: 'strength',
-  strength: key,
-  title: key === 'kort' ? 'Kracht kort (A en B)' : `Kracht ${key}${light ? ' (licht)' : ''}`,
-  minutes: key === 'kort' ? 30 : 40,
-  detail: light ? 'Halve sets, ruim binnen je kunnen.' : 'Stop elke set 1 tot 2 herhalingen voor je niet meer kunt.',
-});
-
-const boxing = (rounds: number, optional = false, slot = 'boksen'): PlannedItem => ({
-  slotId: slot,
-  kind: 'boxing',
-  title: `Boksen, ${rounds} rondes`,
-  minutes: rounds * 4,
-  optional,
-  detail: 'Rondes van 3 min, 1 min rust.',
-});
-
-const rest = (title = 'Rust', detail?: string): PlannedItem => ({ slotId: 'rust', kind: 'rest', title, detail });
-const free = (): PlannedItem => ({
-  slotId: 'vrij',
-  kind: 'free',
-  title: 'Vrij',
-  detail: 'Rustig fietsen, wandelen of niks. Niet hard fietsen na een lange zaterdag.',
-});
 const optionalEasy = (minutes: number): PlannedItem => ({ ...easy(minutes), slotId: 'run-extra', title: 'Extra rustige loop', optional: true });
+const rest = (title = 'Rust', detail?: string): PlannedItem => ({ slotId: 'rust', kind: 'rest', title, detail });
+const free = (): PlannedItem => ({ slotId: 'vrij', kind: 'free', title: 'Vrij', detail: 'Rustig fietsen, wandelen of niks. Niet hard fietsen na een lange zaterdag.' });
 
 // ---------------------------------------------------------------------------
-// Weekschema's
+// Testweek
+// ---------------------------------------------------------------------------
+
+function testWeek(level: number): PlannedItem[][] {
+  return [
+    [
+      { slotId: 'test-pullups', kind: 'test', title: 'Test: strikte pull-ups', detail: 'Uitgerust, na een korte warming-up. Zoveel mogelijk strikte herhalingen in 1 set.' },
+      strengthItem('benen', level, true),
+    ],
+    [{ slotId: 'test-cooper', kind: 'test', title: 'Test: Cooper (12 min)', minutes: 40, detail: '15 min inlopen met een paar versnellingen, dan 12 min zo ver mogelijk, daarna uitlopen. Vlak parcours. Doel: 3000 m.' }],
+    [
+      strengthItem('duwen', level, true),
+      { slotId: 'test-press', kind: 'test', title: 'Test: press 28 kg', optional: true, detail: 'Strikte press met 28 kg, zwakste arm telt. Alleen als je fris bent.' },
+    ],
+    [easy(30)],
+    [rest()],
+    [{ slotId: 'test-10k', kind: 'test', title: 'Test: 10 km', minutes: 70, detail: '15 min inlopen, dan 10 km zo snel als je kunt, of een 10 km-wedstrijd. Doel: onder 43 min.' }],
+    [{ slotId: 'test-meten', kind: 'test', title: 'Rust en meten', detail: 'Gewicht en buikomtrek op navelhoogte, na het opstaan en voor het ontbijt.' }],
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Weekschema
 // ---------------------------------------------------------------------------
 
 interface WeekSpec {
   light?: boolean;
+  test?: boolean;
   note?: string;
-  days: PlannedItem[][]; // ma t/m zo
+  days: PlannedItem[][];
 }
 
-function standardWeek(o: {
-  tue: PlannedItem | null;
-  thu: PlannedItem | null;
-  sat: PlannedItem | null;
-  sun?: PlannedItem[];
-  rounds?: number;
-  mon?: PlannedItem[];
-  wed?: PlannedItem[];
-  fri?: PlannedItem[];
-  light?: boolean;
-  note?: string;
-}): WeekSpec {
-  const r = o.rounds ?? 3;
+function standard(o: { level: number; tue: PlannedItem; thu: PlannedItem; sat: PlannedItem; sun?: PlannedItem[]; light?: boolean; note?: string }): WeekSpec {
   return {
     light: o.light,
     note: o.note,
     days: [
-      o.mon ?? [boxing(r), strength('A', o.light)],
-      o.tue ? [o.tue] : [rest()],
-      o.wed ?? [boxing(r), strength('B', o.light)],
-      o.thu ? [o.thu] : [rest()],
-      o.fri ?? [rest('Rust', 'Of 4 tot 6 rondes boksen als je zin hebt.')],
-      o.sat ? [o.sat] : [rest()],
+      [strengthItem('benen', o.level, o.light)],
+      [o.tue],
+      [strengthItem('duwen', o.level, o.light)],
+      [o.thu],
+      [rest()],
+      [o.sat],
       o.sun ?? [free()],
     ],
   };
 }
 
-function buildWeeks(): WeekSpec[] {
-  const w: WeekSpec[] = [];
-
-  // Fase 1: basis (week 1-8)
-  w.push(standardWeek({ tue: easy(35), thu: easy(40), sat: long(90, 'weg') }));
-  w.push(standardWeek({ tue: easy(40), thu: easy(45), sat: long(95, 'trail') }));
-  w.push(standardWeek({ tue: easy(45, true), thu: commute(), sat: long(95, 'weg') }));
-  w.push(standardWeek({ tue: easy(40), thu: null, sat: null, sun: [rest()], light: true, note: 'Lichte week.' }));
-  w.push(standardWeek({ tue: easy(45, true), thu: commute(), sat: long(105, 'trail'), rounds: 4 }));
-  w.push(standardWeek({ tue: easy(50, true), thu: easy(50), sat: long(115, 'weg'), rounds: 4 }));
-  w.push(standardWeek({ tue: easy(50, true), thu: easy(55), sat: long(125, 'trail'), rounds: 4 }));
-  w.push({
-    light: true,
-    note: 'Lichte week.',
-    days: [[easy(40)], [strength('kort', true)], [rest()], [rest()], [rest()], [rest()], [rest('Rust', 'Morgen wandelen of 30 min heel rustig. Daarna start fase 2.')]],
-  });
-
-  // Fase 2: opbouw (week 9-20)
-  const longs2 = [130, 140, 150, 115, 155, 165, 175, 125, 170, 180, 180, 130];
-  longs2.forEach((min, i) => {
-    const week = 9 + i;
-    const light = (week % 4) === 0;
-    const terrain = i % 2 === 0 ? 'trail' : 'weg';
-    const thu = [10, 14, 18].includes(week) ? commute() : easy(light ? 45 : 55);
-    w.push(standardWeek({
-      tue: light ? easy(45, true) : tempo(),
-      thu,
-      sat: long(min, terrain),
-      sun: !light && week >= 13 ? [optionalEasy(40), free()] : [free()],
-      rounds: light ? 3 : 5,
-      light,
-      note: light ? 'Lichte week.' : undefined,
-    }));
-  });
-
-  // Fase 3: ultra-specifiek (week 21-32)
-  const longs3 = [195, 210, 225, 150, 225, 240, 255, 170, 240, 270, 240, 160];
-  const b2b = [60, 70, 80, 0, 80, 90, 90, 0, 45, 90, 80, 0];
-  longs3.forEach((min, i) => {
-    const week = 21 + i;
-    const light = (week % 4) === 0;
-    const terrain = i % 2 === 0 ? 'trail' : 'weg';
-    const sat = week === 29
-      ? long(min, 'trail', 'Generale repetitie: 35 tot 40 km. Zelfde schoenen, rugzak en eten als op de dag zelf.')
-      : long(min, terrain);
-    const thu = [22, 26, 30].includes(week) ? commute() : easy(light ? 45 : 60);
-    w.push(standardWeek({
-      mon: [boxing(3), strength('kort', light)],
-      tue: light ? easy(45, true) : tempo(60),
-      wed: [{ ...strength('B'), optional: true, title: 'Kracht B (optioneel)' }],
-      thu,
-      sat: sat,
-      sun: b2b[i] ? [backToBack(b2b[i])] : [free()],
-      light,
-      note: light ? 'Lichte week.' : week === 29 ? 'Generale repetitie op zaterdag.' : undefined,
-    }));
-  });
-
-  // Fase 4: afbouw (week 33-34)
-  w.push(standardWeek({
-    mon: [strength('kort', true)],
-    tue: easy(45, true),
-    wed: [boxing(3, true)],
-    thu: easy(50),
-    sat: long(90, 'trail'),
-    sun: [optionalEasy(40)],
-    note: 'Afbouw: minder volume, niets nieuws meer proberen.',
-  }));
-  w.push({
-    note: 'Racedag op zaterdag.',
-    days: [
-      [rest()],
-      [easy(40, true)],
-      [rest()],
-      [easy(30)],
-      [rest('Rust', 'Spullen klaarleggen, goed eten, vroeg naar bed.')],
-      [{ slotId: 'race', kind: 'race', title: '50 km trail', minutes: 420, detail: 'Rustig starten. Eten vanaf het eerste uur, elke 20 tot 30 min iets.' }],
-      [rest('Herstel', 'Wandelen. De komende week alleen rustig bewegen.')],
-    ],
-  });
-
-  return w;
+function block1Week(w: number): WeekSpec {
+  switch (w) {
+    case 1: return standard({ level: 0, tue: easy(35), thu: easy(40), sat: long(90, 'weg') });
+    case 2: return standard({ level: 0, tue: easy(40), thu: easy(45), sat: long(95, 'trail') });
+    case 3: return standard({ level: 0, tue: easy(45, true), thu: commute(), sat: long(95, 'weg') });
+    case 4: return standard({ level: 0, tue: easy(40), thu: easy(40), sat: long(75, 'weg'), sun: [rest()], light: true, note: 'Lichte week.' });
+    case 5: return standard({ level: 0, tue: progression(50), thu: commute(), sat: long(100, 'trail') });
+    case 6: return standard({ level: 0, tue: progression(50), thu: easy(50), sat: long(105, 'weg') });
+    case 7: return standard({ level: 0, tue: progression(55), thu: easy(55), sat: long(110, 'trail') });
+    case 8: return {
+      light: true,
+      note: 'Lichte week.',
+      days: [[easy(40)], [strengthItem('benen', 0, true)], [rest()], [rest()], [rest()], [rest()], [rest('Rust', 'Morgen wandelen of 30 min heel rustig.')]],
+    };
+    default: return { test: true, note: 'Testweek: meet waar je staat.', days: testWeek(0) };
+  }
 }
 
-export const WEEKS: WeekSpec[] = buildWeeks();
+function laterWeek(blockNr: number, w: number): WeekSpec {
+  const level = Math.min(blockNr - 1, 2);
+  const extra = Math.min(blockNr - 2, 3) * 5; // elke blok iets langer, max +15 min
+  const hillsBlock = blockNr % 2 === 1;
+  if (w === 8) return { test: true, note: 'Testweek: meet waar je staat.', days: testWeek(level) };
+  if (w === 4) {
+    return standard({ level, tue: easy(40, true), thu: easy(40), sat: long(75, 'weg'), light: true, note: 'Lichte week.' });
+  }
+  const idx = w < 4 ? w - 1 : w - 2; // 0..5 voor de opbouwweken
+  const tempoMin = Math.min([20, 20, 25, 25, 30, 30][idx] + extra, 40);
+  const tue = hillsBlock && idx % 2 === 1 ? hills(50 + extra) : tempo(tempoMin);
+  const thu = w === 2 || w === 6 ? commute() : easy(45 + idx * 2 + extra);
+  const sat = long(Math.min([90, 95, 100, 100, 105, 110][idx] + extra, 120), idx % 2 === 0 ? 'trail' : 'weg');
+  return standard({ level, tue, thu, sat, sun: [optionalEasy(40), free()] });
+}
+
+export function weekSpec(week: number): WeekSpec {
+  const b = blockOfWeek(week);
+  const w = week - b.firstWeek + 1;
+  return b.nr === 1 ? block1Week(w) : laterWeek(b.nr, w);
+}
 
 // ---------------------------------------------------------------------------
-// Plan voor een dag, rekening houdend met blokken (Defensie, ziek, vakantie)
+// Plan voor een dag, rekening houdend met blokken (Defensie, ziek, wedstrijd)
 // ---------------------------------------------------------------------------
 
 export interface DayPlan {
   date: ISODate;
   week: number;
-  phase?: Phase;
+  block?: PlanBlock;
   items: PlannedItem[];
-  block?: Block;
+  event?: Block;
   lightWeek: boolean;
+  testWeek: boolean;
   weekNote?: string;
-  status: 'voor' | 'actief' | 'klaar';
+  status: 'voor' | 'actief';
 }
 
 const BLOCKING: Block['kind'][] = ['defensie', 'ziek', 'anders'];
 
-export function blockOn(date: ISODate, blocks: Block[]): Block | undefined {
-  return blocks.find(b => !b.deleted && inRange(date, b.start, b.end));
+export function eventOn(date: ISODate, events: Block[]): Block | undefined {
+  return events.find(b => !b.deleted && inRange(date, b.start, b.end));
 }
 
-export function planForDay(date: ISODate, blocks: Block[] = []): DayPlan {
+export function planForDay(date: ISODate, events: Block[] = []): DayPlan {
   const week = weekOf(date);
   const wd = (diffDays(date, mondayOf(date)) + 7) % 7;
-  const block = blockOn(date, blocks);
+  const event = eventOn(date, events);
 
   if (week < 1) {
-    return { date, week, items: [rest('Nog niet begonnen', 'Het schema start maandag 16 november 2026.')], lightWeek: false, status: 'voor', block };
-  }
-  if (week > TOTAL_WEEKS) {
-    return { date, week, items: [free()], lightWeek: false, status: 'klaar', block };
+    return { date, week, items: [rest('Nog niet begonnen', 'Het schema start maandag 16 november 2026.')], lightWeek: false, testWeek: false, status: 'voor', event };
   }
 
-  const spec = WEEKS[week - 1];
+  const spec = weekSpec(week);
   let items = spec.days[wd].map(i => ({ ...i }));
 
   // Defensieweek telt als lichte week: lopen 30% korter
   const weekStart = mondayOfWeek(week);
   const weekEnd = addDays(weekStart, 6);
-  const defensieInWeek = blocks.some(b => !b.deleted && b.kind === 'defensie' && b.start <= weekEnd && b.end >= weekStart);
+  const defensieInWeek = events.some(b => !b.deleted && b.kind === 'defensie' && b.start <= weekEnd && b.end >= weekStart);
   let lightWeek = !!spec.light;
   let weekNote = spec.note;
-  if (defensieInWeek && !spec.light) {
+  if (defensieInWeek && !spec.light && !spec.test) {
     lightWeek = true;
     weekNote = 'Defensieweek: lichte week, lopen 30% korter.';
     items = items.map(i => (i.kind === 'run' && i.minutes ? { ...i, minutes: Math.round((i.minutes * 0.7) / 5) * 5 } : i));
   }
 
-  if (block && BLOCKING.includes(block.kind)) {
-    const detail = block.kind === 'defensie' ? 'Geen training. Dit telt als belasting.' : block.kind === 'ziek' ? 'Herstellen. Niet inhalen.' : undefined;
-    items = [rest(block.label, detail)];
+  if (event && BLOCKING.includes(event.kind)) {
+    const detail = event.kind === 'defensie' ? 'Geen training. Dit telt als belasting.' : event.kind === 'ziek' ? 'Herstellen. Niet inhalen.' : undefined;
+    items = [rest(event.label, detail)];
+  } else if (event && event.kind === 'wedstrijd') {
+    items = [{ slotId: 'race', kind: 'race', title: event.label, detail: 'Wedstrijd. Rustig inlopen, de dag erna rustig of vrij.' }];
   } else {
-    // Dag na een Defensieblok: rust of wandelen
-    const after = blocks.find(b => !b.deleted && b.kind === 'defensie' && addDays(b.end, 1) === date);
-    if (after) {
-      items = [rest('Herstel na Defensie', 'Rust of wandelen. Je eerste loop daarna is rustig en kort.')];
-    }
+    const after = events.find(b => !b.deleted && b.kind === 'defensie' && addDays(b.end, 1) === date);
+    if (after) items = [rest('Herstel na Defensie', 'Rust of wandelen. Je eerste loop daarna is rustig en kort.')];
+    // Dag voor een wedstrijd: kort en rustig
+    const before = events.find(b => !b.deleted && b.kind === 'wedstrijd' && addDays(b.start, -1) === date);
+    if (before) items = [easy(20, true)];
   }
 
-  return { date, week, phase: phaseOf(week), items, block, lightWeek, weekNote, status: 'actief' };
+  return { date, week, block: blockOfWeek(week), items, event, lightWeek, testWeek: !!spec.test, weekNote, status: 'actief' };
 }
 
-export function planForWeek(week: number, blocks: Block[] = []): DayPlan[] {
+export function planForWeek(week: number, events: Block[] = []): DayPlan[] {
   const start = mondayOfWeek(week);
-  return Array.from({ length: 7 }, (_, i) => planForDay(addDays(start, i), blocks));
+  return Array.from({ length: 7 }, (_, i) => planForDay(addDays(start, i), events));
 }
 
 /** Geplande loopminuten in een week (zonder optionele lopen). */
-export function plannedRunMinutes(week: number, blocks: Block[] = []): number {
-  return planForWeek(week, blocks)
+export function plannedRunMinutes(week: number, events: Block[] = []): number {
+  return planForWeek(week, events)
     .flatMap(d => d.items)
-    .filter(i => (i.kind === 'run' || i.kind === 'race') && !i.optional)
+    .filter(i => (i.kind === 'run' || (i.kind === 'test' && i.minutes)) && !i.optional)
     .reduce((s, i) => s + (i.minutes ?? 0), 0);
 }
 
-/** Pull-ups 'grease the groove' alleen op ma t/m vr, binnen het schema. */
+/** Pull-ups tussendoor ('grease the groove') op ma t/m vr. */
 export function gtgDay(date: ISODate): boolean {
-  const w = weekOf(date);
   const wd = (diffDays(date, mondayOf(date)) + 7) % 7;
-  return w >= 1 && w <= TOTAL_WEEKS && wd < 5;
+  return weekOf(date) >= 1 && wd < 5;
 }
 
-// ---------------------------------------------------------------------------
-// Krachtoefeningen
-// ---------------------------------------------------------------------------
-
-export interface Exercise {
-  name: string;
-  weight: string;
-  sets: number;
-  reps: string;
-  defaultKg: number;
-  defaultReps: number;
-  why: string;
+/** Eerstvolgende testweek (maandag) vanaf een datum. */
+export function nextTestWeek(date: ISODate): ISODate {
+  let w = Math.max(weekOf(date), 1);
+  while (!isTestWeek(w)) w++;
+  return mondayOfWeek(w);
 }
-
-export const STRENGTH: Record<StrengthKey, Exercise[]> = {
-  A: [
-    { name: 'Swings', weight: '28 kg', sets: 8, reps: '10, elke minuut starten', defaultKg: 28, defaultReps: 10, why: 'heupkracht, conditie' },
-    { name: 'Goblet squat', weight: '28 kg', sets: 3, reps: '8 tot 10', defaultKg: 28, defaultReps: 8, why: 'benen' },
-    { name: 'Bulgarian split squat', weight: '20 kg', sets: 3, reps: '8 per been', defaultKg: 20, defaultReps: 8, why: 'eenbenige kracht, kniestabiliteit' },
-    { name: 'Pull-ups', weight: 'lichaamsgewicht', sets: 4, reps: '3 tot 5', defaultKg: 0, defaultReps: 4, why: 'rug, grip' },
-    { name: 'Kuitheffen 1 been', weight: 'lichaamsgewicht', sets: 3, reps: '15 per been, langzaam zakken', defaultKg: 0, defaultReps: 15, why: 'achillespees en kuit' },
-  ],
-  B: [
-    { name: 'Clean en press', weight: '20 kg', sets: 5, reps: '5 per arm, naar 5 x 8', defaultKg: 20, defaultReps: 5, why: 'schouders, hele keten' },
-    { name: 'Eenbenige RDL', weight: '20 of 28 kg', sets: 3, reps: '8 per been', defaultKg: 20, defaultReps: 8, why: 'hamstrings, balans' },
-    { name: 'Step-ups', weight: '20 kg', sets: 3, reps: '10 per been', defaultKg: 20, defaultReps: 10, why: 'klimmen op trail' },
-    { name: 'Push-ups, 3 sec zakken', weight: 'lichaamsgewicht', sets: 3, reps: '20', defaultKg: 0, defaultReps: 20, why: 'borst, romp' },
-    { name: 'Suitcase carry', weight: '28 kg', sets: 4, reps: '40 m per kant', defaultKg: 28, defaultReps: 40, why: 'romp, grip' },
-    { name: 'Hanging knee raises', weight: 'lichaamsgewicht', sets: 3, reps: '10', defaultKg: 0, defaultReps: 10, why: 'romp' },
-  ],
-  kort: [
-    { name: 'Swings', weight: '28 kg', sets: 5, reps: '10, elke minuut starten', defaultKg: 28, defaultReps: 10, why: 'heupkracht' },
-    { name: 'Bulgarian split squat', weight: '20 kg', sets: 2, reps: '8 per been', defaultKg: 20, defaultReps: 8, why: 'eenbenige kracht' },
-    { name: 'Step-ups', weight: '20 kg', sets: 2, reps: '10 per been', defaultKg: 20, defaultReps: 10, why: 'klimmen' },
-    { name: 'Kuitheffen 1 been', weight: 'lichaamsgewicht', sets: 3, reps: '15 per been', defaultKg: 0, defaultReps: 15, why: 'achillespees en kuit' },
-    { name: 'Clean en press', weight: '20 kg', sets: 3, reps: '5 per arm', defaultKg: 20, defaultReps: 5, why: 'schouders' },
-  ],
-};
 
 // ---------------------------------------------------------------------------
 // Doelen
 // ---------------------------------------------------------------------------
 
+export type GoalMetric = 'cooper' | 'tenK' | 'waist';
+
 export interface Goal {
   id: string;
   title: string;
-  deadline: ISODate;
-  metric?: 'pullupMax' | 'cooper' | 'pressReps';
+  metric: GoalMetric;
   target?: number;
-  unit?: string;
+  lowerIsBetter?: boolean;
+  unit: string;
 }
 
 export const GOALS: Goal[] = [
-  { id: 'freq', title: 'Elke week 3 keer lopen', deadline: '2027-01-11' },
-  { id: 'pullups', title: '10 strikte pull-ups', deadline: '2027-03-31', metric: 'pullupMax', target: 10, unit: 'herhalingen' },
-  { id: 'cooper', title: '3000 m in 12 minuten', deadline: '2027-04-30', metric: 'cooper', target: 3000, unit: 'm' },
-  { id: 'press', title: 'Press 28 kg, 1 tot 3 keer per arm', deadline: '2027-08-31', metric: 'pressReps', target: 1, unit: 'herhalingen met 28 kg' },
-  { id: 'race', title: 'Eerste 50 km trail', deadline: RACE_DATE },
+  { id: 'cooper', title: '3000 m op de Cooper-test', metric: 'cooper', target: 3000, unit: 'm' },
+  { id: 'tenK', title: '10 km onder 43 minuten', metric: 'tenK', target: 43 * 60, lowerIsBetter: true, unit: '' },
+  { id: 'build', title: 'Fitte bouw', metric: 'waist', lowerIsBetter: true, unit: 'cm buikomtrek' },
 ];

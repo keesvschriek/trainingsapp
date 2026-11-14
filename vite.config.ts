@@ -19,7 +19,7 @@ export default defineConfig({
       manifest: {
         name: 'Trainingsapp',
         short_name: 'Training',
-        description: 'Persoonlijk trainingsschema richting de eerste 50 km trail',
+        description: 'Persoonlijk trainingsschema',
         lang: 'nl',
         start_url: base,
         scope: base,
