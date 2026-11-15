@@ -60,7 +60,7 @@ export const THEMES: Theme[] = [
   { key: 'geo', name: 'Geografie en topografie', cats: ['aardrijkskunde'], geo: ['capital', 'countryOfCapital', 'flag', 'highlight', 'borders', 'area', 'landlocked', 'region'] },
   { key: 'hist', name: 'Geschiedenis en wereldleiders', cats: ['geschiedenis', 'wereldgeschiedenis', 'wereldleiders'] },
   { key: 'world', name: 'Geopolitiek en actualiteit', cats: ['geopolitiek', 'actueel', 'politiek', 'economie'] },
-  { key: 'def', name: 'Defensie: ZHKH, wapenleer, AAW en Search', cats: ['defensie', 'zhkh', 'wapenleer', 'aaw', 'search'] },
+  { key: 'def', name: 'Defensie: ZHKH, wapenleer, AAW, Search en exercitie', cats: ['defensie', 'zhkh', 'wapenleer', 'aaw', 'search', 'exercitie'] },
   { key: 'sci', name: 'Wetenschap, natuur en techniek', cats: ['wetenschap', 'natuur', 'ict', 'uitvindingen'] },
   { key: 'cult', name: 'Cultuur, sport en eten', cats: ['cultuur', 'muziekfilm', 'eten', 'sport', 'religie'] },
   { key: 'nl', name: 'Nederland', cats: ['nederland', 'geschiedenis', 'politiek'] },

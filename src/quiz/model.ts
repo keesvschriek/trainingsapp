@@ -39,6 +39,7 @@ export const CATS: CatInfo[] = [
   { key: 'wapenleer', name: 'Wapenleer', group: 'Defensie' },
   { key: 'aaw', name: 'Ammunition Awareness (AAW)', group: 'Defensie' },
   { key: 'search', name: 'Search', group: 'Defensie' },
+  { key: 'exercitie', name: 'Exercitie', group: 'Defensie' },
   { key: 'actueel', name: 'Actualiteit', group: 'Maatschappij' },
 ];
 export const catName = (k: string) => CATS.find(c => c.key === k)?.name ?? k;

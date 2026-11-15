@@ -40,6 +40,838 @@
           "why": "Bij volwassenen rond de 55 tot 60 procent."
         }
       ]
+    },
+    {
+      "id": "breed-1",
+      "title": "Breed pakket 1",
+      "version": 1,
+      "questions": [
+        {
+          "cat": "sport",
+          "q": "Hoeveel spelers staan er per team op het veld bij hockey?",
+          "a": [
+            "Elf",
+            "Tien",
+            "Twaalf",
+            "Negen"
+          ],
+          "why": "Inclusief de keeper."
+        },
+        {
+          "cat": "sport",
+          "q": "Hoe lang duurt een basketbalwedstrijd in de NBA zonder verlenging?",
+          "a": [
+            "48 minuten",
+            "40 minuten",
+            "60 minuten",
+            "36 minuten"
+          ],
+          "why": "Vier kwarten van 12 minuten. Bij FIBA zijn het kwarten van 10."
+        },
+        {
+          "cat": "sport",
+          "q": "In welke sport wordt om de Stanley Cup gespeeld?",
+          "a": [
+            "IJshockey",
+            "American football",
+            "Honkbal",
+            "Basketbal"
+          ],
+          "why": "De kampioensbeker van de NHL."
+        },
+        {
+          "cat": "sport",
+          "q": "In welke sport kun je een 'albatros' slaan?",
+          "a": [
+            "Golf",
+            "Tennis",
+            "Cricket",
+            "Badminton"
+          ],
+          "why": "Drie slagen onder par op één hole."
+        },
+        {
+          "cat": "sport",
+          "q": "Hoe heet de beroemde klim met kasseien in de Ronde van Vlaanderen?",
+          "a": [
+            "De Koppenberg",
+            "De Cauberg",
+            "De Mur de Huy",
+            "De Poggio"
+          ],
+          "why": "Ook de Oude Kwaremont en de Paterberg zijn bekend. De Cauberg ligt in Limburg."
+        },
+        {
+          "cat": "sport",
+          "q": "Wat is de afstand tussen de honken bij honkbal?",
+          "a": [
+            "Ongeveer 27 meter (90 voet)",
+            "Ongeveer 18 meter",
+            "Ongeveer 40 meter",
+            "Ongeveer 10 meter"
+          ],
+          "why": "Het veld is een vierkant, de 'diamond'."
+        },
+        {
+          "cat": "sport",
+          "q": "Welk land won de meeste WK-titels voetbal bij de mannen?",
+          "a": [
+            "Brazilië",
+            "Duitsland",
+            "Italië",
+            "Argentinië"
+          ],
+          "why": "Vijf titels."
+        },
+        {
+          "cat": "sport",
+          "q": "Hoe hoog hangt een basketbalring boven de grond?",
+          "a": [
+            "3,05 meter",
+            "2,75 meter",
+            "3,50 meter",
+            "2,90 meter"
+          ],
+          "why": "Tien voet."
+        },
+        {
+          "cat": "sport",
+          "q": "Hoe vaak won Nederland het WK voetbal bij de mannen?",
+          "a": [
+            "Nooit",
+            "Eén keer",
+            "Twee keer",
+            "Drie keer"
+          ],
+          "why": "Wel drie keer finalist: 1974, 1978 en 2010."
+        },
+        {
+          "cat": "politiek",
+          "q": "Wat is een coalitieakkoord?",
+          "a": [
+            "Afspraken tussen regeringspartijen over het beleid",
+            "Een verdrag tussen landen",
+            "Een cao",
+            "Een begroting"
+          ],
+          "why": "Gemaakt tijdens de formatie."
+        },
+        {
+          "cat": "politiek",
+          "q": "Wat is de kiesdrempel voor de Tweede Kamer in de praktijk?",
+          "a": [
+            "Eén volle zetel (de kiesdeler)",
+            "5% van de stemmen",
+            "3% van de stemmen",
+            "100.000 stemmen"
+          ],
+          "why": "Nederland heeft geen aparte drempel; je hebt genoeg stemmen voor één zetel nodig."
+        },
+        {
+          "cat": "politiek",
+          "q": "Wat doet de Raad van State naast adviseren?",
+          "a": [
+            "Rechtspreken als hoogste bestuursrechter",
+            "Wetten aannemen",
+            "Ministers benoemen",
+            "De begroting controleren"
+          ],
+          "why": "Via de Afdeling bestuursrechtspraak."
+        },
+        {
+          "cat": "politiek",
+          "q": "Hoe heet de verkiezing waarmee je indirect de Eerste Kamer kiest?",
+          "a": [
+            "Provinciale Statenverkiezingen",
+            "Gemeenteraadsverkiezingen",
+            "Waterschapsverkiezingen",
+            "Europese verkiezingen"
+          ],
+          "why": "Die worden op dezelfde dag gehouden als de waterschapsverkiezingen."
+        },
+        {
+          "cat": "politiek",
+          "q": "Wat is lobbyen?",
+          "a": [
+            "Proberen beleid te beïnvloeden door contact met politici",
+            "Stemmen tellen",
+            "Een motie indienen",
+            "Een referendum houden"
+          ],
+          "why": "Bedrijven, vakbonden en belangengroepen doen dit."
+        },
+        {
+          "cat": "politiek",
+          "q": "Wat is populisme in de kern?",
+          "a": [
+            "Een tegenstelling tussen 'het volk' en 'de elite' centraal stellen",
+            "Een stroming die de markt vrij wil laten",
+            "Een vorm van communisme",
+            "Een stroming die religie centraal stelt"
+          ],
+          "why": "Het kan zowel links als rechts voorkomen."
+        },
+        {
+          "cat": "politiek",
+          "q": "Welk land heeft het oudste nog geldende geschreven nationale grondwet?",
+          "a": [
+            "De Verenigde Staten",
+            "Nederland",
+            "Frankrijk",
+            "Groot-Brittannië"
+          ],
+          "why": "Uit 1787. San Marino heeft oudere wetten, maar die gelden meestal niet als één grondwet. Het VK heeft geen geschreven grondwet in één document."
+        },
+        {
+          "cat": "politiek",
+          "q": "Wat is filibusteren?",
+          "a": [
+            "Een besluit tegenhouden door eindeloos te blijven praten",
+            "Stemmen kopen",
+            "Kiesdistricten oneerlijk indelen",
+            "Een minister ondervragen"
+          ],
+          "why": "Bekend uit de Amerikaanse Senaat."
+        },
+        {
+          "cat": "politiek",
+          "q": "Wat is gerrymandering?",
+          "a": [
+            "Kiesdistricten zo indelen dat een partij voordeel heeft",
+            "Stemmen dubbel tellen",
+            "Een verkiezing uitstellen",
+            "Een kandidaat uitsluiten"
+          ],
+          "why": "Vernoemd naar gouverneur Elbridge Gerry."
+        },
+        {
+          "cat": "wereldgeschiedenis",
+          "q": "Welk rijk had Cuzco als hoofdstad?",
+          "a": [
+            "Het Incarijk",
+            "Het Azteekse rijk",
+            "Het Mayarijk",
+            "Het Spaanse rijk"
+          ],
+          "why": "In het huidige Peru."
+        },
+        {
+          "cat": "wereldgeschiedenis",
+          "q": "Welke slag in 1815 betekende het definitieve einde van Napoleon?",
+          "a": [
+            "De slag bij Waterloo",
+            "De slag bij Austerlitz",
+            "De slag bij Leipzig",
+            "De slag bij Trafalgar"
+          ],
+          "why": "Napoleon werd daarna verbannen naar Sint-Helena."
+        },
+        {
+          "cat": "wereldgeschiedenis",
+          "q": "Welke stad lag na 1945 midden in de Sovjetzone, maar werd toch in vier sectoren verdeeld?",
+          "a": [
+            "Berlijn",
+            "Bonn",
+            "Hamburg",
+            "München"
+          ],
+          "why": "West-Berlijn werd een enclave van het Westen."
+        },
+        {
+          "cat": "wereldgeschiedenis",
+          "q": "Wie was de leider van de Sovjet-Unie tijdens de Cubacrisis?",
+          "a": [
+            "Nikita Chroesjtsjov",
+            "Leonid Brezjnev",
+            "Jozef Stalin",
+            "Michail Gorbatsjov"
+          ],
+          "why": "In 1962, tegenover Kennedy."
+        },
+        {
+          "cat": "wereldgeschiedenis",
+          "q": "Welk land werd in 1948 opgericht na het einde van het Britse mandaat over Palestina?",
+          "a": [
+            "Israël",
+            "Jordanië",
+            "Libanon",
+            "Syrië"
+          ],
+          "why": "Op 14 mei 1948."
+        },
+        {
+          "cat": "wereldgeschiedenis",
+          "q": "Hoe heette het offensief van Noord-Vietnam in 1968 dat de publieke opinie in de VS kantelde?",
+          "a": [
+            "Het Tet-offensief",
+            "Operatie Rolling Thunder",
+            "De Ho Chi Minhroute",
+            "Dien Bien Phu"
+          ],
+          "why": "Militair geen overwinning voor Noord-Vietnam, politiek wel een keerpunt."
+        },
+        {
+          "cat": "geschiedenis",
+          "q": "In welk jaar was de eerste Elfstedentocht?",
+          "a": [
+            "1909",
+            "1890",
+            "1929",
+            "1941"
+          ],
+          "why": "Gewonnen door Minne Hoekstra."
+        },
+        {
+          "cat": "geschiedenis",
+          "q": "Wie was de eerste vrouwelijke minister in Nederland?",
+          "a": [
+            "Marga Klompé",
+            "Annie Romein-Verschoor",
+            "Aletta Jacobs",
+            "Neelie Kroes"
+          ],
+          "why": "In 1956, minister van Maatschappelijk Werk."
+        },
+        {
+          "cat": "geschiedenis",
+          "q": "Welke Nederlandse provincie werd in de 20e eeuw grotendeels drooggelegd uit de Zuiderzee?",
+          "a": [
+            "Flevoland",
+            "Noord-Holland",
+            "Friesland",
+            "Overijssel"
+          ],
+          "why": "De Noordoostpolder hoort bij Flevoland."
+        },
+        {
+          "cat": "wereldleiders",
+          "q": "Wie was de laatste leider van de Sovjet-Unie?",
+          "a": [
+            "Michail Gorbatsjov",
+            "Boris Jeltsin",
+            "Joeri Andropov",
+            "Konstantin Tsjernenko"
+          ],
+          "why": "Jeltsin was president van Rusland."
+        },
+        {
+          "cat": "wereldleiders",
+          "q": "Welke Indiase premier werd in 1984 vermoord?",
+          "a": [
+            "Indira Gandhi",
+            "Rajiv Gandhi",
+            "Jawaharlal Nehru",
+            "Mahatma Gandhi"
+          ],
+          "why": "Haar zoon Rajiv werd in 1991 vermoord."
+        },
+        {
+          "cat": "wereldleiders",
+          "q": "Wie was de eerste premier van Israël?",
+          "a": [
+            "David Ben-Gurion",
+            "Golda Meir",
+            "Menachem Begin",
+            "Yitzhak Rabin"
+          ],
+          "why": "Hij las in 1948 de onafhankelijkheidsverklaring voor."
+        },
+        {
+          "cat": "wereldleiders",
+          "q": "Welke Franse president schafte in 1981 de doodstraf af?",
+          "a": [
+            "François Mitterrand",
+            "Charles de Gaulle",
+            "Jacques Chirac",
+            "Valéry Giscard d'Estaing"
+          ],
+          "why": "Via zijn minister van Justitie Robert Badinter."
+        },
+        {
+          "cat": "wereldleiders",
+          "q": "Wie was de eerste vrouwelijke premier ter wereld?",
+          "a": [
+            "Sirimavo Bandaranaike",
+            "Indira Gandhi",
+            "Golda Meir",
+            "Margaret Thatcher"
+          ],
+          "why": "In 1960 in Ceylon, het huidige Sri Lanka."
+        },
+        {
+          "cat": "geopolitiek",
+          "q": "Welk kanaal verbindt de Atlantische Oceaan met de Stille Oceaan?",
+          "a": [
+            "Het Panamakanaal",
+            "Het Suezkanaal",
+            "Het Kielkanaal",
+            "Het Korinthekanaal"
+          ],
+          "why": "Geopend in 1914."
+        },
+        {
+          "cat": "geopolitiek",
+          "q": "Welk land controleert de Bosporus en de Dardanellen?",
+          "a": [
+            "Turkije",
+            "Griekenland",
+            "Rusland",
+            "Bulgarije"
+          ],
+          "why": "Het Verdrag van Montreux (1936) regelt de doorvaart."
+        },
+        {
+          "cat": "geopolitiek",
+          "q": "Welke organisatie van Zuidoost-Aziatische landen heet ASEAN?",
+          "a": [
+            "Association of Southeast Asian Nations",
+            "Asian Security and Economic Alliance",
+            "Asia-Pacific Economic Cooperation",
+            "South Asian Association"
+          ],
+          "why": "Opgericht in 1967."
+        },
+        {
+          "cat": "geopolitiek",
+          "q": "Wat is de Afrikaanse Unie?",
+          "a": [
+            "Een samenwerkingsverband van vrijwel alle Afrikaanse landen",
+            "Een Afrikaanse munt",
+            "Een militair bondgenootschap van Noord-Afrika",
+            "Een VN-organisatie"
+          ],
+          "why": "Het hoofdkantoor staat in Addis Abeba."
+        },
+        {
+          "cat": "geopolitiek",
+          "q": "Welke landen grenzen aan zowel de Kaspische Zee als aan Iran?",
+          "a": [
+            "Azerbeidzjan en Turkmenistan",
+            "Irak en Turkije",
+            "Armenië en Georgië",
+            "Kazachstan en Oezbekistan"
+          ],
+          "why": "Ook Rusland en Kazachstan liggen aan de Kaspische Zee."
+        },
+        {
+          "cat": "aardrijkskunde",
+          "q": "Welke rivier stroomt door Caïro?",
+          "a": [
+            "De Nijl",
+            "De Congo",
+            "De Niger",
+            "De Eufraat"
+          ],
+          "why": "De langste rivier van Afrika."
+        },
+        {
+          "cat": "aardrijkskunde",
+          "q": "Wat is de hoofdstad van Nieuw-Zeeland?",
+          "a": [
+            "Wellington",
+            "Auckland",
+            "Christchurch",
+            "Queenstown"
+          ],
+          "why": "Auckland is de grootste stad."
+        },
+        {
+          "cat": "aardrijkskunde",
+          "q": "In welk land ligt de Atacamawoestijn?",
+          "a": [
+            "Chili",
+            "Peru",
+            "Bolivia",
+            "Argentinië"
+          ],
+          "why": "Een kleine strook loopt door naar buurlanden."
+        },
+        {
+          "cat": "aardrijkskunde",
+          "q": "Welke zee ligt tussen Italië en de Balkan?",
+          "a": [
+            "De Adriatische Zee",
+            "De Egeïsche Zee",
+            "De Tyrreense Zee",
+            "De Ionische Zee"
+          ],
+          "why": "Met Venetië aan de noordkant."
+        },
+        {
+          "cat": "aardrijkskunde",
+          "q": "Welk Europees land heeft de meeste inwoners?",
+          "a": [
+            "Rusland",
+            "Duitsland",
+            "Frankrijk",
+            "Turkije"
+          ],
+          "why": "Als je heel Rusland meetelt. Binnen de EU is het Duitsland."
+        },
+        {
+          "cat": "wetenschap",
+          "q": "Hoe heet de kleinste bot in het menselijk lichaam?",
+          "a": [
+            "De stijgbeugel",
+            "Het aambeeld",
+            "De hamer",
+            "Het staartbeen"
+          ],
+          "why": "In het middenoor."
+        },
+        {
+          "cat": "wetenschap",
+          "q": "Wat meet een seismograaf?",
+          "a": [
+            "Trillingen van de aarde",
+            "Luchtdruk",
+            "Windsnelheid",
+            "Straling"
+          ],
+          "why": "Bijvoorbeeld bij aardbevingen."
+        },
+        {
+          "cat": "wetenschap",
+          "q": "Welke bloedvaten vervoeren bloed van het hart af?",
+          "a": [
+            "Slagaders",
+            "Aders",
+            "Haarvaten",
+            "Lymfevaten"
+          ],
+          "why": "Aders voeren het bloed terug naar het hart."
+        },
+        {
+          "cat": "wetenschap",
+          "q": "Hoeveel tanden heeft een volwassene met verstandskiezen?",
+          "a": [
+            "32",
+            "28",
+            "30",
+            "36"
+          ],
+          "why": "Zonder verstandskiezen 28."
+        },
+        {
+          "cat": "wetenschap",
+          "q": "Welk element heeft atoomnummer 1?",
+          "a": [
+            "Waterstof",
+            "Helium",
+            "Koolstof",
+            "Zuurstof"
+          ],
+          "why": "Met één proton."
+        },
+        {
+          "cat": "natuur",
+          "q": "Hoeveel poten heeft een spin?",
+          "a": [
+            "Acht",
+            "Zes",
+            "Tien",
+            "Twaalf"
+          ],
+          "why": "Insecten hebben er zes."
+        },
+        {
+          "cat": "natuur",
+          "q": "Welke planeet heeft de kortste dag?",
+          "a": [
+            "Jupiter",
+            "Mercurius",
+            "Aarde",
+            "Venus"
+          ],
+          "why": "Ongeveer 10 uur. Een dag op Venus duurt langer dan een jaar."
+        },
+        {
+          "cat": "natuur",
+          "q": "Wat is fotosynthese?",
+          "a": [
+            "Planten maken suiker uit CO2 en water met licht",
+            "Planten nemen 's nachts zuurstof op",
+            "Bladeren verkleuren in de herfst",
+            "Wortels nemen mineralen op"
+          ],
+          "why": "Daarbij komt zuurstof vrij."
+        },
+        {
+          "cat": "natuur",
+          "q": "Hoe heet een groep wolven?",
+          "a": [
+            "Een roedel",
+            "Een kudde",
+            "Een zwerm",
+            "Een school"
+          ],
+          "why": "Sinds 2015 worden er weer wolven in Nederland gezien."
+        },
+        {
+          "cat": "natuur",
+          "q": "Welke vogel kan achteruit vliegen?",
+          "a": [
+            "De kolibrie",
+            "De zwaluw",
+            "De gierzwaluw",
+            "De ijsvogel"
+          ],
+          "why": "Door de manier waarop hij zijn vleugels draait."
+        },
+        {
+          "cat": "ict",
+          "q": "Wat betekent de afkorting 'AI'?",
+          "a": [
+            "Artificial intelligence",
+            "Automatic input",
+            "Advanced internet",
+            "Applied information"
+          ],
+          "why": "Kunstmatige intelligentie."
+        },
+        {
+          "cat": "ict",
+          "q": "Wat is een QR-code?",
+          "a": [
+            "Een tweedimensionale streepjescode",
+            "Een wachtwoord",
+            "Een type virus",
+            "Een programmeertaal"
+          ],
+          "why": "Bedacht in 1994 door het Japanse Denso Wave."
+        },
+        {
+          "cat": "ict",
+          "q": "Welk bedrijf maakte de eerste versie van Windows?",
+          "a": [
+            "Microsoft",
+            "Apple",
+            "IBM",
+            "Intel"
+          ],
+          "why": "Windows 1.0 verscheen in 1985."
+        },
+        {
+          "cat": "uitvindingen",
+          "q": "Wie bedacht het periodiek systeem der elementen in de bekendste vorm?",
+          "a": [
+            "Dmitri Mendelejev",
+            "Antoine Lavoisier",
+            "John Dalton",
+            "Niels Bohr"
+          ],
+          "why": "In 1869, met open plekken voor nog onbekende elementen."
+        },
+        {
+          "cat": "uitvindingen",
+          "q": "Welk land vond buskruit uit?",
+          "a": [
+            "China",
+            "India",
+            "Perzië",
+            "Griekenland"
+          ],
+          "why": "Rond de 9e eeuw."
+        },
+        {
+          "cat": "economie",
+          "q": "Wat is een cao?",
+          "a": [
+            "Afspraken over loon en arbeidsvoorwaarden tussen werkgevers en vakbonden",
+            "Een belasting",
+            "Een type pensioen",
+            "Een uitkering"
+          ],
+          "why": "Collectieve arbeidsovereenkomst."
+        },
+        {
+          "cat": "economie",
+          "q": "Wat meet de koopkracht?",
+          "a": [
+            "Wat je met je inkomen kunt kopen",
+            "De hoogte van je spaargeld",
+            "De prijs van huizen",
+            "De omzet van winkels"
+          ],
+          "why": "Stijgen prijzen sneller dan inkomens, dan daalt de koopkracht."
+        },
+        {
+          "cat": "economie",
+          "q": "Wat is de munteenheid van Zwitserland?",
+          "a": [
+            "De Zwitserse frank",
+            "De euro",
+            "De kroon",
+            "De mark"
+          ],
+          "why": "Zwitserland is geen lid van de EU."
+        },
+        {
+          "cat": "eten",
+          "q": "Uit welk land komt de paella?",
+          "a": [
+            "Spanje",
+            "Italië",
+            "Portugal",
+            "Mexico"
+          ],
+          "why": "Oorspronkelijk uit de streek rond Valencia."
+        },
+        {
+          "cat": "eten",
+          "q": "Wat is de basis van hummus?",
+          "a": [
+            "Kikkererwten",
+            "Linzen",
+            "Witte bonen",
+            "Aubergine"
+          ],
+          "why": "Met tahin, citroen en knoflook."
+        },
+        {
+          "cat": "cultuur",
+          "q": "Wie schreef De Kleine Prins?",
+          "a": [
+            "Antoine de Saint-Exupéry",
+            "Victor Hugo",
+            "Jules Verne",
+            "Albert Camus"
+          ],
+          "why": "Hij was zelf piloot."
+        },
+        {
+          "cat": "cultuur",
+          "q": "Welke Nederlandse schrijver schreef Het Bittere Kruid?",
+          "a": [
+            "Marga Minco",
+            "Harry Mulisch",
+            "Gerard Reve",
+            "Hella Haasse"
+          ],
+          "why": "Over een joodse familie in de oorlog."
+        },
+        {
+          "cat": "cultuur",
+          "q": "Wie schilderde De Sterrennacht?",
+          "a": [
+            "Vincent van Gogh",
+            "Claude Monet",
+            "Paul Gauguin",
+            "Edvard Munch"
+          ],
+          "why": "In 1889, in Saint-Rémy-de-Provence."
+        },
+        {
+          "cat": "muziekfilm",
+          "q": "Welk instrument bespeelde Jimi Hendrix?",
+          "a": [
+            "Elektrische gitaar",
+            "Drums",
+            "Saxofoon",
+            "Piano"
+          ],
+          "why": "Bekend van zijn optreden op Woodstock in 1969."
+        },
+        {
+          "cat": "muziekfilm",
+          "q": "Uit welk land kwam de componist Edvard Grieg?",
+          "a": [
+            "Noorwegen",
+            "Zweden",
+            "Denemarken",
+            "Finland"
+          ],
+          "why": "Bekend van Peer Gynt."
+        },
+        {
+          "cat": "muziekfilm",
+          "q": "Welke film won in 1998 elf Oscars, net als Ben-Hur?",
+          "a": [
+            "Titanic",
+            "Forrest Gump",
+            "Gladiator",
+            "Braveheart"
+          ],
+          "why": "Later evenaarde The Return of the King dat aantal."
+        },
+        {
+          "cat": "religie",
+          "q": "In welke stad staat de Kaaba?",
+          "a": [
+            "Mekka",
+            "Medina",
+            "Jeruzalem",
+            "Riyad"
+          ],
+          "why": "Het centrum van de bedevaart."
+        },
+        {
+          "cat": "religie",
+          "q": "Wat is Chanoeka?",
+          "a": [
+            "Het joodse lichtfeest",
+            "Het joodse nieuwjaar",
+            "Een hindoeïstisch feest",
+            "Een christelijke vastentijd"
+          ],
+          "why": "Acht dagen lang, met de chanoekia."
+        },
+        {
+          "cat": "nederland",
+          "q": "Hoeveel gemeenten heeft Nederland ongeveer?",
+          "a": [
+            "Ongeveer 340",
+            "Ongeveer 100",
+            "Ongeveer 600",
+            "Ongeveer 1000"
+          ],
+          "why": "Het aantal daalt door herindelingen."
+        },
+        {
+          "cat": "nederland",
+          "q": "Welke stad is de hoofdstad van Overijssel?",
+          "a": [
+            "Zwolle",
+            "Enschede",
+            "Deventer",
+            "Almelo"
+          ],
+          "why": "Enschede is de grootste stad."
+        },
+        {
+          "cat": "sport",
+          "q": "Hoe vaak won Sven Kramer olympisch goud op de 5000 meter?",
+          "a": [
+            "Drie keer",
+            "Eén keer",
+            "Twee keer",
+            "Vier keer"
+          ],
+          "why": "In 2010, 2014 en 2018."
+        },
+        {
+          "cat": "sport",
+          "q": "Welke band komt bij judo direct voor de zwarte band?",
+          "a": [
+            "Bruin",
+            "Blauw",
+            "Groen",
+            "Oranje"
+          ],
+          "why": "De volgorde eindigt met blauw, bruin, zwart."
+        },
+        {
+          "cat": "sport",
+          "q": "Hoeveel slagen onder par is een birdie bij golf?",
+          "a": [
+            "Eén",
+            "Twee",
+            "Drie",
+            "Nul"
+          ],
+          "why": "Twee onder par is een eagle, drie onder een albatros."
+        }
+      ]
     }
   ]
 }

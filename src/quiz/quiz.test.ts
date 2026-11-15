@@ -120,3 +120,10 @@ describe('records', () => {
     expect(dayStreak(['2026-11-12'], '2026-11-15')).toBe(0);
   });
 });
+
+describe('pakket overlapt niet met de vaste bank', () => {
+  it('geen identieke vragen', () => {
+    const bank = new Set(BANK.map(q => q.q));
+    for (const p of packs.packs) for (const q of p.questions) expect(bank.has(q.q), q.q).toBe(false);
+  });
+});

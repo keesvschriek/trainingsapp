@@ -391,11 +391,15 @@ input[type='checkbox'] { accent-color: var(--accent); width: 18px; height: 18px;
 .map-sea { fill: var(--map-sea); }
 .map-land { fill: var(--map-other); stroke: color-mix(in srgb, var(--ink) 35%, transparent); stroke-width: 0.4; vector-effect: non-scaling-stroke; }
 .map-land.can { fill: var(--map-land); cursor: pointer; }
-.map-dot { fill: transparent; stroke: var(--accent); stroke-width: 1.2; cursor: pointer; }
+.map-dot { fill: transparent; stroke: var(--accent); stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: pointer; }
 .map-dot.target { fill: var(--accent); }
 .map-dot.right { fill: var(--good); stroke: var(--good); }
 .map-dot.wrong { fill: var(--bad); stroke: var(--bad); }
 .map-land.target { fill: var(--accent); }
 .map-land.right { fill: var(--good); }
 .map-land.wrong { fill: var(--bad); }
+.map-wrap { position: relative; }
+.map.zoomable { touch-action: none; }
+.map-zoom { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.map-zoom button { width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 1.2rem; line-height: 1; cursor: pointer; box-shadow: var(--shadow); }
 .map-ask { font-size: 1.05rem; margin: 4px 0; }

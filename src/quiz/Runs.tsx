@@ -338,8 +338,9 @@ export function MapRun({ region, rounds = 15, onDone, onClose }: { region?: Regi
       </div>
       <div className="map-ask">Tik aan: <strong>{t.name}</strong> <span className="muted small">in {name}</span></div>
       <Suspense fallback={<div className="empty">Kaart laden...</div>}>
-        <MapView region={region} clickable={clickable} marks={marks} onPick={pickC} height={!region ? 190 : region === 'Europa' ? 400 : 320} />
+        <MapView region={region} clickable={clickable} marks={marks} onPick={pickC} height={!region ? 190 : region === 'Europa' ? 400 : 320} zoom />
       </Suspense>
+      <div className="muted small">Inzoomen: met twee vingers of de knoppen. Slepen om te verschuiven.</div>
       <div className="small" style={{ minHeight: 22, marginTop: 6 }}>{msg || (tries ? `Nog ${3 - tries} poging${3 - tries === 1 ? '' : 'en'}.` : '')}</div>
     </div>
   );

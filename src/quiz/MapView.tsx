@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent as RPE, type WheelEvent as RWE } from 'react';
 import { geoMercator, geoNaturalEarth1, geoPath, type GeoProjection } from 'd3-geo';
 import { feature } from 'topojson-client';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
@@ -50,9 +50,10 @@ interface Props {
   onPick?: (c3: string) => void;
   focus?: string; // c3: kaart op dit land richten (voor een klein kaartje bij een vraag)
   height?: number;
+  zoom?: boolean; // knijpen, slepen en knoppen om in te zoomen
 }
 
-export function MapView({ region, marks = {}, clickable, onPick, focus, height = 320 }: Props) {
+export function MapView({ region, marks = {}, clickable, onPick, focus, height = 320, zoom = false }: Props) {
   const [world, setWorld] = useState<F[] | null>(null);
   const [err, setErr] = useState('');
   useEffect(() => {
@@ -63,6 +64,7 @@ export function MapView({ region, marks = {}, clickable, onPick, focus, height =
 
   const W = 600;
   const H = Math.round((W * height) / 360);
+  const z = useZoom(W, H, zoom); // voor de vroege returns: hooks altijd in dezelfde volgorde
   const paths = useMemo(() => {
     if (!world) return [];
     let proj: GeoProjection;
@@ -88,33 +90,133 @@ export function MapView({ region, marks = {}, clickable, onPick, focus, height =
     // Een rondje bij landen die als geheel te klein zijn om aan te tikken (alleen op het grootste stuk)
     const biggest = new Map<string, (typeof items)[number]>();
     for (const it of items) if (it.c3 && (!biggest.has(it.c3) || biggest.get(it.c3)!.area < it.area)) biggest.set(it.c3, it);
-    if (region || focus) for (const it of biggest.values()) if (it.area < 60) it.dot = path.centroid(it.f);
+    for (const it of biggest.values()) if (it.area < 60) it.dot = path.centroid(it.f);
     return items;
   }, [world, region, focus, H]);
 
   if (err) return <div className="empty">Kaart laden mislukt: {err}</div>;
   if (!world) return <div className="map-wrap" style={{ aspectRatio: `${W} / ${H}` }}><div className="empty">Kaart laden...</div></div>;
 
+  const showDots = !!(region || focus || z.t.k >= 2.5);
+
   return (
     <div className="map-wrap">
-      <svg viewBox={`0 0 ${W} ${H}`} className="map" role="img" aria-label="Kaart">
+      <svg
+        ref={z.ref}
+        viewBox={`0 0 ${W} ${H}`}
+        className={`map${zoom ? ' zoomable' : ''}`}
+        role="img"
+        aria-label="Kaart"
+        onPointerDown={z.down}
+        onPointerMove={z.move}
+        onPointerUp={z.up}
+        onPointerCancel={z.up}
+        onWheel={z.wheel}
+      >
         <rect width={W} height={H} className="map-sea" />
-        {paths.map(p => {
-          const m = p.c3 ? marks[p.c3] : undefined;
-          const can = !!(p.c3 && onPick && (!clickable || clickable.has(p.c3)));
-          return (
-            <g key={p.key} data-c3={p.c3} onClick={can ? () => onPick!(p.c3!) : undefined}>
-              <path d={p.d} className={`map-land${m ? ' ' + m : ''}${can ? ' can' : ''}`} />
-              {/* Kleine landen krijgen een rondje, zodat je ze kunt zien en aantikken */}
-              {p.dot && (can || m) && Number.isFinite(p.dot[0]) && (
-                <circle cx={p.dot[0]} cy={p.dot[1]} r={can ? 9 : 6} className={`map-dot${m ? ' ' + m : ''}`} />
-              )}
-            </g>
-          );
-        })}
+        <g transform={`translate(${z.t.x} ${z.t.y}) scale(${z.t.k})`}>
+          {paths.map(p => {
+            const m = p.c3 ? marks[p.c3] : undefined;
+            const can = !!(p.c3 && onPick && (!clickable || clickable.has(p.c3)));
+            return (
+              <g key={p.key} data-c3={p.c3} onClick={can ? () => !z.dragged() && onPick!(p.c3!) : undefined}>
+                <path d={p.d} className={`map-land${m ? ' ' + m : ''}${can ? ' can' : ''}`} />
+                {/* Kleine landen krijgen een rondje, zodat je ze kunt zien en aantikken */}
+                {p.dot && showDots && (can || m) && Number.isFinite(p.dot[0]) && (
+                  <circle cx={p.dot[0]} cy={p.dot[1]} r={(can ? 9 : 6) / Math.sqrt(z.t.k)} className={`map-dot${m ? ' ' + m : ''}`} />
+                )}
+              </g>
+            );
+          })}
+        </g>
       </svg>
+      {zoom && (
+        <div className="map-zoom">
+          <button type="button" onClick={() => z.step(1.6)} aria-label="Inzoomen">+</button>
+          <button type="button" onClick={() => z.step(1 / 1.6)} aria-label="Uitzoomen">−</button>
+          {z.t.k > 1.01 && <button type="button" onClick={z.reset} aria-label="Hele kaart">⤢</button>}
+        </div>
+      )}
     </div>
   );
+}
+
+// Inzoomen met twee vingers, slepen met één vinger, scrollwiel op de computer.
+interface T { k: number; x: number; y: number }
+const MAXK = 14;
+
+function useZoom(W: number, H: number, on: boolean) {
+  const ref = useRef<SVGSVGElement>(null);
+  const [t, setT] = useState<T>({ k: 1, x: 0, y: 0 });
+  const pts = useRef(new Map<number, { x: number; y: number }>());
+  const last = useRef<{ t: T; d: number; mx: number; my: number; sx: number; sy: number } | null>(null);
+  const moved = useRef(false);
+
+  const clamp = (n: T): T => {
+    const k = Math.min(MAXK, Math.max(1, n.k));
+    return { k, x: Math.min(0, Math.max(W - W * k, n.x)), y: Math.min(0, Math.max(H - H * k, n.y)) };
+  };
+  // schermpunt naar svg-coördinaat
+  const toSvg = (cx: number, cy: number) => {
+    const r = ref.current!.getBoundingClientRect();
+    return { x: ((cx - r.left) / r.width) * W, y: ((cy - r.top) / r.height) * H };
+  };
+  const zoomAt = (base: T, factor: number, px: number, py: number): T => {
+    const k = Math.min(MAXK, Math.max(1, base.k * factor));
+    const f = k / base.k;
+    return clamp({ k, x: px - (px - base.x) * f, y: py - (py - base.y) * f });
+  };
+  const snapshot = (cur: T) => {
+    const p = [...pts.current.values()];
+    const mx = p.reduce((a, b) => a + b.x, 0) / p.length;
+    const my = p.reduce((a, b) => a + b.y, 0) / p.length;
+    const d = p.length > 1 ? Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) : 0;
+    last.current = { t: cur, d, mx, my, sx: mx, sy: my };
+  };
+
+  return {
+    ref,
+    t,
+    dragged: () => moved.current,
+    down: (e: RPE<SVGSVGElement>) => {
+      if (!on) return;
+      if (pts.current.size === 0) moved.current = false;
+      pts.current.set(e.pointerId, toSvg(e.clientX, e.clientY));
+      snapshot(t);
+    },
+    move: (e: RPE<SVGSVGElement>) => {
+      if (!on || !pts.current.has(e.pointerId) || !last.current) return;
+      pts.current.set(e.pointerId, toSvg(e.clientX, e.clientY));
+      const p = [...pts.current.values()];
+      const mx = p.reduce((a, b) => a + b.x, 0) / p.length;
+      const my = p.reduce((a, b) => a + b.y, 0) / p.length;
+      const L = last.current;
+      if (Math.hypot(mx - L.sx, my - L.sy) > 8 || p.length > 1) moved.current = true;
+      if (!moved.current) return;
+      let n: T = { ...L.t, x: L.t.x + (mx - L.mx), y: L.t.y + (my - L.my) };
+      if (p.length > 1 && L.d > 0) {
+        const d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+        n = zoomAt(n, d / L.d, mx, my);
+      }
+      setT(clamp(n));
+    },
+    up: (e: RPE<SVGSVGElement>) => {
+      if (!on) return;
+      pts.current.delete(e.pointerId);
+      setT(cur => {
+        if (pts.current.size) snapshot(cur);
+        else last.current = null;
+        return cur;
+      });
+    },
+    wheel: (e: RWE<SVGSVGElement>) => {
+      if (!on) return;
+      const p = toSvg(e.clientX, e.clientY);
+      setT(cur => zoomAt(cur, e.deltaY < 0 ? 1.25 : 0.8, p.x, p.y));
+    },
+    step: (f: number) => setT(cur => zoomAt(cur, f, W / 2, H / 2)),
+    reset: () => setT({ k: 1, x: 0, y: 0 }),
+  };
 }
 
 function box([x0, y0, x1, y1]: [number, number, number, number]) {

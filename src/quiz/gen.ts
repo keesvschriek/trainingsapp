@@ -18,7 +18,7 @@ const others = (c: Country, n: number, pool: Country[], rnd: Rnd) => sample(pool
 export type GeoKind = 'capital' | 'countryOfCapital' | 'flag' | 'region' | 'area' | 'borders' | 'landlocked' | 'highlight';
 
 /** Landen die groot genoeg zijn om op de kaart te zien en aan te tikken. */
-export const mapPool = (r?: Region) => inRegion(r).filter(c => c.area >= (r ? (r === 'Europa' ? 2000 : r === 'Oceanië' ? 2000 : 9000) : 60000));
+export const mapPool = (r?: Region) => inRegion(r).filter(c => c.area >= (r ? (r === 'Europa' ? 2000 : r === 'Oceanië' ? 2000 : 9000) : 9000));
 
 export function geoQuestion(kind: GeoKind, region?: Region, rnd: Rnd = R): MC | null {
   const pool = inRegion(region);
