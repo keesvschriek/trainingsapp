@@ -2,6 +2,10 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Krachttraining in Sport
+- Kracht, tests en wedstrijden uit je schema staan nu ook in Sport, met de oefeningen
+- Fout opgelost: Sport liep vast als intervals.icu een leeg veld meestuurde
+
 ## Betere wifi
 - Wifi gaat niet meer uit terwijl je iets aan het bijwerken bent
 - Na een minuut zonder netwerkgebruik gaat wifi uit, alleen als de app hem zelf had aangezet

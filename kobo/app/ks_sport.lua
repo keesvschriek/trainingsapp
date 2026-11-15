@@ -15,7 +15,37 @@ local SHORT = { "zo", "ma", "di", "wo", "do", "vr", "za" }
 S.BASE = os.getenv("KEES_STUDY_INTERVALS_URL") or "https://intervals.icu"
 
 function S.connected() return (Store.get("sport.key") or "") ~= "" end
-function S.cache() return Store.get("sport.cache") end
+-- JSON "null" komt binnen als een functie (zo doet KOReader dat). Alles wat geen tekst
+-- of getal is, maken we leeg, zodat een lege waarde nooit een scherm kan breken.
+local function str(v) return type(v) == "string" and v or nil end
+local function num(v) return type(v) == "number" and v or nil end
+local function cleanList(list, fields)
+    local out = {}
+    for _, e in ipairs(type(list) == "table" and list or {}) do
+        if type(e) == "table" then
+            local c = {}
+            for k, kind in pairs(fields) do c[k] = kind == "n" and num(e[k]) or str(e[k]) end
+            table.insert(out, c)
+        end
+    end
+    return out
+end
+local EV = { date = "s", name = "s", desc = "s", type = "s", dur = "n", load = "n", cat = "s" }
+local AC = { date = "s", name = "s", type = "s", dist = "n", dur = "n", load = "n", hr = "n" }
+
+function S.cache()
+    local c = Store.get("sport.cache")
+    if type(c) ~= "table" then return nil end
+    if not c.clean then
+        c = { at = num(c.at) or 0, clean = true, events = cleanList(c.events, EV), acts = cleanList(c.acts, AC), well = c.well }
+        local w = {}
+        for _, x in ipairs(type(c.well) == "table" and c.well or {}) do
+            if type(x) == "table" and num(x.ctl) and num(x.atl) then table.insert(w, { date = str(x.date) or "", ctl = x.ctl, atl = x.atl }) end
+        end
+        c.well = w
+    end
+    return c
+end
 
 local function iso(ts) return os.date("%Y-%m-%d", ts) end
 local function dateTs(d) -- "2026-11-15..." -> tijd om 12:00
@@ -24,8 +54,18 @@ local function dateTs(d) -- "2026-11-15..." -> tijd om 12:00
     return os.time{ year = tonumber(y), month = tonumber(m), day = tonumber(dd), hour = 12 }
 end
 
+--- Notities hebben geen sporttype: afleiden uit de naam.
+function S.noteType(name)
+    name = (name or ""):lower()
+    if name:find("test") then return "Test" end
+    if name:find("kracht") or name:find("kettle") or name:find("push") or name:find("pull") or name:find("press") then return "WeightTraining" end
+    return "Note"
+end
+
 local function sportIcon(t)
-    t = (t or ""):lower()
+    t = (type(t) == "string" and t or ""):lower()
+    if t == "test" then return "target" end
+    if t == "note" then return "flag" end
     if t:find("ride") or t:find("cycl") or t:find("bike") then return "bike" end
     if t:find("swim") then return "swim" end
     if t:find("walk") or t:find("hike") then return "walk" end
@@ -76,21 +116,23 @@ function S.fetchNow()
     if not events then return false, err end
     local acts = api("/activities?oldest=" .. iso(now - 28 * 86400) .. "&newest=" .. iso(now)) or {}
     local well = api("/wellness?oldest=" .. iso(now - 42 * 86400) .. "&newest=" .. iso(now)) or {}
-    local c = { at = now, events = {}, acts = {}, well = {} }
+    if type(events) ~= "table" then return false, "Onverwacht antwoord van intervals.icu." end
+    local c = { at = now, clean = true, events = {}, acts = {}, well = {} }
     for _, e in ipairs(events) do
-        if e.category == "WORKOUT" or e.category == "NOTE" or e.category == "RACE_A" or e.category == "RACE_B" or e.category == "RACE_C" then
-            table.insert(c.events, { date = (e.start_date_local or ""):sub(1, 10), name = e.name or "Training", desc = e.description,
-                type = e.type, dur = e.moving_time, load = e.icu_training_load, cat = e.category })
+        local cat = str(e.category)
+        if cat == "WORKOUT" or cat == "NOTE" or cat == "RACE_A" or cat == "RACE_B" or cat == "RACE_C" then
+            table.insert(c.events, { date = (str(e.start_date_local) or ""):sub(1, 10), name = str(e.name) or "Training", desc = str(e.description),
+                type = str(e.type) or (cat == "NOTE" and S.noteType(str(e.name)) or nil), dur = num(e.moving_time), load = num(e.icu_training_load), cat = cat })
         end
     end
     table.sort(c.events, function(a, b) return a.date < b.date end)
-    for _, a in ipairs(acts) do
-        table.insert(c.acts, { date = (a.start_date_local or ""):sub(1, 10), name = a.name, type = a.type, dist = a.distance,
-            dur = a.moving_time, load = a.icu_training_load, hr = a.average_heartrate })
+    for _, a in ipairs(type(acts) == "table" and acts or {}) do
+        table.insert(c.acts, { date = (str(a.start_date_local) or ""):sub(1, 10), name = str(a.name), type = str(a.type), dist = num(a.distance),
+            dur = num(a.moving_time), load = num(a.icu_training_load), hr = num(a.average_heartrate) })
     end
     table.sort(c.acts, function(a, b) return a.date > b.date end)
-    for _, w in ipairs(well) do
-        if w.ctl then table.insert(c.well, { date = w.id or w.date, ctl = w.ctl, atl = w.atl }) end
+    for _, w in ipairs(type(well) == "table" and well or {}) do
+        if num(w.ctl) and num(w.atl) then table.insert(c.well, { date = str(w.id) or str(w.date) or "", ctl = w.ctl, atl = w.atl }) end
     end
     table.sort(c.well, function(a, b) return a.date < b.date end)
     Store.set("sport.cache", c)
