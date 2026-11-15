@@ -2,6 +2,15 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Nieuw ontwerp, sport en krant
+- Nieuw ontwerp: lettertype Inter, iconen, afgeronde kaarten en een rij apps onderaan
+- Beginscherm met dagtekst, training van vandaag, gewoontes (ring) en het nieuws
+- Sport: training van vandaag en de komende dagen uit intervals.icu, deze week en je vorm
+- Intervaltimer voor kettlebells en rust; de lamp knippert bij elke wissel
+- Krant van de NOS: ochtend- en avondeditie automatisch, of zelf ophalen; offline te lezen
+- Verversknop rechtsboven en een home-knop op elk scherm
+- Statusbalk met iconen voor wifi, batterij en schermtijd
+
 ## Kees Personal
 - Nieuw beginscherm met mappen: Kees Study, Ontwikkeling, Lezen en Instellingen
 - Statusbalk bovenaan met tijd, batterij, wifi en schermtijd

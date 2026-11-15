@@ -119,7 +119,7 @@ function H.page(app)
     local l = H.list()
     local done, total = H.summary()
     local items = { UI.header("Gewoontes", function() app:back() end, require("ks_main").dateText() .. " · " .. done .. " van " .. total .. " gedaan") }
-    local compact = #l > 5 or UI.scale > 1.05
+    local compact = #l > 5 or UI.scale > 1.05 or UI.compact
     for _, h in ipairs(l) do
         local on = H.isDone(h.id)
         local textW = UI.INNER() - UI.px(56)

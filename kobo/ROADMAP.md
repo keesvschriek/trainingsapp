@@ -18,13 +18,17 @@ en alleen echte testresultaten melden.
 - Instellingen: lettergrootte (vier stappen, schermen die niet passen worden automatisch iets compacter), automatisch slapen, schermtijd, back-ups
 - Bijwerken: wijzigingen tonen, voortgang per bestand, vorige versie terugzetten
 
+- Nieuw ontwerp (Inter, iconen, kaarten), verversknop en home-knop
+- Sport: intervals.icu (vandaag, komende dagen, week, vorm) en intervaltimer
+- Krant: NOS-feeds, ochtend- en avondeditie automatisch, offline lezen
+
 ## Volgende ronde (gekozen door Kees)
-1. Leesstatistieken uit de Kobo-database (leestijd, voortgang, markeringen als citaten)
-2. Focustimer (pomodoro, historie) en dagplanner (taken, prioriteit, weekoverzicht, reflectie)
-3. Krant/RSS (eens per dag, offline, favorieten) en toolbox (rekenmachine, stopwatch, eenheden, wereldklok)
+1. Synchronisatie twee kanten op voor sport en notities (privé, niet via de openbare repo)
+2. Leesstatistieken uit de Kobo-database (leestijd, voortgang, markeringen als citaten)
+3. Focustimer (pomodoro, historie) en dagplanner (taken, prioriteit, weekoverzicht, reflectie)
+4. Toolbox (rekenmachine, stopwatch, eenheden, wereldklok)
 
 ## Later
-- Workout van de dag uit intervals.icu (sleutel alleen op de Kobo zelf)
 - Leren: gespreid herhalen, tips, vandaag in de geschiedenis
 - Notities (schermtoetsenbord van KOReader; handschrift kan beter in de notitieboeken van Kobo zelf)
 

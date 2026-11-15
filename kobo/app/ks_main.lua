@@ -47,8 +47,8 @@ function App:home()
     self:render("page")
 end
 
---- Teken het huidige scherm opnieuw (na een tik). mode "page" = nieuw scherm.
-function App:render(mode)
+--- Bouw het huidige scherm opnieuw zonder het al naar het scherm te sturen.
+function App:rebuild()
     local builder = self.stack[#self.stack]
     if not builder then return end
     -- Bouwen; past het scherm niet met de gekozen lettergrootte, dan stapje kleiner (alleen voor dit scherm)
@@ -68,6 +68,11 @@ function App:render(mode)
         w = UI.page(UI.vgroup({ UI.header("Er ging iets mis", function() self:home() end), UI.text(tostring(w), { width = UI.INNER(), size = 16 }) }))
     end
     self[1] = w
+end
+
+--- Teken het huidige scherm opnieuw (na een tik). mode "page" = nieuw scherm.
+function App:render(mode)
+    self:rebuild()
     -- Altijd "partial": op de Elipsa 2E is dat de modus zonder knipperen (REAGL).
     -- "ui" laat het scherm zelf kiezen en dat knippert bij grijstinten; "full" geeft een zwarte flits.
     UIManager:setDirty(self, "partial")
@@ -96,8 +101,8 @@ end
 local MONTHS = { "januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december" }
 local DAYS = { "zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag" }
 
-function M.dateText()
-    local t = os.date("*t")
+function M.dateText(ts)
+    local t = os.date("*t", ts)
     return DAYS[t.wday] .. " " .. t.day .. " " .. MONTHS[t.month]
 end
 
@@ -117,14 +122,14 @@ function M.studyFolder(app)
     local QuizUI = require("ks_quizui")
     local items = {
         UI.header("Kees Study", function() app:back() end, "Schaken, quiz en topografie"),
-        UI.row("Schaken leren", safe(ChessUI.summary, ""), "›", function() remember("Schaken leren"); app:go(ChessUI.lessonList) end),
+        UI.row("Schaken leren", safe(ChessUI.summary, ""), "›", function() remember("Schaken leren"); app:go(ChessUI.lessonList) end, nil, "school"),
         UI.row("Tegen de computer", safe(require("ks_play").summary, ""), "›", function()
             remember("Tegen de computer")
             local g = Store.get("play.game")
             app:go((g and not g.over) and require("ks_play").game or require("ks_play").menu)
-        end),
-        UI.row("Quiz", safe(QuizUI.summary, ""), "›", function() remember("Quiz"); app:go(QuizUI.home) end),
-        UI.row("Topografie op de kaart", "Landen aanwijzen en herkennen, per werelddeel", "›", function() remember("Topografie"); app:go(require("ks_mapui").menu) end),
+        end, nil, "chess"),
+        UI.row("Quiz", safe(QuizUI.summary, ""), "›", function() remember("Quiz"); app:go(QuizUI.home) end, nil, "help"),
+        UI.row("Topografie op de kaart", "Landen aanwijzen en herkennen, per werelddeel", "›", function() remember("Topografie"); app:go(require("ks_mapui").menu) end, nil, "earth"),
     }
     return UI.page(UI.vgroup(items))
 end
@@ -137,92 +142,124 @@ function M.growFolder(app)
     local done, total = safe(H.summary, 0)
     local items = {
         UI.header("Ontwikkeling", function() app:back() end, "Elke dag een beetje"),
-        UI.row("Dagtekst", "Vandaag: " .. tostring(who), "›", function() remember("Dagtekst"); app:go(D.page) end),
-        UI.row("Gewoontes", ("%d van %d gedaan vandaag"):format(done or 0, total or 0), "›", function() remember("Gewoontes"); app:go(H.page) end),
+        UI.row("Dagtekst", "Vandaag: " .. tostring(who), "›", function() remember("Dagtekst"); app:go(D.page) end, nil, "quote"),
+        UI.row("Gewoontes", ("%d van %d gedaan vandaag"):format(done or 0, total or 0), "›", function() remember("Gewoontes"); app:go(H.page) end, nil, "list_checks"),
     }
     return UI.page(UI.vgroup(items))
+end
+
+local function greeting()
+    local h = tonumber(os.date("%H"))
+    if h < 6 then return "Goedenacht" end
+    if h < 12 then return "Goedemorgen" end
+    if h < 18 then return "Goedemiddag" end
+    return "Goedenavond"
 end
 
 local function homePage(app)
     local D = require("ks_dagtekst")
     local H = require("ks_habits")
+    local Sport = require("ks_sport")
+    local News = require("ks_news")
     local Sys = require("ks_system")
     local W = UI.INNER()
     local gap = UI.px(16)
-    local tw = math.floor((W - gap) / 2)
+    local half = math.floor((W - gap) / 2)
     local space = UI.H() - UI.px(UI.TOPPAD) - UI.MARGIN()
 
-    -- level 0: alles; 1: zonder "Verder met"; 2: ook de dagtekst ingekort
     local function build(level)
-        local items = {
-            UI.text("Kees Personal", { font = "serif", size = 40 }),
-            UI.vspace(2),
-            UI.text(M.dateText(), { size = 18, color = UI.INK2 }),
-            UI.vspace(20),
-            UI.line(W, UI.BLACK, UI.px(2)),
-        }
-        -- Dagtekst: kort stukje, tik voor de hele tekst
+        local items = {}
+        -- Begroeting
+        table.insert(items, UI.text(greeting() .. ", Kees", { font = "display", size = 40, width = W }))
+        table.insert(items, UI.vspace(2))
+        table.insert(items, UI.text(M.dateText(), { size = 19, color = UI.INK2, font = "medium" }))
+        table.insert(items, UI.vspace(22))
+
+        -- Dagtekst: grijze kaart met citaat
         local who, first = safe(D.summary, "Dagtekst")
-        first = first or ""
-        if level >= 2 and #first > 90 then first = first:sub(1, 87):gsub("%s+%S*$", "") .. "..." end
-        local label = D.isEvening() and "Dagtekst · terugblik" or "Dagtekst"
-        table.insert(items, UI.Tap:new{ label = "Dagtekst", callback = function() remember("Dagtekst"); app:go(D.page) end, UI.vgroup({
-            UI.vspace(16),
-            UI.text(label .. " · " .. tostring(who), { size = 16, color = UI.INK2, width = W }),
-            UI.vspace(6),
-            UI.text(first, { font = "serif", size = 21, width = W, line_height = 0.35 }),
-            UI.vspace(16),
-            UI.line(W),
-        }) })
-        -- Kleine regels: gewoontes, laatst geopend
+        local quote = UI.vgroup({
+            UI.hgroup({ UI.icon("quote", 22, UI.BLACK, { bg = UI.FILL }), UI.hspace(8),
+                UI.text((D.isEvening() and "Terugblik · " or "Dagtekst · ") .. tostring(who), { size = 16, font = "bold", bg = UI.FILL }) }),
+            UI.vspace(8),
+            UI.text(first or "", { font = "serif", size = 21, width = W - UI.px(48), line_height = 0.35, bg = UI.FILL, height = level >= 1 and UI.px(84) or UI.px(118) }),
+        })
+        table.insert(items, UI.Tap:new{ label = "Dagtekst", callback = function() remember("Dagtekst"); app:go(D.page) end,
+            UI.card(quote, { fill = true, border = 0, pad = UI.px(22) }) })
+        table.insert(items, UI.vspan(gap))
+
+        -- Training en gewoontes naast elkaar
+        local name, sub, icon = Sport.today()
+        local tr = UI.vgroup({
+            UI.hgroup({ UI.icon(icon or "run", 22), UI.hspace(8), UI.text("Training", { size = 16, font = "bold" }) }),
+            UI.vspace(8),
+            UI.text(name or "Sport", { font = "display", size = 22, width = half - UI.px(44), height = UI.px(60) }),
+            UI.vspace(2),
+            UI.text(sub or "", { size = 15, color = UI.INK2, width = half - UI.px(44), height = UI.px(42) }),
+        })
         local done, total = safe(H.summary, 0)
-        UI.rowPad = 26
-        table.insert(items, UI.row("Gewoontes vandaag", nil, ("%d van %d"):format(done or 0, total or 0), function() remember("Gewoontes"); app:go(H.page) end))
-        local last = Store.get("last.module")
-        if last and level < 1 then
-            local open = {
-                ["Schaken leren"] = function() app:go(require("ks_chessui").lessonList) end,
-                ["Tegen de computer"] = function()
-                    local g = Store.get("play.game")
-                    app:go((g and not g.over) and require("ks_play").game or require("ks_play").menu)
-                end,
-                ["Quiz"] = function() app:go(require("ks_quizui").home) end,
-                ["Topografie"] = function() app:go(require("ks_mapui").menu) end,
-                ["Dagtekst"] = function() app:go(D.page) end,
-                ["Gewoontes"] = function() app:go(H.page) end,
-            }
-            if open[last] then table.insert(items, UI.row("Verder met " .. last, nil, "›", open[last])) end
+        done, total = done or 0, total or 0
+        local ringSize = UI.px(level >= 2 and 64 or 78)
+        local hb = UI.vgroup({
+            UI.hgroup({ UI.icon("list_checks", 22), UI.hspace(8), UI.text("Gewoontes", { size = 16, font = "bold" }) }),
+            UI.vspace(12),
+            UI.hgroup({
+                UI.Ring:new{ size = ringSize, frac = total > 0 and done / total or 0, thick = UI.px(10) },
+                UI.hspace(14),
+                UI.vgroup({ UI.text(done .. " van " .. total, { font = "display", size = 24 }), UI.text("vandaag", { size = 15, color = UI.INK2 }) }),
+            }),
+        })
+        local rowH = math.max(tr:getSize().h, hb:getSize().h) + UI.px(40)
+        table.insert(items, UI.hgroup({
+            UI.Tap:new{ label = "Training", callback = function() app:go(Sport.page) end, UI.card(tr, { width = half, height = rowH }) },
+            UI.hspan(gap),
+            UI.Tap:new{ label = "Gewoontes", callback = function() remember("Gewoontes"); app:go(H.page) end, UI.card(hb, { width = half, height = rowH }) },
+        }, "top"))
+        table.insert(items, UI.vspan(gap))
+
+        -- Nieuws
+        local nd = News.data()
+        local edName = nd.edition or (News.edition())
+        local nv = { UI.hgroup({ UI.icon("news", 22), UI.hspace(8),
+            UI.text(edName .. (nd.at and (" · " .. os.date("%H:%M", nd.at)) or ""), { size = 16, font = "bold" }),
+            UI.hspace(8), UI.text("NOS", { size = 15, color = UI.INK3 }) }) }
+        table.insert(nv, UI.vspace(8))
+        local nHead = level >= 1 and 2 or 3
+        local shown = 0
+        for _, it in ipairs(nd.items or {}) do
+            if shown >= nHead then break end
+            if it.feed == "algemeen" or shown < nHead then
+                table.insert(nv, UI.text(it.title, { size = 18, font = "medium", width = W - UI.px(44), height = UI.px(26) }))
+                table.insert(nv, UI.vspace(6))
+                shown = shown + 1
+            end
         end
-        UI.rowPad = nil
-        table.insert(items, UI.vspace(24))
+        if shown == 0 then table.insert(nv, UI.text("Nog niet opgehaald. Tik om de krant te openen.", { size = 17, color = UI.INK2, width = W - UI.px(44) })) end
+        table.insert(items, UI.Tap:new{ label = "Nieuws", callback = function() app:go(News.page) end, UI.card(UI.vgroup(nv)) })
+        table.insert(items, UI.vspace(level >= 2 and 18 or 26))
+
         local top = UI.vgroup(items)
         local topH = top:getSize().h
 
-        -- Mappen als tegels, twee per rij; hoogte past zich aan de ruimte aan
-        local th = math.min(UI.px(170), math.floor((space - topH - 2 * gap) / 2))
-        local tiles = {
-            { "Kees Study", "Schaken, quiz en topografie", function() app:go(M.studyFolder) end },
-            { "Ontwikkeling", "Dagtekst en gewoontes", function() app:go(M.growFolder) end },
-            { "Lezen", "Terug naar je boeken", function() app:quit() end },
-            { "Instellingen", "Letters, schermtijd, bijwerken", function() app:go(Sys.settingsPage) end },
+        -- Apps: zes naast elkaar, als een dock
+        local icon = UI.px(level >= 3 and 58 or 66)
+        local apps = {
+            { "chess", "Kees Study", function() app:go(M.studyFolder) end, true },
+            { "run", "Sport", function() app:go(Sport.page) end },
+            { "leaf", "Ontwikkeling", function() app:go(M.growFolder) end },
+            { "news", "Nieuws", function() app:go(News.page) end },
+            { "book", "Lezen", function() app:quit() end },
+            { "cog", "Instellingen", function() app:go(Sys.settingsPage) end },
         }
-        local HSpan = require("ui/widget/horizontalspan")
-        local VSpan = require("ui/widget/verticalspan")
-        local grid = {}
-        for r = 0, 1 do
-            table.insert(grid, UI.hgroup({
-                UI.tile(tiles[r * 2 + 1][1], tiles[r * 2 + 1][2], tw, th, tiles[r * 2 + 1][3]),
-                HSpan:new{ width = gap },
-                UI.tile(tiles[r * 2 + 2][1], tiles[r * 2 + 2][2], tw, th, tiles[r * 2 + 2][3]),
-            }, "top"))
-            table.insert(grid, VSpan:new{ width = gap })
-        end
+        local col = math.floor(W / 6)
+        local row = {}
+        for _, a in ipairs(apps) do table.insert(row, UI.appIcon(a[1], a[2], icon, a[3], a[4], col)) end
+        local grid = { UI.hgroup(row, "top") }
         local g = UI.vgroup(grid)
         return UI.vgroup({ top, g }), topH + g:getSize().h
     end
 
     local body
-    for level = 0, 2 do
+    for level = 0, 3 do
         local h
         body, h = build(level)
         if h <= space then break end
@@ -311,6 +348,8 @@ function M.run(dir)
     local app = App:new{}
     app.stack = { homePage }
     app[1] = homePage(app)
+    UI.onRefresh = function() app:cleanScreen() end
+    UI.onHome = function() app:home() end
     UIManager:show(app, "full")
     M.app = app
     Sys.start(app)

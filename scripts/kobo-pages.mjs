@@ -18,6 +18,7 @@ function add(src, path) {
 
 for (const f of readdirSync('kobo/app')) if (f.endsWith('.lua')) add(join('kobo/app', f), f);
 for (const f of readdirSync('kobo/app/data')) if (f.endsWith('.json')) add(join('kobo/app/data', f), 'data/' + f);
+for (const f of readdirSync('kobo/app/fonts')) if (/\.(ttf|txt)$/.test(f)) add(join('kobo/app/fonts', f), 'fonts/' + f);
 add('kobo/install/patches/2-kees-study.lua', 'patches/2-kees-study.lua');
 // NickelMenu-item (de app slaat dit over als NickelMenu er niet is)
 add('kobo/install/nm/kees_study', 'nm/kees_study');

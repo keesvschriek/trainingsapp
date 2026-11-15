@@ -1,10 +1,17 @@
 Kees Personal op de Kobo
 
-Een eigen omgeving voor je Kobo Elipsa 2E. Op het beginscherm vier mappen:
+Een eigen omgeving voor je Kobo Elipsa 2E. Op het beginscherm de dagtekst, je
+training van vandaag, je gewoontes en het nieuws, en onderaan zes apps:
 - Kees Study: schaaklessen, tegen de computer spelen, quiz en topografie op de kaart
+- Sport: training uit intervals.icu, deze week, je vorm en een intervaltimer
 - Ontwikkeling: dagtekst (ochtend en avond) en gewoontes
+- Nieuws: krant van de NOS, ochtend- en avondeditie, offline te lezen
 - Lezen: terug naar je Kobo-boeken
-- Instellingen: lettergrootte, automatisch slapen, schermtijd, back-ups en bijwerken
+- Instellingen: lettergrootte, slapen, schermtijd, sport, nieuws, back-ups en bijwerken
+Rechtsboven ververs je het scherm (één flits), het huisje brengt je terug.
+
+Lettertypes: Inter (SIL Open Font License) en iconen uit de Nerd Fonts-set van
+KOReader; de licenties staan in app/fonts.
 
 Wat je nodig hebt
 - KOReader op de Kobo (die gebruikt Kees Study als motor; je ziet er niets van).

@@ -80,16 +80,16 @@ end
 -- Statusbalk -----------------------------------------------------------------
 
 function Sys.statusText()
-    local left = os.date("%H:%M")
-    local parts = {}
-    local cap, charging = Sys.battery()
+    local st = { time = os.date("%H:%M") }
     local okW, wifi = pcall(function() return require("ui/network/manager"):isWifiOn() end)
-    if okW and wifi then table.insert(parts, "wifi aan") end
-    if cap then table.insert(parts, ("batterij %d%%%s"):format(cap, charging and " (laadt)" or "")) end
+    st.wifi = okW and wifi or false
+    local cap, charging = Sys.battery()
+    if cap then st.battery = cap; st.charging = charging end
     local ok, err = pcall(Sys.account)
-    if not ok then require("logger").warn("Kees Study schermtijd:", err) end
-    table.insert(parts, "schermtijd " .. Sys.fmt(Sys.secondsOn()))
-    return { left, table.concat(parts, "   ·   ") }
+    if not ok then require("logger").warn("Kees Personal schermtijd:", err) end
+    st.screen = Sys.fmt(Sys.secondsOn())
+    st.busy = Sys.busy
+    return st
 end
 
 -- Klok, slapen en tikken ----------------------------------------------------
@@ -126,11 +126,24 @@ function Sys.onSuspend()
     Store.flush()
 end
 
+--- Ochtend- en avondronde: krant (en training) ophalen als die editie er nog niet is.
+function Sys.autoRound()
+    local ok, due = pcall(function() return require("ks_news").due() end)
+    if not ok or not due or Sys.busy then return end
+    Sys.busy = "krant ophalen"
+    if Sys.app then Sys.app:render("ui") end
+    require("ks_news").refresh(function()
+        Sys.busy = nil
+        if Sys.app then Sys.app:render("ui") end
+    end, true)
+end
+
 function Sys.onResume()
     local now = os.time()
     state.suspended = false
     state.lastTick, state.lastAction = now, now
     if Sys.app then Sys.app:render("ui") end
+    UIManager:scheduleIn(3, Sys.autoRound)
 end
 
 function Sys.start(app)
@@ -142,6 +155,7 @@ function Sys.start(app)
     UI.status = Sys.statusText
     UIManager:unschedule(tick)
     UIManager:scheduleIn(61 - os.date("*t").sec, tick)
+    if not os.getenv("KS_NO_AUTO") then UIManager:scheduleIn(3, Sys.autoRound) end
 end
 
 function Sys.stop()
@@ -185,50 +199,65 @@ local function weekBlock()
     return row, total
 end
 
-local function choiceRow(list, current, onPick)
-    local items = {}
-    for i, it in ipairs(list) do
-        table.insert(items, { it.label, function() onPick(i) end, primary = (i == current), small = true })
-    end
-    return UI.buttonRow(items)
-end
-
 function Sys.settingsPage(app)
+    local W = UI.INNER()
     local items = { UI.header("Instellingen", function() app:back() end) }
-    local gapS = UI.scale > 1.1 and 16 or 26
+    local big = UI.scale > 1.1
 
-    table.insert(items, UI.text("Lettergrootte", { font = "serif", size = 24 }))
-    table.insert(items, UI.vspace(8))
+    table.insert(items, UI.section("Lettergrootte"))
     local fl = {}
-    for i, f in ipairs(Sys.FONTS) do fl[i] = { label = f[2] } end
-    table.insert(items, choiceRow(fl, Sys.fontIndex(), function(i)
+    for i, f in ipairs(Sys.FONTS) do fl[i] = f[2] end
+    table.insert(items, UI.segmented(fl, Sys.fontIndex(), function(i)
         Store.set("set.font", i)
         Sys.applyFont()
         app:render("ui")
     end))
-    table.insert(items, UI.vspace(gapS))
+    table.insert(items, UI.vspace(big and 12 or 18))
 
-    table.insert(items, UI.text("Automatisch slapen na", { font = "serif", size = 24 }))
-    table.insert(items, UI.vspace(10))
+    table.insert(items, UI.section("Automatisch slapen na"))
     local sl, cur = {}, 2
     for i, m in ipairs(Sys.SLEEP) do
-        sl[i] = { label = m .. " min" }
+        sl[i] = m .. " min"
         if m == Sys.sleepMinutes() then cur = i end
     end
-    table.insert(items, choiceRow(sl, cur, function(i)
+    table.insert(items, UI.segmented(sl, cur, function(i)
         Store.set("set.sleep", Sys.SLEEP[i])
         app:refresh()
     end))
-    table.insert(items, UI.vspace(gapS))
+    table.insert(items, UI.vspace(big and 14 or 22))
 
-    UI.rowPad = UI.scale > 1.1 and 16 or 22
-    table.insert(items, UI.line(UI.INNER()))
+    UI.rowPad = big and 16 or 22
     local _, total = weekBlock()
-    table.insert(items, UI.row("Schermtijd", "Vandaag " .. Sys.fmt(Sys.secondsOn()) .. " · deze week " .. Sys.fmt(total), "›", function() app:go(Sys.screenPage) end))
-    table.insert(items, UI.row("Bijwerken via wifi", "Versie " .. require("ks_update").localVersion(), "›", function() app:go(require("ks_main").updatePage) end))
-    table.insert(items, UI.row("Scherm verversen", "Haalt vage restjes weg, met één flits", nil, function() app:cleanScreen() end))
-    table.insert(items, UI.row("Back-ups", "Je voortgang wordt elke dag bewaard (laatste 7 dagen)", "›", function() app:go(Sys.backupPage) end))
+    table.insert(items, UI.row("Schermtijd", "Vandaag " .. Sys.fmt(Sys.secondsOn()) .. " · deze week " .. Sys.fmt(total), "›", function() app:go(Sys.screenPage) end, W, "clock"))
+    local Sport = require("ks_sport")
+    table.insert(items, UI.row("Sport", Sport.connected() and "Gekoppeld met intervals.icu" or "Nog niet gekoppeld", "›", function() app:go(Sys.sportPage) end, W, "run"))
+    table.insert(items, UI.row("Nieuws", "Rubrieken en automatisch ophalen", "›", function() app:go(require("ks_news").settings) end, W, "news"))
+    table.insert(items, UI.row("Bijwerken via wifi", "Versie " .. require("ks_update").localVersion(), "›", function() app:go(require("ks_main").updatePage) end, W, "download"))
+    table.insert(items, UI.row("Back-ups", "Elke dag een kopie, 7 dagen bewaard", "›", function() app:go(Sys.backupPage) end, W, "history"))
     UI.rowPad = nil
+    return UI.page(UI.vgroup(items))
+end
+
+function Sys.sportPage(app)
+    local Sport = require("ks_sport")
+    local W = UI.INNER()
+    local items = { UI.header("Sport", function() app.forgetKey = nil; app:back() end, "Koppeling met intervals.icu") }
+    if Sport.connected() then
+        table.insert(items, UI.text("Gekoppeld. De sleutel staat alleen op deze Kobo.", { size = 19, width = W }))
+        table.insert(items, UI.vspace(18))
+        table.insert(items, UI.button(app.forgetKey and "Zeker? Tik nog een keer" or "Koppeling verwijderen", function()
+            if not app.forgetKey then app.forgetKey = true; return app:refresh() end
+            app.forgetKey = nil
+            Store.set("sport.key", nil)
+            Store.set("sport.cache", nil)
+            Store.flush()
+            app:refresh()
+        end, { width = W }))
+    else
+        table.insert(items, UI.text("Nog niet gekoppeld.", { size = 19 }))
+        table.insert(items, UI.vspace(18))
+        table.insert(items, UI.button("Koppelen", function() app:go(Sport.page) end, { width = W, primary = true }))
+    end
     return UI.page(UI.vgroup(items))
 end
 
