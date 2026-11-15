@@ -32,6 +32,7 @@ export interface Rig {
 export function buildRig(colors: { body: string; muscle: string; active: string }): Rig {
   const bodyMat = new THREE.MeshStandardMaterial({ color: colors.body, roughness: 0.75, metalness: 0 });
   const muscleMats: Partial<Record<MuscleId, THREE.MeshStandardMaterial[]>> = {};
+  const sideOf = new Map<THREE.MeshStandardMaterial, 'L' | 'R' | 'C'>();
   let muscleBase = new THREE.Color(colors.muscle);
   let activeColor = new THREE.Color(colors.active);
 
@@ -53,9 +54,10 @@ export function buildRig(colors: { body: string; muscle: string; active: string 
   };
   const sphere = new THREE.SphereGeometry(1, 24, 16);
   const capsule = (r: number, len: number) => new THREE.CapsuleGeometry(r, len, 6, 14);
-  const muscle = (id: MuscleId, parent: THREE.Object3D, pos: [number, number, number], scale: [number, number, number]) => {
+  const muscle = (id: MuscleId, parent: THREE.Object3D, pos: [number, number, number], scale: [number, number, number], side: 'L' | 'R' | 'C' = 'C') => {
     const mat = new THREE.MeshStandardMaterial({ color: muscleBase.clone(), roughness: 0.6, metalness: 0, emissive: new THREE.Color(0x000000) });
     (muscleMats[id] ??= []).push(mat);
+    sideOf.set(mat, side === 'C' ? (pos[0] > 0.001 ? 'L' : pos[0] < -0.001 ? 'R' : 'C') : side);
     mesh(sphere, parent, pos, scale, mat);
   };
 
@@ -86,13 +88,13 @@ export function buildRig(colors: { body: string; muscle: string; active: string 
   for (const [side, sx] of [['L', 1], ['R', -1]] as const) {
     const sh = (b[`shoulder${side}`] = group(`shoulder${side}`, b.chest, 0.195 * sx, 0.24, 0));
     mesh(capsule(0.045, 0.22), sh, [0, -0.15, 0]);
-    muscle('schouders', sh, [0.012 * sx, -0.01, 0], [0.065, 0.07, 0.065]);
-    muscle('biceps', sh, [0, -0.15, 0.02], [0.036, 0.09, 0.032]);
-    muscle('triceps', sh, [0, -0.15, -0.02], [0.038, 0.1, 0.034]);
+    muscle('schouders', sh, [0.012 * sx, -0.01, 0], [0.065, 0.07, 0.065], side);
+    muscle('biceps', sh, [0, -0.15, 0.02], [0.036, 0.09, 0.032], side);
+    muscle('triceps', sh, [0, -0.15, -0.02], [0.038, 0.1, 0.034], side);
     const el = (b[`elbow${side}`] = group(`elbow${side}`, sh, 0, -LIMB.upperArm, 0));
     mesh(sphere, el, [0, 0, 0], [0.04, 0.04, 0.04]);
     mesh(capsule(0.037, 0.2), el, [0, -0.135, 0]);
-    muscle('onderarmen', el, [0, -0.09, 0.008], [0.042, 0.085, 0.036]);
+    muscle('onderarmen', el, [0, -0.09, 0.008], [0.042, 0.085, 0.036], side);
     const wr = (b[`wrist${side}`] = group(`wrist${side}`, el, 0, -LIMB.forearm, 0));
     mesh(sphere, wr, [0, -0.05, 0], [0.036, 0.058, 0.02]);
     const palm = new THREE.Object3D();
@@ -107,12 +109,12 @@ export function buildRig(colors: { body: string; muscle: string; active: string 
     muscle('billen', b.pelvis, [0.07 * sx, -0.01, -0.055], [0.075, 0.075, 0.06]);
     const hip = (b[`hip${side}`] = group(`hip${side}`, b.pelvis, 0.095 * sx, -0.02, 0));
     mesh(capsule(0.068, 0.3), hip, [0, -0.22, 0]);
-    muscle('bovenbenen', hip, [0, -0.22, 0.026], [0.062, 0.17, 0.048]);
-    muscle('hamstrings', hip, [0, -0.22, -0.026], [0.058, 0.16, 0.046]);
+    muscle('bovenbenen', hip, [0, -0.22, 0.026], [0.062, 0.17, 0.048], side);
+    muscle('hamstrings', hip, [0, -0.22, -0.026], [0.058, 0.16, 0.046], side);
     const kn = (b[`knee${side}`] = group(`knee${side}`, hip, 0, -LIMB.thigh, 0));
     mesh(sphere, kn, [0, 0, 0], [0.055, 0.055, 0.055]);
     mesh(capsule(0.05, 0.32), kn, [0, -0.21, 0]);
-    muscle('kuiten', kn, [0, -0.12, -0.02], [0.046, 0.1, 0.042]);
+    muscle('kuiten', kn, [0, -0.12, -0.02], [0.046, 0.1, 0.042], side);
     const an = (b[`ankle${side}`] = group(`ankle${side}`, kn, 0, -LIMB.shin, 0));
     mesh(sphere, an, [0, -0.03, 0.06], [0.045, 0.035, 0.11]);
     const toe = new THREE.Object3D();
@@ -136,16 +138,21 @@ export function buildRig(colors: { body: string; muscle: string; active: string 
       activeColor = new THREE.Color(active);
     },
     // kleur per spier zetten gebeurt in applyIntensity
-    ...{ _get: () => ({ muscleBase, activeColor }) },
-  } as Rig & { _get: () => { muscleBase: THREE.Color; activeColor: THREE.Color } };
+    ...{ _get: () => ({ muscleBase, activeColor, sideOf }) },
+  } as Rig & { _get: () => { muscleBase: THREE.Color; activeColor: THREE.Color; sideOf: Map<THREE.MeshStandardMaterial, 'L' | 'R' | 'C'> } };
 }
 
+/** Belasting per spier; "biceps:R" geldt alleen voor de rechterkant (rechts = -X). */
+export type Intensity = Partial<Record<MuscleId | `${MuscleId}:L` | `${MuscleId}:R`, number>>;
+
 /** Kleurt spieren: 0 = rust, 1 = maximaal belast (rood). */
-export function applyIntensity(rig: Rig, intensity: Partial<Record<MuscleId, number>>) {
-  const { muscleBase, activeColor } = (rig as Rig & { _get: () => { muscleBase: THREE.Color; activeColor: THREE.Color } })._get();
+export function applyIntensity(rig: Rig, intensity: Intensity) {
+  const { muscleBase, activeColor, sideOf } = (rig as Rig & { _get: () => { muscleBase: THREE.Color; activeColor: THREE.Color; sideOf: Map<THREE.MeshStandardMaterial, 'L' | 'R' | 'C'> } })._get();
   for (const id of Object.keys(rig.muscles) as MuscleId[]) {
-    const v = Math.max(0, Math.min(1, intensity[id] ?? 0));
     for (const mat of rig.muscles[id]) {
+      const side = sideOf.get(mat) ?? 'C';
+      const raw = side === 'C' ? intensity[id] : intensity[`${id}:${side}`] ?? intensity[id];
+      const v = Math.max(0, Math.min(1, raw ?? 0));
       mat.color.copy(muscleBase).lerp(activeColor, v);
       mat.emissive.copy(activeColor).multiplyScalar(v * 0.18);
     }
@@ -191,7 +198,7 @@ export function worldPos(o: THREE.Object3D): THREE.Vector3 {
  * Twee-delige IK (bovenarm + onderarm of bovenbeen + onderbeen).
  * `pole` geeft de richting waarin het middelste gewricht (elleboog/knie) uitwijkt.
  */
-export function solveTwoBone(upper: THREE.Group, lower: THREE.Group, a: number, b: number, target: THREE.Vector3, pole: THREE.Vector3, frontHint?: THREE.Vector3) {
+export function solveTwoBone(upper: THREE.Group, lower: THREE.Group, a: number, b: number, target: THREE.Vector3, pole: THREE.Vector3, frontHint?: THREE.Vector3, flipFront = false) {
   const S = worldPos(upper);
   const toT = target.clone().sub(S);
   const d = Math.min(Math.max(toT.length(), Math.abs(a - b) + 0.01), a + b - 0.002);
@@ -206,6 +213,7 @@ export function solveTwoBone(upper: THREE.Group, lower: THREE.Group, a: number, 
   let anterior = dir2.clone().sub(dir1.clone().multiplyScalar(dir2.dot(dir1)));
   if (anterior.lengthSq() < 1e-5) anterior = frontHint?.clone() ?? w.clone().negate();
   anterior.normalize();
+  if (flipFront) anterior.negate();
   aim(upper, dir1, anterior);
   aim(lower, dir2, anterior);
 }

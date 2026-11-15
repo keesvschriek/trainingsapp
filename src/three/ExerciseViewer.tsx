@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { applyIntensity, buildRig, MUSCLE_NAMES, type MuscleId } from './rig';
-import { getMotion, type Motion } from './exercises';
+import { BAR_Y, getMotion, type Motion, type Props } from './exercises';
 import { cssColor } from '../theme';
 import { Sheet } from '../ui';
 
@@ -70,6 +70,13 @@ export default function ExerciseViewer(props: { motionKey: string; name: string;
     mat.position.set(0, 0.002, 0.75);
     mat.receiveShadow = true;
     scene.add(mat);
+    if (motion.mat === null) mat.visible = false;
+    else if (motion.mat) { mat.scale.y = motion.mat.length / 1.85; mat.position.z = motion.mat.z; }
+
+    const props = buildProps(dark);
+    for (const [name, objs] of Object.entries({ kb: [props.kb], bar: [props.bar], band: [props.bandL, props.bandR], step: [props.step], post: [props.post] })) {
+      for (const o of objs) { o.visible = motion.props.includes(name as Motion['props'][number]); scene.add(o); }
+    }
 
     const rig = buildRig({
       body: dark ? '#8c97a3' : '#a7b0ba',
@@ -98,7 +105,7 @@ export default function ExerciseViewer(props: { motionKey: string; name: string;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       if (!state.current.paused) t += dt * state.current.speed;
-      const intensity = motion.pose(rig, t);
+      const intensity = motion.pose(rig, t, props);
       applyIntensity(rig, intensity);
       controls.update();
       renderer.render(scene, camera);
@@ -106,10 +113,10 @@ export default function ExerciseViewer(props: { motionKey: string; name: string;
       const x = t % motion.cycle;
       const c = motion.cues.find(q => x >= q.from && x < q.to)?.text ?? '';
       if (c !== lastCue) { lastCue = c; setCue(c); }
-      const act = (Object.entries(intensity) as [MuscleId, number][])
+      const act = [...new Set((Object.entries(intensity) as [string, number][])
         .filter(([, v]) => v >= 0.5)
         .sort((a, b) => b[1] - a[1])
-        .map(([k]) => MUSCLE_NAMES[k]);
+        .map(([k]) => MUSCLE_NAMES[k.split(':')[0] as MuscleId]))];
       const key = act.join(',');
       if (key !== lastActive) { lastActive = key; setActive(act); }
       raf = requestAnimationFrame(loop);
@@ -156,4 +163,56 @@ export default function ExerciseViewer(props: { motionKey: string; name: string;
       )}
     </Sheet>
   );
+}
+
+/** Spullen: kettlebell, optrekstang, weerstandsband en verhoging. */
+export function buildProps(dark: boolean): Props {
+  const iron = new THREE.MeshStandardMaterial({ color: dark ? '#3a4048' : '#2b2f33', roughness: 0.55, metalness: 0.35 });
+  const steel = new THREE.MeshStandardMaterial({ color: dark ? '#9aa4ae' : '#7d8790', roughness: 0.35, metalness: 0.6 });
+  const rubber = new THREE.MeshStandardMaterial({ color: '#2f8f5b', roughness: 0.7 });
+  const wood = new THREE.MeshStandardMaterial({ color: dark ? '#6b5a48' : '#b79a77', roughness: 0.9 });
+  const shadow = (m: THREE.Object3D) => { m.traverse(o => { o.castShadow = true; o.receiveShadow = true; }); return m; };
+
+  // Kettlebell: oorsprong in het midden van de handgreep, bol eronder
+  const kb = new THREE.Group();
+  const bell = new THREE.Mesh(new THREE.SphereGeometry(0.085, 28, 20), iron);
+  bell.scale.set(1, 0.95, 1);
+  bell.position.y = -0.13;
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.013, 12, 32, Math.PI), iron);
+  handle.position.y = -0.065;
+  const horns = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.07, 10), iron);
+  for (const sx of [1, -1]) { const h = horns.clone(); h.position.set(sx * 0.06, -0.09, 0); kb.add(h); }
+  kb.add(bell, handle);
+  shadow(kb);
+
+  // Optrekstang met twee steunen
+  const bar = new THREE.Group();
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 1.1, 16), steel);
+  rod.rotation.z = Math.PI / 2;
+  rod.position.set(0, BAR_Y, 0);
+  bar.add(rod);
+  for (const sx of [1, -1]) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.12), steel);
+    post.position.set(sx * 0.55, BAR_Y, -0.05);
+    bar.add(post);
+  }
+  shadow(bar);
+
+  const bandGeo = new THREE.CylinderGeometry(0.008, 0.008, 1, 8);
+  const bandL = new THREE.Mesh(bandGeo, rubber);
+  const bandR = new THREE.Mesh(bandGeo, rubber);
+  shadow(bandL); shadow(bandR);
+
+  const step = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.32), wood);
+  shadow(step);
+
+  // Paal waar de band aan vastzit (zoals een deurpost of rek)
+  const post = new THREE.Group();
+  const pole = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.9, 0.07), wood);
+  pole.position.y = 0.95;
+  const knot = new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 8), rubber);
+  knot.position.set(0, 1.55, -0.04);
+  post.add(pole, knot);
+  shadow(post);
+  return { kb, bar, bandL, bandR, step, post };
 }
