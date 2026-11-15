@@ -49,8 +49,14 @@ function phase(t: number, go: number, hold: number, back: number, rest: number) 
 }
 
 const SIDES = [['L', 1], ['R', -1]] as const;
-const STAND_Y = 0.95;
 const ANKLE_Y = 0.075;
+const LEG = LIMB.thigh + LIMB.shin;
+/** Hoogte van het bekken waarbij de benen bijna gestrekt zijn (knie ~170 graden). */
+function standY(stance = 0.11, dz = 0) {
+  const d = LEG - 0.006;
+  return ANKLE_Y + Math.sqrt(d * d - (stance - 0.095) ** 2 - dz * dz) + 0.02;
+}
+const STAND_Y = standY();
 
 function arm(rig: Rig, side: 'L' | 'R', target: THREE.Vector3, pole: THREE.Vector3, front = V(0, 0, 1)) {
   solveTwoBone(rig.b[`shoulder${side}`], rig.b[`elbow${side}`], LIMB.upperArm, LIMB.forearm, target, pole, front);
@@ -67,7 +73,7 @@ function footFlat(rig: Rig, side: 'L' | 'R', forward = V(0, 0, 1)) {
 /** Staan of hurken: bekken op hoogte y, voeten plat op heupbreedte. */
 function stand(rig: Rig, opts: { y?: number; z?: number; hinge?: number; lean?: number; stance?: number; feetZ?: [number, number]; knees?: number } = {}) {
   resetPose(rig);
-  rig.root.position.set(0, opts.y ?? STAND_Y, opts.z ?? 0);
+  rig.root.position.set(0, opts.y ?? standY(opts.stance ?? 0.11), opts.z ?? 0);
   rig.b.pelvis.rotation.x = opts.hinge ?? 0;
   rig.b.spine.rotation.x = opts.lean ?? 0;
   rig.root.updateMatrixWorld(true);
@@ -135,8 +141,8 @@ function solvePlank(rig: Rig, target: number, toeY: number) {
 function pushup(variant: 'normaal' | 'smal' | 'breed' | 'verhoogd', slow: boolean): Motion {
   const handWidth = variant === 'smal' ? 0.07 : variant === 'breed' ? 0.34 : 0.22;
   const toeY = variant === 'verhoogd' ? STEP_H + 0.015 : 0.015;
-  const top = LIMB.upperArm + LIMB.forearm + 0.02;
-  const bottom = 0.17;
+  const top = 0.05 + LIMB.upperArm + LIMB.forearm - 0.006; // armen gestrekt
+  const bottom = 0.17; // borst ongeveer 6 cm boven de vloer
   const down = slow ? 3 : 1.8;
   let handZ: number | null = null;
   return {
@@ -147,10 +153,10 @@ function pushup(variant: 'normaal' | 'smal' | 'breed' | 'verhoogd', slow: boolea
     focus: variant === 'verhoogd' ? [0, 0.3, 0.8] : [0, 0.24, 0.92],
     camera: variant === 'verhoogd' ? [3.1, 1.3, 1.1] : [2.5, 0.95, 1.45],
     cues: [
-      { from: 0, to: down, text: slow ? '3 tellen zakken. Ellebogen schuin naar achteren, niet wijd.' : variant === 'smal' ? 'Zakken met je handen dicht bij elkaar. Ellebogen langs je lichaam.' : 'Zakken, gecontroleerd. Ellebogen schuin naar achteren, niet wijd.' },
+      { from: 0, to: down, text: (slow ? '3 tellen zakken. ' : 'Zakken. ') + (variant === 'smal' ? 'Handen dicht bij elkaar, ellebogen langs je lichaam.' : 'Ellebogen schuin naar achteren, zo’n 45 graden van je romp. Van bovenaf een pijl, geen T.') },
       { from: down, to: down + 0.4, text: 'Borst net boven de vloer. Romp blijft een rechte plank.' },
       { from: down + 0.4, to: down + 1.4, text: 'Omhoog duwen en uitademen. Billen niet laten zakken.' },
-      { from: down + 1.4, to: down + 3.2, text: variant === 'verhoogd' ? 'Voeten op de verhoging: meer werk voor je schouders en bovenkant borst.' : 'Bovenin: armen gestrekt, schouders weg van je oren.' },
+      { from: down + 1.4, to: down + 3.2, text: variant === 'verhoogd' ? 'Voeten op de verhoging: meer werk voor je schouders en bovenkant borst.' : 'Bovenin: armen gestrekt, handen onder je schouders, schouders weg van je oren.' },
     ],
     pose(rig, t, p) {
       resetPose(rig);
@@ -161,7 +167,7 @@ function pushup(variant: 'normaal' | 'smal' | 'breed' | 'verhoogd', slow: boolea
       const d = phase(t, down, 0.4, 1.0, 1.8);
       solvePlank(rig, lerp(top, bottom, d), toeY);
       for (const [side, sx] of SIDES) {
-        const pole = V(sx * (variant === 'breed' ? 0.9 : variant === 'smal' ? 0.2 : 0.45), 0.4, -1);
+        const pole = V(sx * (variant === 'breed' ? 1.4 : variant === 'smal' ? 0.25 : 0.85), 0.4, -1);
         arm(rig, side, V(sx * handWidth, 0.05, handZ - 0.02), pole);
         aim(rig.b[`wrist${side}`], V(0, 0, 1), V(0, -1, 0));
       }
@@ -196,15 +202,15 @@ function gobletSquat(slow: boolean): Motion {
     camera: [2.3, 1.3, 2.2],
     cues: [
       { from: 0, to: down, text: slow ? '3 tellen zakken. Heupen naar achteren en omlaag, borst omhoog.' : 'Zakken: heupen naar achteren en omlaag, borst omhoog.' },
-      { from: down, to: down + 0.5, text: 'Onderin: knieën in de richting van je tenen, hielen op de grond.' },
+      { from: down, to: down + 0.5, text: 'Onderin: heupen tot kniehoogte of lager, ellebogen binnen je knieën, hielen op de grond.' },
       { from: down + 0.5, to: down + 1.7, text: 'Omhoog duwen vanuit je hielen. Billen aanspannen.' },
-      { from: down + 1.7, to: down + 3, text: 'Bovenin: rechtop, kettlebell tegen je borst.' },
+      { from: down + 1.7, to: down + 3, text: 'Bovenin: rechtop, kettlebell aan de hoorns tegen je borst, ellebogen omlaag.' },
     ],
     pose(rig, t, p) {
       const d = phase(t, down, 0.5, 1.2, 1.3);
-      stand(rig, { y: lerp(STAND_Y - 0.01, 0.52, d), z: lerp(0, -0.2, d), hinge: 0.6 * d, lean: -0.2 * d, stance: 0.16, knees: 0.4 });
+      stand(rig, { y: lerp(standY(0.17), 0.39, d), z: lerp(0, -0.17, d), hinge: 0.7 * d, lean: -0.32 * d, stance: 0.17, knees: lerp(0.4, 0.75, d) });
       for (const [side, sx] of SIDES) {
-        arm(rig, side, local(rig.b.chest, V(sx * 0.055, 0.05, 0.24)), V(sx * 0.6, -1, -0.1));
+        arm(rig, side, local(rig.b.chest, V(sx * 0.055, 0.04, 0.23)), V(sx * 0.15, -1, 0.1));
         aim(rig.b[`wrist${side}`], V(0, 1, 0), V(-sx, 0, 0));
       }
       const grip = mid(rig.palmL, rig.palmR);
@@ -221,7 +227,7 @@ function gobletSquat(slow: boolean): Motion {
 export const BAR_Y = 2.2;
 
 function pullup(chin: boolean, slow: boolean): Motion {
-  const grip = chin ? 0.16 : 0.34;
+  const grip = chin ? 0.2 : 0.26; // chin-up op schouderbreedte, pull-up iets breder
   const down = slow ? 3 : 1.6;
   return {
     key: `${chin ? 'chinup' : 'pullup'}${slow ? '-slow' : ''}`,
@@ -233,18 +239,18 @@ function pullup(chin: boolean, slow: boolean): Motion {
     camera: [2.3, 1.75, 2.6],
     cues: [
       { from: 0, to: 1.4, text: chin ? 'Optrekken met je handpalmen naar je toe. Ellebogen naar je heupen.' : 'Optrekken: schouderbladen eerst omlaag, dan ellebogen naar je zij.' },
-      { from: 1.4, to: 1.9, text: 'Kin boven de stang. Niet zwaaien met je benen.' },
-      { from: 1.9, to: 1.9 + down, text: slow ? '3 tellen zakken, gecontroleerd tot gestrekte armen.' : 'Gecontroleerd zakken tot je armen bijna gestrekt zijn.' },
-      { from: 1.9 + down, to: 2.7 + down, text: 'Onderin: even hangen, schouders actief.' },
+      { from: 1.4, to: 1.9, text: 'Kin boven de stang zonder je nek te strekken. Niet zwaaien.' },
+      { from: 1.9, to: 1.9 + down, text: slow ? '3 tellen zakken, gecontroleerd tot gestrekte armen.' : 'Gecontroleerd zakken tot je armen gestrekt zijn.' },
+      { from: 1.9 + down, to: 2.7 + down, text: 'Onderin: armen helemaal gestrekt. Elke herhaling begint vanuit hangen.' },
     ],
     pose(rig, t) {
       const up = phase(t, 1.4, 0.5, down, 0.8);
       resetPose(rig);
-      const reach = LIMB.upperArm + LIMB.forearm + 0.02;
+      const reach = LIMB.upperArm + LIMB.forearm - 0.004; // dead hang: armen gestrekt
       const shoulderOffset = 0.52; // schouder boven root (bekken)
       const handY = BAR_Y - 0.02;
       const sBottom = handY - Math.sqrt(reach * reach - (grip - 0.195) ** 2);
-      const sTop = BAR_Y - 0.2;
+      const sTop = BAR_Y - 0.1; // kin net boven de stang
       const sy = lerp(sBottom, sTop, up);
       rig.root.position.set(0, sy - shoulderOffset, lerp(-0.02, -0.07, up));
       rig.b.spine.rotation.x = -0.1 * up;
@@ -255,11 +261,11 @@ function pullup(chin: boolean, slow: boolean): Motion {
       }
       rig.root.updateMatrixWorld(true);
       for (const [side, sx] of SIDES) {
-        const pole = chin ? V(sx * 0.3, -0.5, 1) : V(sx * 1, -0.4, 0.1);
+        const pole = chin ? V(sx * 0.3, -0.6, 1) : V(sx * 0.75, -0.6, 0.5);
         arm(rig, side, V(sx * grip, handY, 0), pole, V(0, 0, chin ? -1 : 1));
         aim(rig.b[`wrist${side}`], V(0, 1, 0), V(0, 0, chin ? -1 : 1));
       }
-      rig.b.neck.rotation.x = -0.15 * up;
+      rig.b.neck.rotation.x = 0; // hoofd neutraal, niet met je kin naar de stang reiken
       return {
         rug: 0.45 + 0.55 * up, trapezius: 0.3 + 0.4 * up, biceps: chin ? 0.45 + 0.55 * up : 0.3 + 0.45 * up,
         onderarmen: 0.65, schouders: 0.2 + 0.25 * up, buik: 0.35,
@@ -282,23 +288,30 @@ function row(): Motion {
     focus: [0, 0.7, 0.1],
     camera: [-2.5, 1.3, 1.4],
     cues: [
-      { from: 0, to: 1.0, text: 'Trek de kettlebell naar je heup. Elleboog langs je lichaam naar achteren.' },
-      { from: 1.0, to: 1.5, text: 'Bovenin: schouderblad naar achteren, rug blijft plat.' },
+      { from: 0, to: 1.0, text: 'Trek de kettlebell naar je heup, niet naar je borst. Elleboog dicht langs je lichaam.' },
+      { from: 1.0, to: 1.5, text: 'Bovenin: schouderblad naar achteren, niet draaien met je romp of schouder optrekken.' },
       { from: 1.5, to: 3.1, text: 'Rustig laten zakken tot je arm gestrekt is.' },
-      { from: 3.1, to: 3.7, text: 'Heupen naar achteren, rug plat, andere hand op je knie.' },
+      { from: 3.1, to: 3.7, text: 'Rug plat en bijna horizontaal, hand steunt op je bovenbeen, kijk naar de vloer.' },
     ],
     pose(rig, t, p) {
       const up = phase(t, 1.0, 0.5, 1.6, 0.6);
-      stand(rig, { y: 0.84, z: -0.14, hinge: 1.0, lean: 0.0, stance: 0.15, feetZ: [0.2, -0.12], knees: 0.2 });
-      rig.b.neck.rotation.x = -0.35;
+      // Spreidstand, linkervoet voor. Romp bijna horizontaal (ca. 15-20 graden), rug plat.
+      stand(rig, { y: 0.8, z: -0.12, hinge: 1.15, lean: 0.12, stance: 0.15, feetZ: [0.3, -0.55], knees: 0.15 });
+      rig.b.neck.rotation.x = 0; // nek in het verlengde van de rug, blik naar de vloer
       rig.root.updateMatrixWorld(true);
       const S = worldPos(rig.b.shoulderR);
-      const bottom = S.clone().add(V(0.0, -0.55, 0.04));
-      const top = S.clone().add(V(-0.03, -0.27, -0.3));
-      arm(rig, 'R', lerpV(bottom, top, up), V(-0.2, 1, -0.7));
+      const hipR = worldPos(rig.b.hipR);
+      const bottom = S.clone().add(V(0.0, -(LIMB.upperArm + LIMB.forearm - 0.01), 0.02));
+      // Bovenin: elleboog naast de romp, iets boven de rug, onderarm loodrecht
+      const E = S.clone().lerp(hipR, 0.5).add(V(-0.05, 0.07, 0));
+      const topW = E.clone().add(V(0, -LIMB.forearm + 0.01, 0));
+      const w = lerpV(bottom, topW, up);
+      const pole = lerpV(V(-0.2, 0.3, -1), E.clone().sub(S).normalize(), up);
+      arm(rig, 'R', w, pole);
       aim(rig.b.wristR, worldPos(rig.b.wristR).sub(worldPos(rig.b.elbowR)), V(1, 0, 0));
-      const knee = worldPos(rig.b.kneeL);
-      arm(rig, 'L', knee.add(V(0.0, 0.06, 0.03)), V(0.9, 0.3, -0.5));
+      // Linkerhand steunt op het bovenbeen, net boven de knie
+      const support = worldPos(rig.b.kneeL).lerp(worldPos(rig.b.hipL), 0.15).add(V(0.0, 0.07, 0));
+      arm(rig, 'L', support, V(0.9, 0.4, -0.4));
       placeKb(p, worldPos(rig.palmR), V(0, -1, 0), V(0, 0, 1));
       return {
         'rug:R': 0.45 + 0.55 * up, 'rug:L': 0.2, trapezius: 0.3 + 0.45 * up, 'biceps:R': 0.25 + 0.45 * up,
@@ -354,7 +367,7 @@ function curl(slow: boolean): Motion {
 // ---------------------------------------------------------------------------
 
 function facePull(): Motion {
-  const anchor = V(0, 1.55, 1.3);
+  const anchor = V(0, 1.7, 1.3); // op ooghoogte
   return {
     key: 'facepull',
     title: 'Face pulls met band',
@@ -364,18 +377,19 @@ function facePull(): Motion {
     focus: [0, 1.25, 0.5],
     camera: [2.4, 1.7, 1.9],
     cues: [
-      { from: 0, to: 1.0, text: 'Trek de band naar je gezicht. Ellebogen hoog en naar buiten.' },
-      { from: 1.0, to: 1.6, text: 'Handen naast je oren, schouderbladen samen.' },
+      { from: 0, to: 1.0, text: 'Trek naar je voorhoofd, handen uit elkaar. Ellebogen op of boven schouderhoogte.' },
+      { from: 1.0, to: 1.6, text: 'Handen naast je oren, knokkels omhoog, schouderbladen samen. Even vasthouden.' },
       { from: 1.6, to: 3.0, text: 'Rustig terug tot je armen gestrekt zijn.' },
-      { from: 3.0, to: 3.5, text: 'Band vast op ooghoogte. Rechtop staan.' },
+      { from: 3.0, to: 3.5, text: 'Band vast op ooghoogte, armen gestrekt. Schouders laag.' },
     ],
     pose(rig, t, p) {
       const pull = phase(t, 1.0, 0.6, 1.4, 0.5);
       stand(rig);
       p.post.position.set(anchor.x, 0, anchor.z + 0.03);
       for (const [side, sx] of SIDES) {
-        const start = V(sx * 0.1, 1.46, 0.6);
-        const end = V(sx * 0.26, 1.6, 0.1);
+        const S = worldPos(rig.b[`shoulder${side}`]);
+        const start = S.clone().add(anchor.clone().add(V(sx * 0.08, 0, 0)).sub(S).normalize().multiplyScalar(LIMB.upperArm + LIMB.forearm - 0.02));
+        const end = V(sx * 0.2, 1.7, 0.03); // handen naast je oren
         arm(rig, side, lerpV(start, end, pull), V(sx * 1, 0.5, -0.3));
         aim(rig.b[`wrist${side}`], anchor.clone().sub(worldPos(rig.b[`wrist${side}`])), V(0, 1, 0));
       }
@@ -401,9 +415,9 @@ function floorPress(pause: boolean): Motion {
     focus: [0, 0.22, 0.3],
     camera: [-2.2, 1.55, 1.2],
     cues: [
-      { from: 0, to: 1.6, text: 'Laten zakken tot je bovenarm de vloer raakt. Elleboog schuin langs je lichaam.' },
+      { from: 0, to: 1.6, text: 'Laten zakken tot je bovenarm de vloer raakt. Elleboog op 45 graden van je romp.' },
       { from: 1.6, to: 1.6 + hold, text: pause ? 'Onderin 2 tellen stil, niet ontspannen.' : 'Bovenarm raakt de vloer.' },
-      { from: 1.6 + hold, to: 2.6 + hold, text: 'Recht omhoog duwen boven je schouder. Pols recht.' },
+      { from: 1.6 + hold, to: 2.6 + hold, text: 'Recht omhoog duwen boven je schouder. Pols recht, onderarm loodrecht. Niet stuiteren.' },
       { from: 2.6 + hold, to: 3.4 + hold, text: 'Bovenin: arm gestrekt, schouder blijft op de vloer.' },
     ],
     pose(rig, t, p) {
@@ -417,9 +431,10 @@ function floorPress(pause: boolean): Motion {
         footFlat(rig, side);
       }
       const S = worldPos(rig.b.shoulderR);
-      const top = S.clone().add(V(0.02, LIMB.upperArm + LIMB.forearm - 0.02, 0));
-      const bottom = S.clone().add(V(-0.17, 0.25, 0.18));
-      arm(rig, 'R', lerpV(top, bottom, d), V(-1, -0.35, 0.6));
+      const top = S.clone().add(V(0.0, LIMB.upperArm + LIMB.forearm - 0.006, 0));
+      // Onderin: bovenarm op de vloer, 45 graden van je romp, onderarm loodrecht
+      const bottom = S.clone().add(V(-0.21, LIMB.forearm - 0.01, 0.21));
+      arm(rig, 'R', lerpV(top, bottom, d), V(-1, -0.6, 1));
       aim(rig.b.wristR, V(0, 1, 0), V(1, 0, 0));
       // Linkerarm ontspannen naast het lichaam
       const SL = worldPos(rig.b.shoulderL);
@@ -444,18 +459,20 @@ function press(): Motion {
     focus: [0, 1.2, 0],
     camera: [-2.1, 1.5, 2.4],
     cues: [
-      { from: 0, to: 1.2, text: 'Recht omhoog drukken. Billen en buik aanspannen, niet achterover leunen.' },
-      { from: 1.2, to: 1.7, text: 'Bovenin: arm gestrekt naast je oor.' },
+      { from: 0, to: 1.2, text: 'Recht omhoog drukken, onderarm blijft loodrecht. Billen en buik aan, niet achterover leunen.' },
+      { from: 1.2, to: 1.7, text: 'Bovenin: arm gestrekt, kettlebell boven je schouder, niet ervoor.' },
       { from: 1.7, to: 3.3, text: 'Gecontroleerd terug naar je schouder.' },
-      { from: 3.3, to: 4.0, text: 'Startpositie: kettlebell tegen je onderarm, pols recht.' },
+      { from: 3.3, to: 4.0, text: 'Rack: kettlebell op de buitenkant van je onderarm, pols recht, elleboog tegen je ribben.' },
     ],
     pose(rig, t, p) {
       const up = phase(t, 1.2, 0.5, 1.6, 0.7);
       stand(rig);
       const S = worldPos(rig.b.shoulderR);
-      const rack = S.clone().add(V(0.07, -0.04, 0.15));
-      const top = S.clone().add(V(0.01, LIMB.upperArm + LIMB.forearm - 0.03, 0.02));
-      arm(rig, 'R', lerpV(rack, top, up), V(-0.3, -1, 0.6));
+      // Rack: onderarm loodrecht, elleboog tegen je ribben en iets voor je lichaam
+      const rack = S.clone().add(V(0.06, -0.03, 0.14));
+      // Bovenin: arm gestrekt, kettlebell boven je schouder, bovenarm naast je oor
+      const top = S.clone().add(V(0.05, LIMB.upperArm + LIMB.forearm - 0.008, -0.01));
+      arm(rig, 'R', lerpV(rack, top, up), lerpV(V(0.25, -1, 0.5), V(-0.6, 0.2, 0.6), up));
       aim(rig.b.wristR, worldPos(rig.b.wristR).sub(worldPos(rig.b.elbowR)), V(0, 0, 1));
       rig.b.shoulderL.rotation.set(0, 0, 0.12);
       rig.b.elbowL.rotation.set(-0.15, 0, 0);
@@ -483,7 +500,7 @@ function lateralRaise(): Motion {
     focus: [0, 1.05, 0],
     camera: [0.9, 1.4, 3.0],
     cues: [
-      { from: 0, to: 1.1, text: 'Armen zijwaarts omhoog tot schouderhoogte. Ellebogen licht gebogen.' },
+      { from: 0, to: 1.1, text: 'Armen omhoog tot schouderhoogte, iets voor je lichaam (schuin, niet recht opzij). Ellebogen licht gebogen.' },
       { from: 1.1, to: 1.5, text: 'Bovenin: schouders laag houden, niet optrekken.' },
       { from: 1.5, to: 3.1, text: 'Langzaam laten zakken tegen de band in.' },
       { from: 3.1, to: 3.6, text: 'Sta met beide voeten op het midden van de band.' },
@@ -491,9 +508,12 @@ function lateralRaise(): Motion {
     pose(rig, t, p) {
       const u = phase(t, 1.1, 0.4, 1.6, 0.5);
       stand(rig);
-      const th = lerp(0.12, 1.45, u);
+      // Schouderblad-vlak: armen 25 graden voor je zij, tot schouderhoogte
+      const elev = lerp(0.12, Math.PI / 2 - 0.04, u);
+      const plane = (25 * Math.PI) / 180;
       for (const [side, sx] of SIDES) {
-        rig.b[`shoulder${side}`].rotation.set(-0.08, 0, sx * th);
+        const dir = V(sx * Math.sin(elev) * Math.cos(plane), -Math.cos(elev), Math.sin(elev) * Math.sin(plane));
+        aim(rig.b[`shoulder${side}`], dir, V(0, 1, 0).add(V(0, 0, 1).multiplyScalar(Math.cos(elev))));
         rig.b[`elbow${side}`].rotation.set(-0.3, 0, 0);
       }
       rig.root.updateMatrixWorld(true);
@@ -526,7 +546,7 @@ function tricepsExt(): Motion {
     pose(rig, t, p) {
       const d = phase(t, 1.6, 0.4, 1.1, 0.5); // 1 = gebogen
       stand(rig);
-      const phi = lerp(0.1, 2.35, d);
+      const phi = lerp(0.04, 2.3, d);
       for (const [side, sx] of SIDES) {
         const S = worldPos(rig.b[`shoulder${side}`]);
         const E = S.clone().add(V(-sx * 0.08, LIMB.upperArm - 0.02, 0.07));

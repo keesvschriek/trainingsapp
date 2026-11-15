@@ -8,6 +8,7 @@ import { APK_URL, isNative } from '../native';
 import { pushToGarmin } from '../garmin';
 import { NotifySection } from './NotifySection';
 import { setThemePref, type ThemePref } from '../theme';
+import { usePushupSettings } from '../pushups';
 
 export function Settings() {
   return (
@@ -16,6 +17,7 @@ export function Settings() {
       <IntervalsSection />
       <GarminSection />
       <NotifySection />
+      <PushupSection />
       <SyncSection />
       <BackupSection />
       <h2>Over</h2>
@@ -295,6 +297,33 @@ function ThemeSection() {
         {opts.map(([v, l]) => (
           <button key={v} className={pref === v ? 'active' : ''} onClick={() => { setPref(v); void setThemePref(v); }}>{l}</button>
         ))}
+      </div>
+    </>
+  );
+}
+
+function PushupSection() {
+  const { goal, setSize, show } = usePushupSettings();
+  const num = (v: string, min: number, max: number) => Math.max(min, Math.min(max, Math.round(Number(v) || 0)));
+  return (
+    <>
+      <h2>Push-ups tussendoor</h2>
+      <div className="card">
+        <label className="row" style={{ justifyContent: 'space-between' }}>
+          <span>Kaart tonen op Vandaag</span>
+          <input type="checkbox" checked={show} onChange={e => void setSetting('pushupShow', e.target.checked)} />
+        </label>
+        <label className="row mt" style={{ justifyContent: 'space-between' }}>
+          <span>Dagdoel</span>
+          <input type="number" inputMode="numeric" min={10} max={1000} style={{ width: 90 }} defaultValue={goal} key={`g${goal}`}
+            onBlur={e => void setSetting('pushupGoal', num(e.target.value, 10, 1000))} aria-label="Dagdoel push-ups" />
+        </label>
+        <label className="row mt" style={{ justifyContent: 'space-between' }}>
+          <span>Grote knop telt</span>
+          <input type="number" inputMode="numeric" min={1} max={200} style={{ width: 90 }} defaultValue={setSize} key={`s${setSize}`}
+            onBlur={e => void setSetting('pushupSet', num(e.target.value, 1, 200))} aria-label="Aantal per set" />
+        </label>
+        <p className="muted small" style={{ marginBottom: 0 }}>Houd elke set ruim onder je maximum, ongeveer de helft. Dan herstel je snel genoeg om het elke dag te doen.</p>
       </div>
     </>
   );

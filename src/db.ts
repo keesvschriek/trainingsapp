@@ -36,7 +36,7 @@ export interface StrengthSet extends Base {
   weightKg: number;
 }
 
-export type MetricKind = 'weight' | 'waist' | 'pullupMax' | 'cooper' | 'tenK' | 'gtg' | 'pressReps';
+export type MetricKind = 'weight' | 'waist' | 'pullupMax' | 'cooper' | 'tenK' | 'gtg' | 'pressReps' | 'pushups';
 
 export interface Metric extends Base {
   date: ISODate;

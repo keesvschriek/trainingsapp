@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Bar, CartesianGrid, ComposedChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, ComposedChart, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { db, alive, remove, type MetricKind } from '../db';
 import { addDays, shortDate, today } from '../dates';
 import { GOALS, blockOfWeek, mondayOfWeek, planForWeek, weekOf } from '../plan';
@@ -8,6 +8,7 @@ import { METRICS, MetricEditor, formatMetric } from '../editors';
 import { useBlocks, useMoves } from '../ui';
 import { loadSeries } from '../recovery';
 import { cssColor } from '../theme';
+import { dayTotal, goalStreak, lastDays, setsByDay, usePushupRecords, usePushupSettings } from '../pushups';
 
 
 export function Progress() {
@@ -25,7 +26,7 @@ export function Progress() {
 
   const runs = useLiveQuery(async () => (await db.workouts.where('kind').equals('run').toArray()).filter(alive), [], []);
   const strength = useLiveQuery(async () => (await db.workouts.where('kind').equals('strength').toArray()).filter(alive), [], []);
-  const metrics = useLiveQuery(async () => (await db.metrics.toArray()).filter(alive).filter(m => m.kind !== 'gtg').sort((a, b) => a.date.localeCompare(b.date)), [], []);
+  const metrics = useLiveQuery(async () => (await db.metrics.toArray()).filter(alive).filter(m => m.kind !== 'gtg' && m.kind !== 'pushups').sort((a, b) => a.date.localeCompare(b.date)), [], []);
   const gtgTotal = useLiveQuery(async () => (await db.metrics.where('kind').equals('gtg').toArray()).filter(alive).reduce((s, m) => s + m.value, 0), [], 0);
 
   const weekData = [];
@@ -204,9 +205,54 @@ export function Progress() {
         );
       })}
 
+      <PushupStats />
+
       <p className="muted small">Pull-ups tussendoor sinds de start: {gtgTotal}.</p>
 
       {add && <MetricEditor kind={add} onClose={() => setAdd(null)} />}
+    </>
+  );
+}
+
+function PushupStats() {
+  const ACCENT = cssColor('--accent');
+  const GREY = cssColor('--muted');
+  const GRID = cssColor('--line');
+  const { goal } = usePushupSettings();
+  const records = usePushupRecords();
+  if (records.length === 0) return null;
+  const byDay = setsByDay(records);
+  const t = today();
+  const days = lastDays(byDay, 14, t);
+  const week = lastDays(byDay, 7, t);
+  const weekTotal = week.reduce((s, d) => s + d.total, 0);
+  const all = [...byDay.values()].reduce((s, sets) => s + dayTotal(sets), 0);
+  const best = Math.max(...[...byDay.values()].map(dayTotal));
+  const streak = goalStreak(byDay, goal, t);
+  const data = days.map(d => ({ dag: shortDate(d.date), aantal: d.total }));
+  return (
+    <>
+      <h2>Push-ups tussendoor</h2>
+      <div className="card">
+        <div className="stat-row">
+          <div><div className="num">{weekTotal}</div><div className="muted small">laatste 7 dagen</div></div>
+          <div><div className="num">{Math.round(weekTotal / 7)}</div><div className="muted small">gemiddeld per dag</div></div>
+          <div><div className="num">{streak}</div><div className="muted small">{streak === 1 ? 'dag' : 'dagen'} doel op rij</div></div>
+        </div>
+        <div style={{ height: 170 }} className="mt">
+          <ResponsiveContainer>
+            <BarChart data={data} margin={{ top: 8, right: 4, left: -22, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="dag" tick={{ fontSize: 10 }} tickLine={false} axisLine={{ stroke: GRID }} interval="preserveEnd" minTickGap={14} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
+              <Tooltip formatter={v => [`${v} push-ups`, '']} />
+              <ReferenceLine y={goal} stroke={GREY} strokeDasharray="4 4" />
+              <Bar isAnimationActive={false} dataKey="aantal" fill={ACCENT} radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="muted small" style={{ marginBottom: 0 }}>Gestippelde lijn: dagdoel {goal}. Totaal sinds je begon: {all}. Beste dag: {best}.</p>
+      </div>
     </>
   );
 }

@@ -9,6 +9,7 @@ import { Contour, Icon, Show3D, useBlocks, useMoves, fmt } from '../ui';
 import { MetricEditor, StrengthLogger, TEST_METRIC, WorkoutEditor, METRICS, exercisesFor, formatMetric } from '../editors';
 import { MoveSheet } from '../moves';
 import { RecoveryCard } from './RecoveryCard';
+import { PushupCard } from './PushupCard';
 import { isNative } from '../native';
 
 type Editor =
@@ -170,6 +171,8 @@ export function Today() {
       )}
 
       {isToday && plan.status === 'actief' && <RecoveryCard />}
+
+      {date <= today() && <PushupCard date={date} />}
 
       {gtgDay(date) && !blocking && (
         <div className="rowcard" style={{ cursor: 'default' }}>
