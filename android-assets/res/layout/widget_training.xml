@@ -21,7 +21,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:ellipsize="end"
-        android:maxLines="2"
+        android:maxLines="1"
         android:text="Training"
         android:textColor="@color/w_ink"
         android:textSize="16sp"
@@ -42,6 +42,7 @@
         android:layout_weight="1"
         android:minHeight="6dp" />
 
+    <!-- Push-ups -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -54,30 +55,39 @@
             android:layout_weight="1"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/w_count"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-condensed"
-                android:text="0 / 100"
-                android:textColor="@color/w_ink"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:gravity="bottom"
+                android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/w_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Push-ups vandaag"
-                android:textColor="@color/w_muted"
-                android:textSize="11sp" />
+                <TextView
+                    android:id="@+id/w_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-condensed"
+                    android:text="0 / 100"
+                    android:textColor="@color/w_ink"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/w_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="2dp"
+                    android:text="Push-ups vandaag"
+                    android:textColor="@color/w_muted"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
             <ProgressBar
                 android:id="@+id/w_progress"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="match_parent"
-                android:layout_height="6dp"
-                android:layout_marginTop="6dp"
+                android:layout_height="5dp"
+                android:layout_marginTop="4dp"
                 android:max="100"
                 android:progress="0"
                 android:progressDrawable="@drawable/widget_progress" />
@@ -86,17 +96,88 @@
         <Button
             android:id="@+id/w_add"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_marginStart="14dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="12dp"
             android:background="@drawable/widget_button"
             android:fontFamily="sans-serif-condensed"
-            android:minWidth="84dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
+            android:minWidth="76dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
             android:text="+20"
             android:textAllCaps="false"
             android:textColor="@color/w_on_accent"
-            android:textSize="18sp"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Pull-ups (alleen op pull-updagen) -->
+    <LinearLayout
+        android:id="@+id/w_pull_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="bottom"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/w_pull_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-condensed"
+                    android:text="0 / 15"
+                    android:textColor="@color/w_ink"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/w_pull_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="2dp"
+                    android:text="Pull-ups vandaag"
+                    android:textColor="@color/w_muted"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/w_pull_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="5dp"
+                android:layout_marginTop="4dp"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_progress" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/w_pull_add"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/widget_button_soft"
+            android:fontFamily="sans-serif-condensed"
+            android:minWidth="76dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:text="+3"
+            android:textAllCaps="false"
+            android:textColor="@color/w_accent"
+            android:textSize="17sp"
             android:textStyle="bold" />
     </LinearLayout>
 </LinearLayout>

@@ -3,7 +3,7 @@ import { App as CapApp } from '@capacitor/app';
 import { db, alive, getSetting, save, type Metric } from './db';
 import { addDays, today, type ISODate } from './dates';
 import { planForDay, type PlannedItem } from './plan';
-import { autoSetSize, dayTotal, DEFAULT_GOAL, DEFAULT_SET, newSetId, restReason, setsByDay } from './pushups';
+import { autoSetSize, dayTotal, DEFAULT_GOAL, DEFAULT_SET, newSetId, pullupDay, PULLUP_SETS_PER_DAY, restReason, setsByDay } from './pushups';
 import { isNative } from './native';
 
 // Koppeling met de widget op het startscherm (Android).
@@ -15,17 +15,20 @@ interface WidgetBridge {
 }
 const Bridge = registerPlugin<WidgetBridge>('WidgetBridge');
 
-export interface WidgetDay { title: string; sub: string; rest: boolean }
+export interface WidgetDay { title: string; sub: string; rest: boolean; pull: boolean }
 export interface WidgetSnapshot {
   updated: number;
   goal: number;
   setSize: number;
   days: Record<ISODate, WidgetDay>;
   counts: Record<ISODate, number>;
+  pullSet: number;
+  pullGoal: number;
+  pullCounts: Record<ISODate, number>;
 }
 
 /** Wat de widget voor een dag laat zien. */
-export function describeDay(items: PlannedItem[], status: 'voor' | 'actief'): Omit<WidgetDay, 'rest'> {
+export function describeDay(items: PlannedItem[], status: 'voor' | 'actief'): Omit<WidgetDay, 'rest' | 'pull'> {
   const training = items.filter(i => i.kind !== 'rest' && i.kind !== 'free');
   const main = training.find(i => !i.optional) ?? training[0] ?? items[0];
   if (!main) return { title: 'Rust', sub: '' };
@@ -49,6 +52,13 @@ export async function buildSnapshot(now: ISODate = today()): Promise<WidgetSnaps
     getSetting('pushupSetAuto', true),
     db.metrics.where('kind').equals('pushupMax').toArray().then(r => r.filter(alive)),
   ]);
+  const [pullMaxes, gtgs] = await Promise.all([
+    db.metrics.where('kind').equals('pullupMax').toArray().then(r => r.filter(alive)),
+    db.metrics.where('kind').equals('gtg').toArray().then(r => r.filter(alive)),
+  ]);
+  const lastPullMax = pullMaxes.sort((a, b) => a.date.localeCompare(b.date) || a.updatedAt - b.updatedAt).slice(-1)[0]?.value;
+  const pullSet = autoSetSize(lastPullMax, 3);
+  const pullCounts: Record<ISODate, number> = {};
   const lastMax = maxes.sort((a, b) => a.date.localeCompare(b.date) || a.updatedAt - b.updatedAt).slice(-1)[0]?.value;
   const byDay = setsByDay(records);
   const days: Record<ISODate, WidgetDay> = {};
@@ -56,10 +66,11 @@ export async function buildSnapshot(now: ISODate = today()): Promise<WidgetSnaps
   for (let i = 0; i < 8; i++) {
     const d = addDays(now, i);
     const plan = planForDay(d, events, moves);
-    days[d] = { ...describeDay(plan.items, plan.status), rest: restReason(plan.items) !== null };
+    days[d] = { ...describeDay(plan.items, plan.status), rest: restReason(plan.items) !== null, pull: pullupDay(plan) };
     counts[d] = dayTotal(byDay.get(d));
+    pullCounts[d] = gtgs.find(m => m.id === `gtg-${d}`)?.value ?? 0;
   }
-  return { updated: Date.now(), goal, setSize: auto ? autoSetSize(lastMax, manualSet) : manualSet, days, counts };
+  return { updated: Date.now(), goal, setSize: auto ? autoSetSize(lastMax, manualSet) : manualSet, days, counts, pullSet, pullGoal: pullSet * PULLUP_SETS_PER_DAY, pullCounts };
 }
 
 /** Sets die via de widget zijn getikt in de app zetten. */
@@ -67,10 +78,18 @@ export async function importWidgetSets(): Promise<number> {
   if (!isNative) return 0;
   try {
     const { sets } = await Bridge.takePending();
-    const list = JSON.parse(sets || '[]') as { date: ISODate; value: number; ts: number }[];
+    const list = JSON.parse(sets || '[]') as { date: ISODate; value: number; ts: number; type?: 'pushups' | 'pullups' }[];
     for (const s of list) {
       if (!s.date || !(s.value > 0)) continue;
-      await save('metrics', { id: newSetId(s.date, s.ts), date: s.date, kind: 'pushups', value: s.value } as Metric);
+      if (s.type === 'pullups') {
+        // Pull-ups tussendoor staan als één totaal per dag
+        const id = `gtg-${s.date}`;
+        const cur = await db.metrics.get(id);
+        const base = cur && !cur.deleted ? cur.value : 0;
+        await save('metrics', { id, date: s.date, kind: 'gtg', value: base + s.value } as Metric);
+      } else {
+        await save('metrics', { id: newSetId(s.date, s.ts), date: s.date, kind: 'pushups', value: s.value } as Metric);
+      }
     }
     return list.length;
   } catch {

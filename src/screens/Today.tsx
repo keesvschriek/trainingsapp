@@ -10,6 +10,7 @@ import { MetricEditor, StrengthLogger, TEST_METRIC, WorkoutEditor, METRICS, exer
 import { MoveSheet } from '../moves';
 import { RecoveryCard } from './RecoveryCard';
 import { PushupCard } from './PushupCard';
+import { usePullupSet } from '../pushups';
 import { isNative } from '../native';
 
 type Editor =
@@ -60,6 +61,7 @@ export function Today() {
   const checks = useLiveQuery(async () => (await db.checks.where('date').equals(date).toArray()).filter(alive), [date], []);
   const metrics = useLiveQuery(async () => (await db.metrics.where('date').equals(date).toArray()).filter(alive), [date], []);
   const gtg = metrics.find(m => m.id === `gtg-${date}`);
+  const pull = usePullupSet();
 
   const monday = mondayOf(date);
   const sunday = addDays(monday, 6);
@@ -178,11 +180,11 @@ export function Today() {
         <div className="rowcard" style={{ cursor: 'default' }}>
           <div className="grow">
             <div className="val">Pull-ups tussendoor</div>
-            <div className="lbl">4 tot 5 keer 3, ruim voor je moe bent</div>
+            <div className="lbl">4 tot 5 keer {pull.setSize}, ruim voor je moe bent · doel {pull.goal}</div>
           </div>
           <button className="btn secondary small" onClick={() => bumpGtg(-1)} aria-label="Min 1">−1</button>
           <span className="big" style={{ minWidth: 34, textAlign: 'center' }}>{gtg?.value ?? 0}</span>
-          <button className="btn small" onClick={() => bumpGtg(3)}>+3</button>
+          <button className="btn small" onClick={() => bumpGtg(pull.setSize)}>+{pull.setSize}</button>
         </div>
       )}
 

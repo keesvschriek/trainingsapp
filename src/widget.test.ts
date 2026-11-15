@@ -17,3 +17,13 @@ describe('widget', () => {
     expect(describeDay(before.items, before.status).title).toBe('Nog niet begonnen');
   });
 });
+
+import { pullupDay } from './pushups';
+describe('pull-ups tussendoor in de widget', () => {
+  it('alleen op werkdagen binnen het schema', () => {
+    const mon = mondayOfWeek(1);
+    expect(pullupDay(planForDay(mon))).toBe(true);
+    expect(pullupDay(planForDay(addDays(mon, 5)))).toBe(false); // zaterdag
+    expect(pullupDay(planForDay(addDays(mon, -1)))).toBe(false); // voor de start
+  });
+});

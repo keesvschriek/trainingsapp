@@ -22,6 +22,17 @@ final class WidgetStore {
         return c.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
+    /** Totaal van getikte sets van een soort op een dag. */
+    static synchronized int pendingTotal(Context c, String type, String date) {
+        JSONArray list = pending(c);
+        int total = 0;
+        for (int i = 0; i < list.length(); i++) {
+            JSONObject p = list.optJSONObject(i);
+            if (p != null && date.equals(p.optString("date")) && type.equals(p.optString("type", "pushups"))) total += p.optInt("value", 0);
+        }
+        return total;
+    }
+
     static synchronized void setSnapshot(Context c, String json) {
         prefs(c).edit().putString(SNAPSHOT, json).apply();
     }
@@ -42,10 +53,11 @@ final class WidgetStore {
         }
     }
 
-    static synchronized void addPending(Context c, String date, int value) {
+    static synchronized void addPending(Context c, String type, String date, int value) {
         JSONArray list = pending(c);
         try {
             JSONObject o = new JSONObject();
+            o.put("type", type);
             o.put("date", date);
             o.put("value", value);
             o.put("ts", System.currentTimeMillis());

@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, alive, getSetting, type Metric } from './db';
 import { addDays, type ISODate } from './dates';
-import type { PlannedItem } from './plan';
+import { gtgDay, type DayPlan, type PlannedItem } from './plan';
 
 // Push-ups tussendoor. Elke set is een eigen record (kind 'pushups'), zodat je per dag
 // ziet hoeveel sets je deed en de laatste set ongedaan kunt maken.
@@ -62,6 +62,22 @@ export function lastDays(byDay: Map<ISODate, Metric[]>, n: number, today: ISODat
     const sets = byDay.get(date) ?? [];
     return { date, total: dayTotal(sets), sets: sets.length };
   });
+}
+
+// Pull-ups tussendoor: ma t/m vr, niet op dagen met Defensie, ziek of een ander blok.
+export const PULLUP_SETS_PER_DAY = 5;
+export function pullupDay(plan: DayPlan): boolean {
+  const blocking = plan.event && ['defensie', 'ziek', 'anders'].includes(plan.event.kind);
+  return plan.status === 'actief' && gtgDay(plan.date) && !blocking;
+}
+
+export function usePullupSet() {
+  const lastMax = useLiveQuery(async () => {
+    const all = (await db.metrics.where('kind').equals('pullupMax').toArray()).filter(alive);
+    return all.sort((a, b) => a.date.localeCompare(b.date) || a.updatedAt - b.updatedAt).slice(-1)[0]?.value;
+  }, [], undefined);
+  const setSize = autoSetSize(lastMax, 3);
+  return { setSize, goal: setSize * PULLUP_SETS_PER_DAY, lastMax };
 }
 
 export function usePushupSettings() {

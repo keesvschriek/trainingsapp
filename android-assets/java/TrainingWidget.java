@@ -6,16 +6,17 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.view.View;
 import android.widget.RemoteViews;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 /** Widget op het startscherm: training van vandaag en een knop voor push-ups tussendoor. */
 public class TrainingWidget extends AppWidgetProvider {
     static final String ACTION_ADD = "nl.keesvschriek.trainingsapp.PUSHUPS_ADD";
+    static final String ACTION_ADD_PULL = "nl.keesvschriek.trainingsapp.PULLUPS_ADD";
     private static final Locale NL = Locale.forLanguageTag("nl-NL");
 
     @Override
@@ -28,8 +29,11 @@ public class TrainingWidget extends AppWidgetProvider {
         super.onReceive(context, intent);
         if (ACTION_ADD.equals(intent.getAction())) {
             JSONObject snap = WidgetStore.snapshot(context);
-            int n = snap.optInt("setSize", 20);
-            WidgetStore.addPending(context, today(), n);
+            WidgetStore.addPending(context, "pushups", today(), snap.optInt("setSize", 20));
+            refreshAll(context);
+        } else if (ACTION_ADD_PULL.equals(intent.getAction())) {
+            JSONObject snap = WidgetStore.snapshot(context);
+            WidgetStore.addPending(context, "pullups", today(), snap.optInt("pullSet", 3));
             refreshAll(context);
         }
     }
@@ -64,12 +68,7 @@ public class TrainingWidget extends AppWidgetProvider {
         int goal = Math.max(1, snap.optInt("goal", 100));
         int setSize = snap.optInt("setSize", 20);
         JSONObject counts = snap.optJSONObject("counts");
-        int total = counts != null ? counts.optInt(date, 0) : 0;
-        JSONArray pending = WidgetStore.pending(context);
-        for (int i = 0; i < pending.length(); i++) {
-            JSONObject p = pending.optJSONObject(i);
-            if (p != null && date.equals(p.optString("date"))) total += p.optInt("value", 0);
-        }
+        int total = (counts != null ? counts.optInt(date, 0) : 0) + WidgetStore.pendingTotal(context, "pushups", date);
         boolean rest = day != null && day.optBoolean("rest", false);
 
         v.setTextViewText(R.id.w_count, total + " / " + goal);
@@ -78,6 +77,20 @@ public class TrainingWidget extends AppWidgetProvider {
         v.setProgressBar(R.id.w_progress, 100, Math.min(100, Math.round(total * 100f / goal)), false);
         v.setTextViewText(R.id.w_add, "+" + setSize);
 
+        // Pull-ups tussendoor: alleen op dagen dat ze in het schema staan
+        boolean pull = day != null && day.optBoolean("pull", false);
+        v.setViewVisibility(R.id.w_pull_row, pull ? View.VISIBLE : View.GONE);
+        if (pull) {
+            int pullGoal = Math.max(1, snap.optInt("pullGoal", 15));
+            int pullSet = snap.optInt("pullSet", 3);
+            JSONObject pc = snap.optJSONObject("pullCounts");
+            int pullTotal = (pc != null ? pc.optInt(date, 0) : 0) + WidgetStore.pendingTotal(context, "pullups", date);
+            v.setTextViewText(R.id.w_pull_count, pullTotal + " / " + pullGoal);
+            v.setTextViewText(R.id.w_pull_label, pullTotal >= pullGoal ? "Pull-ups: doel gehaald" : "Pull-ups vandaag");
+            v.setProgressBar(R.id.w_pull_progress, 100, Math.min(100, Math.round(pullTotal * 100f / pullGoal)), false);
+            v.setTextViewText(R.id.w_pull_add, "+" + pullSet);
+        }
+
         int flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
         Intent open = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
         if (open != null) {
@@ -85,6 +98,8 @@ public class TrainingWidget extends AppWidgetProvider {
         }
         Intent add = new Intent(context, TrainingWidget.class).setAction(ACTION_ADD);
         v.setOnClickPendingIntent(R.id.w_add, PendingIntent.getBroadcast(context, 1, add, flags));
+        Intent addPull = new Intent(context, TrainingWidget.class).setAction(ACTION_ADD_PULL);
+        v.setOnClickPendingIntent(R.id.w_pull_add, PendingIntent.getBroadcast(context, 2, addPull, flags));
         return v;
     }
 }
