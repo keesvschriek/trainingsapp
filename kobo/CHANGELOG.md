@@ -5,6 +5,8 @@ Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je i
 ## Krachttraining in Sport
 - Kracht, tests en wedstrijden uit je schema staan nu ook in Sport, met de oefeningen
 - Fout opgelost: Sport liep vast als intervals.icu een leeg veld meestuurde
+- Je opslag wordt beschermd: is het bestand onleesbaar, dan zet de app zelf de nieuwste back-up terug
+- Op het foutscherm staan nu knoppen naar Bijwerken, Instellingen en Afsluiten
 
 ## Betere wifi
 - Wifi gaat niet meer uit terwijl je iets aan het bijwerken bent

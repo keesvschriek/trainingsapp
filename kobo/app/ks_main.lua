@@ -65,7 +65,19 @@ function App:rebuild()
     UI.scale = base
     UI.compact = false
     if not ok then
-        w = UI.page(UI.vgroup({ UI.header("Er ging iets mis", function() self:home() end), UI.text(tostring(w), { width = UI.INNER(), size = 16 }) }))
+        local err = tostring(w)
+        require("logger").warn("Kees Personal fout:", err)
+        local onHome = #self.stack <= 1
+        w = UI.page(UI.vgroup({
+            UI.header("Er ging iets mis", (not onHome) and function() self:back() end or nil),
+            UI.text(err, { width = UI.INNER(), size = 16 }),
+            UI.vspace(20),
+            UI.text("Je voortgang is veilig. Kijk of er een nieuwe versie is, die lost dit vaak op.", { width = UI.INNER(), size = 18 }),
+        }), UI.buttonRow({
+            { "Bijwerken", function() self:go(M.updatePage) end, primary = true },
+            { "Instellingen", function() self:go(require("ks_system").settingsPage) end },
+            { "Afsluiten", function() self:quit() end },
+        }))
     end
     self[1] = w
 end
@@ -108,9 +120,9 @@ end
 
 --- Een module veilig laden: als er iets mis is met één onderdeel, blijft de rest werken.
 local function safe(fn, fallback)
-    local ok, a, b = pcall(fn)
-    if ok then return a, b end
-    require("logger").warn("Kees Personal:", a)
+    local r = { pcall(fn) }
+    if r[1] then return unpack(r, 2, 4) end
+    require("logger").warn("Kees Personal:", r[2])
     return fallback, nil
 end
 
@@ -188,7 +200,7 @@ local function homePage(app)
         table.insert(items, UI.vspan(gap))
 
         -- Training en gewoontes naast elkaar
-        local name, sub, icon = Sport.today()
+        local name, sub, icon = safe(Sport.today, "Sport")
         local tr = UI.vgroup({
             UI.hgroup({ UI.icon(icon or "run", 22), UI.hspace(8), UI.text("Training", { size = 16, font = "bold" }) }),
             UI.vspace(8),
