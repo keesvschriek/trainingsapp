@@ -265,7 +265,7 @@ function GarminSection() {
     setMsg(null);
     try {
       const r = await pushToGarmin();
-      setMsg({ text: `${r.sent} lopen in je intervals.icu-agenda gezet${r.removed ? `, ${r.removed} verschoven weggehaald` : ''}.` });
+      setMsg({ text: `${r.sent} trainingen in je intervals.icu-agenda gezet${r.removed ? `, ${r.removed} verschoven weggehaald` : ''}.` });
       setLast(Date.now());
     } catch (e) {
       setMsg({ text: e instanceof IntervalsError ? e.message : String(e), err: true });
@@ -278,7 +278,7 @@ function GarminSection() {
     <>
       <h2>Trainingen naar je Garmin</h2>
       <p className="muted small">
-        De app zet je lopen van de komende 14 dagen in je intervals.icu-agenda, met hartslagdoelen. intervals.icu stuurt de komende 7 dagen door naar Garmin Connect, en na een sync staan ze op je Fenix. Verschuif je iets, dan gaat dat automatisch mee.
+        De app zet je schema van de komende 14 dagen in je intervals.icu-agenda. Lopen gaan erin als training met hartslagdoelen: intervals.icu stuurt de komende 7 dagen door naar Garmin Connect, en na een sync staan ze op je Fenix. Kracht, tests en wedstrijden gaan erin als notitie: die zie je in intervals.icu en op je Kobo, niet op je horloge. Verschuif je iets, dan gaat dat automatisch mee.
       </p>
       <p className="muted small">
         Eenmalig in intervals.icu: Settings, bij Garmin het vinkje <strong>Upload planned workouts</strong> aan. Controleer ook dat je lactaatdrempel-hartslag (LTHR) bij Hardlopen goed staat.

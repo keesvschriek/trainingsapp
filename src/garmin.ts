@@ -48,12 +48,25 @@ export function workoutText(item: PlannedItem): string | null {
 }
 
 interface IcuEvent {
-  category: 'WORKOUT';
-  type: 'Run';
+  category: 'WORKOUT' | 'NOTE';
+  type?: string;
   start_date_local: string;
   name: string;
   description: string;
   external_id: string;
+  moving_time?: number;
+}
+
+/** Kracht, tests en wedstrijden als notitie in de agenda: zichtbaar in intervals.icu en op de Kobo, niet op je horloge. */
+export function noteText(item: PlannedItem): string | null {
+  if (item.kind !== 'strength' && item.kind !== 'test' && item.kind !== 'race') return null;
+  const lines: string[] = [];
+  if (item.detail) lines.push(item.detail);
+  if (item.exercises?.length) {
+    if (lines.length) lines.push('');
+    for (const e of item.exercises) lines.push(`- ${e.name}: ${e.sets} x ${e.reps}${e.weight ? ` (${e.weight})` : ''}`);
+  }
+  return lines.join('\n') || item.title;
 }
 
 export async function plannedEvents(): Promise<IcuEvent[]> {
@@ -65,14 +78,29 @@ export async function plannedEvents(): Promise<IcuEvent[]> {
     const date = addDays(start, i);
     for (const item of planForDay(date, events, moves).items) {
       const text = workoutText(item);
-      if (!text) continue;
+      const moving_time = item.minutes ? item.minutes * 60 : undefined;
+      if (text) {
+        out.push({
+          category: 'WORKOUT',
+          type: 'Run',
+          start_date_local: `${date}T00:00:00`,
+          name: item.title,
+          description: text,
+          external_id: `${PREFIX}${date}-${item.slotId}`,
+          moving_time,
+        });
+        continue;
+      }
+      const note = noteText(item);
+      if (!note) continue;
       out.push({
-        category: 'WORKOUT',
-        type: 'Run',
+        category: 'NOTE',
+        type: item.kind === 'strength' ? 'WeightTraining' : undefined,
         start_date_local: `${date}T00:00:00`,
         name: item.title,
-        description: text,
+        description: note,
         external_id: `${PREFIX}${date}-${item.slotId}`,
+        moving_time,
       });
     }
   }
