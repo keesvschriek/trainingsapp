@@ -3,12 +3,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { Bar, BarChart, CartesianGrid, ComposedChart, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { db, alive, remove, type MetricKind } from '../db';
 import { addDays, shortDate, today } from '../dates';
-import { GOALS, blockOfWeek, mondayOfWeek, planForWeek, weekOf } from '../plan';
+import { GOALS, blockOfWeek, mondayOfWeek, planForDay, planForWeek, weekOf } from '../plan';
 import { METRICS, MetricEditor, formatMetric } from '../editors';
 import { useBlocks, useMoves } from '../ui';
 import { loadSeries } from '../recovery';
 import { cssColor } from '../theme';
-import { dayTotal, goalStreak, lastDays, setsByDay, usePushupRecords, usePushupSettings } from '../pushups';
+import { dayTotal, goalStreak, lastDays, restReason, setsByDay, usePushupRecords, usePushupSettings } from '../pushups';
 
 
 export function Progress() {
@@ -220,6 +220,8 @@ function PushupStats() {
   const GRID = cssColor('--line');
   const { goal } = usePushupSettings();
   const records = usePushupRecords();
+  const events = useBlocks();
+  const moves = useMoves();
   if (records.length === 0) return null;
   const byDay = setsByDay(records);
   const t = today();
@@ -228,7 +230,7 @@ function PushupStats() {
   const weekTotal = week.reduce((s, d) => s + d.total, 0);
   const all = [...byDay.values()].reduce((s, sets) => s + dayTotal(sets), 0);
   const best = Math.max(...[...byDay.values()].map(dayTotal));
-  const streak = goalStreak(byDay, goal, t);
+  const streak = goalStreak(byDay, goal, t, d => restReason(planForDay(d, events, moves).items) !== null);
   const data = days.map(d => ({ dag: shortDate(d.date), aantal: d.total }));
   return (
     <>

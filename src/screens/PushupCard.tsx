@@ -3,7 +3,9 @@ import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { remove, save, type Metric } from '../db';
 import type { ISODate } from '../dates';
 import { today } from '../dates';
-import { dayTotal, goalStreak, newSetId, setsByDay, usePushupRecords, usePushupSettings } from '../pushups';
+import { dayTotal, goalStreak, newSetId, restReason, setsByDay, usePushupRecords, usePushupSettings } from '../pushups';
+import { planForDay } from '../plan';
+import { useBlocks, useMoves } from '../ui';
 import { isNative } from '../native';
 
 /** Kaart op Vandaag: push-ups tussendoor bijhouden met knoppen. */
@@ -11,13 +13,17 @@ export function PushupCard({ date }: { date: ISODate }) {
   const { goal, setSize, show } = usePushupSettings();
   const records = usePushupRecords();
   const [custom, setCustom] = useState<string | null>(null);
+  const events = useBlocks();
+  const moves = useMoves();
   if (!show) return null;
+  const isRest = (d: ISODate) => restReason(planForDay(d, events, moves).items) !== null;
+  const rest = restReason(planForDay(date, events, moves).items);
 
   const byDay = setsByDay(records);
   const sets = byDay.get(date) ?? [];
   const total = dayTotal(sets);
   const pct = Math.min(100, Math.round((total / Math.max(1, goal)) * 100));
-  const streak = date === today() ? goalStreak(byDay, goal, date) : 0;
+  const streak = date === today() ? goalStreak(byDay, goal, date, isRest) : 0;
 
   async function add(n: number) {
     if (!Number.isFinite(n) || n <= 0) return;
@@ -33,7 +39,7 @@ export function PushupCard({ date }: { date: ISODate }) {
     if (last) await remove('metrics', last.id);
   }
 
-  const status = total >= goal ? 'Doel gehaald' : `Nog ${goal - total} tot je doel`;
+  const status = rest && total < goal ? 'Rustdag voor push-ups' : total >= goal ? 'Doel gehaald' : `Nog ${goal - total} tot je doel`;
 
   return (
     <div className="card pushups" aria-label="Push-ups tussendoor">
@@ -51,6 +57,7 @@ export function PushupCard({ date }: { date: ISODate }) {
         </div>
       </div>
       <div className="progress" role="progressbar" aria-valuenow={total} aria-valuemax={goal}><div style={{ width: `${pct}%` }} /></div>
+      {rest && <div className="pu-sets small">{rest}</div>}
       {sets.length > 0 && (
         <div className="pu-sets small muted">
           {sets.length} {sets.length === 1 ? 'set' : 'sets'}: {sets.map(s => s.value).join(' · ')}

@@ -303,7 +303,7 @@ function ThemeSection() {
 }
 
 function PushupSection() {
-  const { goal, setSize, show } = usePushupSettings();
+  const { goal, setSize, manualSet, auto, lastMax, show } = usePushupSettings();
   const num = (v: string, min: number, max: number) => Math.max(min, Math.min(max, Math.round(Number(v) || 0)));
   return (
     <>
@@ -319,11 +319,19 @@ function PushupSection() {
             onBlur={e => void setSetting('pushupGoal', num(e.target.value, 10, 1000))} aria-label="Dagdoel push-ups" />
         </label>
         <label className="row mt" style={{ justifyContent: 'space-between' }}>
-          <span>Grote knop telt</span>
-          <input type="number" inputMode="numeric" min={1} max={200} style={{ width: 90 }} defaultValue={setSize} key={`s${setSize}`}
-            onBlur={e => void setSetting('pushupSet', num(e.target.value, 1, 200))} aria-label="Aantal per set" />
+          <span>Grote knop: helft van je laatste maxtest</span>
+          <input type="checkbox" checked={auto} onChange={e => void setSetting('pushupSetAuto', e.target.checked)} />
         </label>
-        <p className="muted small" style={{ marginBottom: 0 }}>Houd elke set ruim onder je maximum, ongeveer de helft. Dan herstel je snel genoeg om het elke dag te doen.</p>
+        {auto ? (
+          <p className="muted small">{lastMax ? `Laatste maxtest: ${lastMax}. De grote knop telt nu ${setSize}.` : `Nog geen maxtest gedaan. Tot die tijd telt de grote knop ${setSize}. De eerste test staat in je eerste testweek.`}</p>
+        ) : (
+          <label className="row mt" style={{ justifyContent: 'space-between' }}>
+            <span>Grote knop telt</span>
+            <input type="number" inputMode="numeric" min={1} max={200} style={{ width: 90 }} defaultValue={manualSet} key={`s${manualSet}`}
+              onBlur={e => void setSetting('pushupSet', num(e.target.value, 1, 200))} aria-label="Aantal per set" />
+          </label>
+        )}
+        <p className="muted small" style={{ marginBottom: 0 }}>Houd elke set ruim onder je maximum, ongeveer de helft. Dan herstel je snel genoeg om het elke dag te doen. Op je borst-dag en op de testdag sla je ze over.</p>
       </div>
     </>
   );

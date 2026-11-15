@@ -283,10 +283,12 @@ export const METRICS: { kind: MetricKind; label: string; unit: string; help: str
   { kind: 'weight', label: 'Gewicht', unit: 'kg', help: 'Na het opstaan en voor het ontbijt.' },
   { kind: 'pullupMax', label: 'Strikte pull-ups (max)', unit: 'herh.', help: 'Uitgerust, 1 set zo veel mogelijk.' },
   { kind: 'pressReps', label: 'Press 28 kg (per arm)', unit: 'herh.', help: 'Strikte press, zwakste arm telt.' },
+  { kind: 'pushupMax', label: 'Push-ups (max)', unit: 'herh.', help: 'Uitgerust, 1 set zo veel mogelijk met goede techniek.' },
 ];
 
 export const TEST_METRIC: Record<string, MetricKind[]> = {
   'test-pullups': ['pullupMax'],
+  'test-pushups': ['pushupMax'],
   'test-cooper': ['cooper'],
   'test-10k': ['tenK'],
   'test-press': ['pressReps'],

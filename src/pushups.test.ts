@@ -32,3 +32,34 @@ describe('push-ups tussendoor', () => {
     expect(days[3].sets).toBe(2);
   });
 });
+
+import { autoSetSize, restReason } from './pushups';
+import { planForDay, mondayOfWeek } from './plan';
+import { addDays as addDaysForTest } from './dates';
+
+describe('rustdagen en automatische setgrootte', () => {
+  it('een rustdag breekt de reeks niet en telt niet mee', () => {
+    const recs = [set('2026-11-12', 100, 1), set('2026-11-14', 100, 2), set('2026-11-15', 100, 3)];
+    const byDay = setsByDay(recs);
+    expect(goalStreak(byDay, 100, '2026-11-15')).toBe(2);
+    expect(goalStreak(byDay, 100, '2026-11-15', d => d === '2026-11-13')).toBe(3);
+  });
+
+  it('grote knop is de helft van de maxtest, afgerond', () => {
+    expect(autoSetSize(40, 20)).toBe(20);
+    expect(autoSetSize(47, 20)).toBe(25);
+    expect(autoSetSize(52, 20)).toBe(25);
+    expect(autoSetSize(12, 20)).toBe(6);
+    expect(autoSetSize(undefined, 20)).toBe(20);
+  });
+
+  it('borst-dag en testdag zijn rustdagen voor push-ups; testweek bevat de maxtest', () => {
+    const week1 = mondayOfWeek(1);
+    const wed = addDaysForTest(week1, 2);
+    expect(restReason(planForDay(wed).items)).toMatch(/Borst-dag/);
+    expect(restReason(planForDay(week1).items)).toBeNull();
+    const test = mondayOfWeek(9);
+    expect(planForDay(test).items.map(i => i.slotId)).toContain('test-pushups');
+    expect(restReason(planForDay(test).items)).toMatch(/Testdag/);
+  });
+});

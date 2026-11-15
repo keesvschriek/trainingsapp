@@ -217,6 +217,7 @@ function testWeek(level: number): PlannedItem[][] {
   return [
     [
       { slotId: 'test-pullups', kind: 'test', title: 'Test: strikte pull-ups', detail: 'Uitgerust, na een korte warming-up. Zoveel mogelijk strikte herhalingen in 1 set.' },
+      { slotId: 'test-pushups', kind: 'test', title: 'Test: push-ups', detail: 'Na de pull-uptest en voor de krachttraining. 1 set zo veel mogelijk, borst tot vlak boven de vloer, lichaam recht. Stop als je romp doorzakt. Vandaag geen push-ups tussendoor.' },
       strengthItem('rug', level, true),
     ],
     [{ slotId: 'test-cooper', kind: 'test', title: 'Test: Cooper (12 min)', minutes: 40, detail: '15 min inlopen met een paar versnellingen, dan 12 min zo ver mogelijk, daarna uitlopen. Vlak parcours. Doel: 3000 m.' }],
