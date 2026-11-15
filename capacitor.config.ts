@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'nl.keesvschriek.trainingsapp',
-  appName: 'Training',
+  appName: 'Kees Study',
   webDir: 'dist',
   android: {
     backgroundColor: '#ffffff',

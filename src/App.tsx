@@ -12,16 +12,18 @@ import { APK_URL, checkForUpdate } from './native';
 import { autoPushToGarmin } from './garmin';
 import { scheduleMorning } from './notify';
 
+const QuizHome = lazy(() => import('./quiz/QuizHome').then(m => ({ default: m.QuizHome })));
 const Progress = lazy(() => import('./screens/Progress').then(m => ({ default: m.Progress })));
 
-type Route = 'vandaag' | 'schema' | 'logboek' | 'voortgang' | 'instellingen';
+type Route = 'vandaag' | 'schema' | 'logboek' | 'voortgang' | 'quiz' | 'instellingen';
 const TABS: { id: Route; label: string; icon: ReactNode }[] = [
   { id: 'vandaag', label: 'Vandaag', icon: Icon.today },
   { id: 'schema', label: 'Schema', icon: Icon.plan },
   { id: 'logboek', label: 'Logboek', icon: Icon.log },
   { id: 'voortgang', label: 'Voortgang', icon: Icon.chart },
+  { id: 'quiz', label: 'Quiz', icon: Icon.quiz },
 ];
-const TITLES: Record<Route, string> = { vandaag: 'Vandaag', schema: 'Schema', logboek: 'Logboek', voortgang: 'Voortgang', instellingen: 'Instellingen' };
+const TITLES: Record<Route, string> = { vandaag: 'Vandaag', schema: 'Schema', logboek: 'Logboek', voortgang: 'Voortgang', quiz: 'Quiz', instellingen: 'Instellingen' };
 
 function readRoute(): Route {
   const r = location.hash.replace('#/', '') as Route;
@@ -116,6 +118,7 @@ export function App() {
         {route === 'schema' && <Schedule />}
         {route === 'logboek' && <Log />}
         {route === 'voortgang' && <Suspense fallback={<div className="empty">Laden...</div>}><Progress /></Suspense>}
+        {route === 'quiz' && <Suspense fallback={<div className="empty">Laden...</div>}><QuizHome /></Suspense>}
         {route === 'instellingen' && <Settings />}
       </main>
       <div className="tabbar">

@@ -1,0 +1,45 @@
+{
+  "info": "Vragenpakketten voor de quiz in Kees Study. Elke vraag: cat (categorie-sleutel), q, a (vier antwoorden, eerste is goed), why (optioneel), asOf (optioneel, bij actualiteit). De app haalt dit bestand op met de knop 'Nieuwe vragen ophalen'.",
+  "packs": [
+    {
+      "id": "start",
+      "title": "Startpakket",
+      "version": 1,
+      "questions": [
+        {
+          "cat": "geschiedenis",
+          "q": "Welke brug in Nijmegen werd in september 1944 door Amerikaanse parachutisten veroverd na een oversteek over de Waal?",
+          "a": [
+            "De Waalbrug",
+            "De John Frostbrug",
+            "De Nelson Mandelabrug",
+            "De Maasbrug bij Grave"
+          ],
+          "why": "De oversteek in kleine canvasbootjes vond plaats op 20 september 1944. De John Frostbrug ligt in Arnhem."
+        },
+        {
+          "cat": "aardrijkskunde",
+          "q": "Welke rivier ontspringt in Zwitserland en mondt via Nederland uit in de Noordzee?",
+          "a": [
+            "De Rijn",
+            "De Maas",
+            "De Schelde",
+            "De Donau"
+          ],
+          "why": "De Maas ontspringt in Frankrijk, de Donau stroomt naar de Zwarte Zee."
+        },
+        {
+          "cat": "wetenschap",
+          "q": "Hoeveel procent van het menselijk lichaam bestaat ongeveer uit water?",
+          "a": [
+            "60%",
+            "30%",
+            "85%",
+            "45%"
+          ],
+          "why": "Bij volwassenen rond de 55 tot 60 procent."
+        }
+      ]
+    }
+  ]
+}
