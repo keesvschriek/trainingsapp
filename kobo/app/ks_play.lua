@@ -162,7 +162,7 @@ function M.game(app)
     table.insert(row, { "Nieuwe partij", function() app.playState = nil; app:replace(M.menu) end, small = true, primary = g.over })
     local footer = UI.buttonRow(row)
 
-    local used = header:getSize().h + statusW:getSize().h + footer:getSize().h + UI.px(34 + 30 + 16 + 40)
+    local used = header:getSize().h + statusW:getSize().h + footer:getSize().h + UI.px(UI.TOPPAD + 30 + 16 + 40)
     local size = math.max(UI.px(200), math.min(UI.INNER(), UI.H() - used))
     local board = Board:new{
         size = size, state = s, flip = g.color == "b", onTap = onTap,

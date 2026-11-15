@@ -77,7 +77,7 @@ function M.point(region)
         local footer = UI.buttonRow(S.locked and {
             { S.i >= #S.targets and "Uitslag" or "Volgende", advance, primary = true },
         } or { { "Stoppen", function() app:back() end, small = true } })
-        local used = header:getSize().h + ask:getSize().h + msg:getSize().h + footer:getSize().h + UI.px(34 + 30 + 16 + 16 + 40)
+        local used = header:getSize().h + ask:getSize().h + msg:getSize().h + footer:getSize().h + UI.px(UI.TOPPAD + 30 + 16 + 16 + 40)
         local map = Map.MapWidget:new{ region = region, width = UI.INNER(), maxh = UI.H() - used, marks = S.marks, onPick = pick }
         return UI.page(UI.vgroup({ header, ask, UI.vspace(12), UI.center(map, UI.INNER(), map:getSize().h), UI.vspace(12), msg }), footer)
     end
@@ -153,7 +153,7 @@ function M.which(region)
             end, primary = true },
         } or { { "Stoppen", function() app:back() end, small = true } })
         local belowG = UI.vgroup(below)
-        local used = header:getSize().h + belowG:getSize().h + footer:getSize().h + UI.px(34 + 30 + 16 + 40)
+        local used = header:getSize().h + belowG:getSize().h + footer:getSize().h + UI.px(UI.TOPPAD + 30 + 16 + 40)
         local map = Map.MapWidget:new{ region = region, width = UI.INNER(), maxh = UI.H() - used, marks = { [item.c.c3] = "target" } }
         return UI.page(UI.vgroup({ header, UI.center(map, UI.INNER(), map:getSize().h), UI.vspace(16), belowG }), footer)
     end

@@ -1,6 +1,10 @@
-KEES STUDY OP DE KOBO
+Kees Personal op de Kobo
 
-In de app: schaaklessen, tegen de computer spelen, quiz en topografie op de kaart.
+Een eigen omgeving voor je Kobo Elipsa 2E. Op het beginscherm vier mappen:
+- Kees Study: schaaklessen, tegen de computer spelen, quiz en topografie op de kaart
+- Ontwikkeling: dagtekst (ochtend en avond) en gewoontes
+- Lezen: terug naar je Kobo-boeken
+- Instellingen: lettergrootte, automatisch slapen, schermtijd, back-ups en bijwerken
 
 Wat je nodig hebt
 - KOReader op de Kobo (die gebruikt Kees Study als motor; je ziet er niets van).
@@ -13,14 +17,23 @@ Installeren
    Kies "Samenvoegen" of "Vervangen" als Windows dat vraagt. Er gaat niets van
    KOReader verloren: er komen alleen bestanden bij.
 3. Werp de Kobo veilig uit.
-4. Open het NickelMenu (icoon rechtsonder) en tik op Kees Study.
+4. Open het NickelMenu (icoon rechtsonder) en tik op Kees Personal
+   (in oudere versies heet het menu-item nog Kees Study).
 
 Start je KOReader niet via NickelMenu, maar via een plaatje in je bibliotheek?
 Kopieer dan ook alles uit de map extra/kfmon naar de Kobo. Daarna staat er een
 boek "kees-study" in je bibliotheek waarmee je de app start.
 
 Bijwerken
-Download de nieuwe zip en herhaal stap 2. Je voortgang blijft bewaard.
+In de app: Instellingen, Bijwerken via wifi. Alleen wat veranderd is wordt
+opgehaald en elk bestand wordt gecontroleerd. De vorige versie wordt bewaard;
+met Vorige versie terugzetten ga je terug. Je voortgang wordt nooit overschreven.
+Zonder wifi: download de nieuwe zip en herhaal stap 2.
+
+Back-ups
+Je voortgang staat in .adds/koreader/settings/keesstudy.lua. Elke dag dat je de
+app opent komt er een kopie in .adds/koreader/settings/keesstudy-backup (de
+laatste 7 dagen). Terugzetten kan in Instellingen, Back-ups.
 Nieuwe quizvragen kun je ook ophalen in de app zelf (Quiz, Nieuwe vragen ophalen).
 
 Verwijderen

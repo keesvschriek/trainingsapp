@@ -299,7 +299,7 @@ function M.player(li)
         local footer = UI.buttonRow(row)
         local items = { header }
         if S.state then
-            local used = header:getSize().h + UI.vgroup(below):getSize().h + footer:getSize().h + UI.px(34 + 30 + 16 + 40)
+            local used = header:getSize().h + UI.vgroup(below):getSize().h + footer:getSize().h + UI.px(UI.TOPPAD + 30 + 16 + 40)
             local boardSize = math.max(UI.px(160), math.min(UI.INNER(), UI.H() - used))
             local marks = st.kind == "reach" and S.picked or (S.marks or sqset(st.marks))
             local board = Board:new{

@@ -41,7 +41,14 @@ local FACES = {
     serif = "NotoSerif-Regular.ttf",
     serifbold = "NotoSerif-Bold.ttf",
 }
-function UI.face(kind, size) return Font:getFace(FACES[kind] or kind, size) end
+--- Lettergrootte uit de instellingen: 1 = normaal. Geldt voor alle tekst in de app.
+UI.scale = 1
+--- Ruimte boven elk scherm, voor de statusbalk (tijd, batterij, schermtijd).
+UI.TOPPAD = 46
+--- Geeft { links, rechts } voor de statusbalk, of nil. Wordt gezet door ks_system.
+UI.status = nil
+
+function UI.face(kind, size) return Font:getFace(FACES[kind] or kind, math.floor(size * UI.scale + 0.5)) end
 
 --- Tekst. Met opts.width wordt het een tekstblok dat afbreekt.
 function UI.text(str, opts)
@@ -146,7 +153,7 @@ function UI.row(title, sub, right, callback, width)
         table.insert(left, UI.vspace(4))
         table.insert(left, UI.text(sub, { size = 16, color = UI.INK2, width = width - rightw - UI.px(10) }))
     end
-    local h = left:getSize().h + UI.px(UI.rowPad or 32)
+    local h = left:getSize().h + UI.px(UI.compact and math.min(14, UI.rowPad or 32) or (UI.rowPad or 32))
     local content = OverlapGroup:new{
         dimen = Geom:new{ w = width, h = h },
         LeftContainer:new{ dimen = Geom:new{ w = width, h = h }, left },
@@ -176,13 +183,36 @@ function UI.header(title, onBack, extra)
     return g
 end
 
+--- Statusbalk bovenaan: wordt bij elke keer tekenen opnieuw ingevuld, zodat de klok klopt.
+local Widget = require("ui/widget/widget")
+local StatusBar = Widget:extend{}
+function StatusBar:getSize() return Geom:new{ w = UI.W(), h = UI.px(UI.TOPPAD - 8) } end
+function StatusBar:paintTo(bb, x, y)
+    if not UI.status then return end
+    local st = UI.status()
+    if not st then return end
+    local M = UI.MARGIN()
+    local face = Font:getFace(FACES.sans, 15) -- niet meeschalen: de balk blijft klein
+    local l = TextWidget:new{ text = st[1], face = face, fgcolor = UI.INK2 }
+    local r = TextWidget:new{ text = st[2], face = face, fgcolor = UI.INK2 }
+    local ty = y + UI.px(10)
+    l:paintTo(bb, x + M, ty)
+    r:paintTo(bb, x + UI.W() - M - r:getSize().w, ty)
+    l:free(); r:free()
+end
+UI.StatusBar = StatusBar
+
 --- Volledig scherm: wit, met marges. Inhoud bovenaan, optioneel een voet onderaan.
 function UI.page(body, footer)
     local W, H, M = UI.W(), UI.H(), UI.MARGIN()
     local over = OverlapGroup:new{
         dimen = Geom:new{ w = W, h = H },
-        FrameContainer:new{ bordersize = 0, padding = M, padding_top = UI.px(34), margin = 0, background = UI.WHITE, width = W, height = H, body },
+        FrameContainer:new{ bordersize = 0, padding = M, padding_top = UI.px(UI.TOPPAD), margin = 0, background = UI.WHITE, width = W, height = H, body },
+        StatusBar:new{},
     }
+    -- past het niet, dan meldt de pagina dat; ks_main bouwt hem dan met iets kleinere letters opnieuw
+    local need = UI.px(UI.TOPPAD) + body:getSize().h + (footer and (footer:getSize().h + UI.px(30 + 14)) or M)
+    if need > H then UI.overflow = true end
     if footer then
         local fh = footer:getSize().h
         table.insert(over, FrameContainer:new{
@@ -191,6 +221,31 @@ function UI.page(body, footer)
         })
     end
     return over
+end
+
+--- Tegel voor het beginscherm: kader met titel en bijschrift.
+function UI.tile(title, sub, w, h, callback)
+    local pad = UI.px(18)
+    local inner = VerticalGroup:new{ align = "left",
+        UI.text(title, { font = "serif", size = 27, width = w - 2 * pad - 2 * UI.px(2) }),
+        UI.vspace(6),
+        UI.text(sub, { size = 16, color = UI.INK2, width = w - 2 * pad - 2 * UI.px(2) }),
+    }
+    local b = UI.px(2)
+    local ih = math.max(h - 2 * pad - 2 * b, inner:getSize().h)
+    local frame = FrameContainer:new{
+        bordersize = b, color = UI.BLACK, background = UI.WHITE, radius = 0, margin = 0, padding = pad,
+        OverlapGroup:new{ dimen = Geom:new{ w = w - 2 * pad - 2 * b, h = ih }, inner },
+    }
+    return Tap:new{ callback = callback, label = title, frame }
+end
+
+--- Vierkantje om af te vinken.
+function UI.checkbox(on)
+    local s = UI.px(30)
+    local box = FrameContainer:new{ bordersize = UI.px(2), color = UI.BLACK, background = UI.WHITE, padding = UI.px(5), margin = 0,
+        LineWidget:new{ dimen = Geom:new{ w = s - UI.px(14), h = s - UI.px(14) }, background = on and UI.BLACK or UI.WHITE } }
+    return box
 end
 
 function UI.vgroup(list, align)

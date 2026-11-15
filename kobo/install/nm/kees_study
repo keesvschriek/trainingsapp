@@ -1,1 +1,1 @@
-menu_item : main : Kees Study : cmd_spawn : quiet : export KEES_STUDY=1; exec /mnt/onboard/.adds/koreader/koreader.sh
+menu_item : main : Kees Personal : cmd_spawn : quiet : export KEES_STUDY=1; exec /mnt/onboard/.adds/koreader/koreader.sh
