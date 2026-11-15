@@ -1,0 +1,28 @@
+KEES STUDY OP DE KOBO
+
+Wat je nodig hebt
+- KOReader op de Kobo (die gebruikt Kees Study als motor; je ziet er niets van).
+- NickelMenu. Dat zit meestal al bij KOReader. Je herkent het aan het menu-icoon
+  rechtsonder in het beginscherm van de Kobo.
+
+Installeren
+1. Sluit de Kobo met de kabel aan op de computer en tik op de Kobo op Verbinden.
+2. Open deze zip. Sleep de map .adds naar de Kobo (het station KOBOeReader).
+   Kies "Samenvoegen" of "Vervangen" als Windows dat vraagt. Er gaat niets van
+   KOReader verloren: er komen alleen bestanden bij.
+3. Werp de Kobo veilig uit.
+4. Open het NickelMenu (icoon rechtsonder) en tik op Kees Study.
+
+Start je KOReader niet via NickelMenu, maar via een plaatje in je bibliotheek?
+Kopieer dan ook alles uit de map extra/kfmon naar de Kobo. Daarna staat er een
+boek "kees-study" in je bibliotheek waarmee je de app start.
+
+Bijwerken
+Download de nieuwe zip en herhaal stap 2. Je voortgang blijft bewaard.
+Nieuwe quizvragen kun je ook ophalen in de app zelf (Quiz, Nieuwe vragen ophalen).
+
+Verwijderen
+Verwijder op de Kobo:
+- .adds/keesstudy
+- .adds/koreader/patches/2-kees-study.lua
+- .adds/nm/kees_study

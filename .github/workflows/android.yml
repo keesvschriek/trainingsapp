@@ -99,11 +99,21 @@ jobs:
           keytool -exportcert -alias androiddebugkey -keystore android-assets/debug.keystore -storepass android -file vast.der
           python3 -c "import sys; c=open('vast.der','rb').read(); a=open('trainingsapp.apk','rb').read(); sys.exit(0 if c in a else 'APK is niet met de vaste sleutel ondertekend')"
 
+      - name: Kobo-app testen en inpakken
+        run: |
+          sudo apt-get install -y -qq luajit zip >/dev/null
+          luajit kobo/test/chess_test.lua
+          luajit kobo/test/lessons_test.lua | tail -1
+          luajit kobo/test/lessons_test.lua | grep -q " 0 fouten"
+          sh kobo/build.sh kees-study-kobo.zip
+
       - name: Release maken
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Trainingsapp build ${{ github.run_number }}
           body: Download trainingsapp.apk op je telefoon en installeer hem.
-          files: trainingsapp.apk
+          files: |
+            trainingsapp.apk
+            kees-study-kobo.zip
           make_latest: true
