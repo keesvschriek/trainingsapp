@@ -7,14 +7,14 @@ export function motionKeyFor(exerciseName: string): string | null {
   if (n.includes('push-up') && n.includes('brede')) return 'pushup-breed';
   if (n.includes('push-up') && n.includes('verhoogd')) return `pushup-verhoogd${s}`;
   if (n.includes('push-up')) return `pushup-normaal${s}`;
-  if (n.includes('goblet') || n.includes('squat')) return `squat${s}`;
+  if (n.includes('goblet')) return `squat${s}`;
   if (n.includes('chin-up')) return `chinup${s}`;
   if (n.includes('pull-up')) return `pullup${s}`;
   if (n.includes('row')) return 'row';
   if (n.includes('curl')) return `curl${s}`;
   if (n.includes('face pull')) return 'facepull';
   if (n.includes('floor press')) return n.includes('pauze') ? 'floorpress-pause' : 'floorpress';
-  if (n.includes('press')) return 'press';
+  if (n.includes('strikte press')) return 'press';
   if (n.includes('zijwaarts')) return 'lateral';
   if (n.includes('triceps')) return 'triceps';
   if (n.includes('kuit')) return 'calf';

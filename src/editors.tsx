@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
-import { db, newId, remove, save, alive, type Workout, type WorkoutKind, type StrengthSet, type Metric, type MetricKind } from './db';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { CATALOG, customExercise } from './catalog';
+import { db, newId, remove, save, alive, type Workout, type WorkoutKind, type StrengthSet, type Metric, type MetricKind, type Template } from './db';
 import { planForDay, type Exercise } from './plan';
 import { progressionHint, type Hint } from './progression';
 import { Icon, Sheet, Show3D, num } from './ui';
@@ -9,6 +11,7 @@ const KIND_LABEL: Record<WorkoutKind, string> = { run: 'Lopen', strength: 'Krach
 
 /** Oefeningen voor een bestaande krachttraining: uit het schema van die dag, anders uit de gelogde sets. */
 export async function exercisesFor(w: Workout): Promise<Exercise[]> {
+  if (w.exercises?.length) return w.exercises;
   const moves = (await db.moves.toArray()).filter(alive);
   const planned = planForDay(w.date, [], moves).items.find(i => i.slotId === w.slotId && i.exercises)
     ?? planForDay(w.date).items.find(i => i.slotId === w.slotId && i.exercises);
@@ -30,6 +33,8 @@ export function WorkoutEditor(props: {
   existing?: Workout;
   allowKind?: boolean;
   onClose: () => void;
+  /** Eigen krachttraining: na het kiezen van oefeningen door naar het loggen van sets. */
+  onStrength?: (title: string, exercises: Exercise[]) => void;
 }) {
   const w = props.existing ?? props.initial;
   const [kind, setKind] = useState<WorkoutKind>(w.kind);
@@ -72,6 +77,10 @@ export function WorkoutEditor(props: {
     props.onClose();
   }
 
+  if (kind === 'strength' && !props.existing && props.onStrength) {
+    return <StrengthPicker kindSwitch={props.allowKind ? <KindSwitch kind={kind} setKind={setKind} /> : null} onClose={props.onClose} onNext={props.onStrength} />;
+  }
+
   return (
     <Sheet
       title={props.existing ? 'Training bewerken' : 'Training loggen'}
@@ -79,13 +88,7 @@ export function WorkoutEditor(props: {
       action={props.existing && <button className="icon-btn" onClick={del} aria-label="Verwijderen">{Icon.trash}</button>}
       footer={<><button className="btn secondary" onClick={props.onClose}>Annuleren</button><button className="btn" onClick={submit}>Opslaan</button></>}
     >
-      {props.allowKind && (
-        <div className="seg">
-          {(['run', 'other'] as WorkoutKind[]).map(k => (
-            <button key={k} className={kind === k ? 'active' : ''} onClick={() => setKind(k)}>{KIND_LABEL[k]}</button>
-          ))}
-        </div>
-      )}
+      {props.allowKind && <KindSwitch kind={kind} setKind={setKind} withStrength={!!props.onStrength} />}
       {fromGarmin && <div className="notice">Opgehaald uit intervals.icu. Je aanvullingen blijven bewaard bij een nieuwe import.</div>}
       <div className="grid2">
         <div><label>Datum</label><input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
@@ -123,13 +126,120 @@ export function WorkoutEditor(props: {
   );
 }
 
+function KindSwitch(props: { kind: WorkoutKind; setKind: (k: WorkoutKind) => void; withStrength?: boolean }) {
+  const kinds: WorkoutKind[] = props.withStrength === false ? ['run', 'other'] : ['run', 'strength', 'other'];
+  return (
+    <div className="seg">
+      {kinds.map(k => (
+        <button key={k} className={props.kind === k ? 'active' : ''} onClick={() => props.setKind(k)}>{KIND_LABEL[k]}</button>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Eigen krachttraining samenstellen
+// ---------------------------------------------------------------------------
+
+function StrengthPicker(props: { kindSwitch: ReactNode; onClose: () => void; onNext: (title: string, exercises: Exercise[]) => void }) {
+  const [chosen, setChosen] = useState<Exercise[]>([]);
+  const [title, setTitle] = useState('');
+  const [own, setOwn] = useState('');
+  const [keep, setKeep] = useState(false);
+  const templates = useLiveQuery(async () => (await db.templates.toArray()).filter(alive).sort((a, b) => a.name.localeCompare(b.name)), [], [] as Template[]);
+
+  const has = (name: string) => chosen.some(e => e.name === name);
+  const toggle = (e: Exercise) => setChosen(c => (c.some(x => x.name === e.name) ? c.filter(x => x.name !== e.name) : [...c, e]));
+  function addOwn() {
+    const name = own.trim();
+    if (!name || has(name)) return setOwn('');
+    setChosen(c => [...c, customExercise(name)]);
+    setOwn('');
+  }
+  function useTemplate(t: Template) {
+    setChosen(t.exercises);
+    setTitle(t.name);
+    setKeep(false);
+  }
+  async function dropTemplate(t: Template) {
+    if (confirm(`"${t.name}" verwijderen uit je eigen workouts?`)) await remove('templates', t.id);
+  }
+  async function next() {
+    const name = title.trim() || 'Eigen krachttraining';
+    if (keep) {
+      const same = templates.find(t => t.name.toLowerCase() === name.toLowerCase());
+      await save('templates', { id: same?.id ?? newId(), name, exercises: chosen } as Template);
+    }
+    props.onNext(name, chosen);
+  }
+
+  const owns = chosen.filter(e => !CATALOG.some(g => g.items.some(i => i.name === e.name)));
+
+  return (
+    <Sheet
+      title="Krachttraining samenstellen"
+      onClose={props.onClose}
+      footer={<><button className="btn secondary" onClick={props.onClose}>Annuleren</button><button className="btn" onClick={next} disabled={chosen.length === 0}>Verder{chosen.length ? ` (${chosen.length})` : ''}</button></>}
+    >
+      {props.kindSwitch}
+      {templates.length > 0 && (
+        <>
+          <h3 className="pick-h">Mijn workouts</h3>
+          <div className="pick-templates">
+            {templates.map(t => (
+              <span key={t.id} className="pick-template">
+                <button className="btn secondary small" onClick={() => useTemplate(t)}>{t.name} <span className="muted">· {t.exercises.length}</span></button>
+                <button className="icon-btn" onClick={() => void dropTemplate(t)} aria-label={`${t.name} verwijderen`}>{Icon.trash}</button>
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+      <label>Naam</label>
+      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Eigen krachttraining" />
+      {chosen.length > 0 && (
+        <p className="small" style={{ marginBottom: 0 }}>
+          Volgorde: {chosen.map((e, i) => `${i + 1}. ${e.name}`).join(', ')}
+        </p>
+      )}
+      {CATALOG.map(g => (
+        <div key={g.group}>
+          <h3 className="pick-h">{g.group}</h3>
+          {g.items.map(e => (
+            <label key={e.name} className="pick-row">
+              <input type="checkbox" checked={has(e.name)} onChange={() => toggle(e)} />
+              <span className="grow">{e.name}</span>
+              <span className="muted small">{e.sets} x {e.reps}{e.defaultKg ? ` · ${e.defaultKg} kg` : ''}</span>
+            </label>
+          ))}
+        </div>
+      ))}
+      <h3 className="pick-h">Eigen oefening</h3>
+      {owns.map(e => (
+        <label key={e.name} className="pick-row">
+          <input type="checkbox" checked onChange={() => toggle(e)} />
+          <span className="grow">{e.name}</span>
+        </label>
+      ))}
+      <div className="row" style={{ flexWrap: 'nowrap' }}>
+        <input value={own} onChange={e => setOwn(e.target.value)} onKeyDown={e => e.key === 'Enter' && addOwn()} placeholder="Bijv. dips tussen twee stoelen" aria-label="Eigen oefening" />
+        <button className="btn secondary small" onClick={addOwn} disabled={!own.trim()}>Toevoegen</button>
+      </div>
+      <label className="pick-row mt">
+        <input type="checkbox" checked={keep} onChange={e => setKeep(e.target.checked)} />
+        <span className="grow">Bewaar als eigen workout</span>
+      </label>
+    </Sheet>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Krachttraining loggen: per oefening sets met herhalingen en gewicht
 // ---------------------------------------------------------------------------
 
 interface SetRow { reps: string; kg: string }
 
-export function StrengthLogger(props: { date: ISODate; title: string; exercises: Exercise[]; slotId?: string; existing?: Workout; onClose: () => void }) {
+export function StrengthLogger(props: { date: ISODate; title: string; exercises: Exercise[]; slotId?: string; existing?: Workout; custom?: boolean; onClose: () => void }) {
   const exercises = props.exercises;
   const [rows, setRows] = useState<Record<string, SetRow[]> | null>(null);
   const [notes, setNotes] = useState(props.existing?.notes ?? '');
@@ -205,6 +315,7 @@ export function StrengthLogger(props: { date: ISODate; title: string; exercises:
       rpe: num(rpe),
       notes: notes.trim() || undefined,
       source: 'manual',
+      exercises: props.custom || props.existing?.exercises ? exercises : undefined,
     });
     // Oude sets weg, nieuwe erin
     const old = (await db.sets.where('workoutId').equals(workout.id).toArray()).filter(alive);

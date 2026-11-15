@@ -8,6 +8,8 @@ import { METRICS, MetricEditor, formatMetric } from '../editors';
 import { useBlocks, useMoves } from '../ui';
 import { loadSeries } from '../recovery';
 import { cssColor } from '../theme';
+import { DRIFT_TEXT, driftLevel, driftRuns, rolling } from '../aerobic';
+import type { Workout } from '../db';
 import { dayTotal, goalStreak, lastDays, restReason, setsByDay, usePushupRecords, usePushupSettings } from '../pushups';
 
 
@@ -104,6 +106,8 @@ export function Progress() {
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+
+      <DriftSection runs={runs} />
 
       <h2>Fitheid en vermoeidheid</h2>
       <p className="muted small">Blauw: fitheid (6 weken). Grijs: vermoeidheid (1 week). Stippellijn: verwachting voor de komende 7 dagen volgens je schema. Ligt grijs ver boven blauw, dan ben je vermoeid.</p>
@@ -255,6 +259,59 @@ function PushupStats() {
         </div>
         <p className="muted small" style={{ marginBottom: 0 }}>Gestippelde lijn: dagdoel {goal}. Totaal sinds je begon: {all}. Beste dag: {best}.</p>
       </div>
+    </>
+  );
+}
+
+function DriftSection({ runs }: { runs: Workout[] }) {
+  const ACCENT = cssColor('--accent');
+  const GREY = cssColor('--muted');
+  const GRID = cssColor('--line');
+  const events = useBlocks();
+  const moves = useMoves();
+  const isQuality = (d: string) => {
+    const items = planForDay(d, events, moves).items;
+    return items.some(i => i.slotId === 'run-quality') && !items.some(i => i.kind === 'run' && i.slotId !== 'run-quality');
+  };
+  const list = driftRuns(runs, isQuality).slice(-16);
+  const trend = rolling(list, 4);
+  const data = list.map((r, i) => ({ dag: shortDate(r.date), drift: r.drift, trend: trend[i] }));
+  const last = trend[trend.length - 1];
+  return (
+    <>
+      <h2>Basisconditie</h2>
+      <p className="muted small">
+        Hartslagdrift op rustige lopen van minstens 35 minuten: hoeveel je hartslag in de tweede helft oploopt bij hetzelfde tempo. Lager is beter. Onder 5% is je basis goed voor die duur. Lopen met veel hoogtemeters en tempo- of intervaltrainingen tellen niet mee.
+      </p>
+      {list.length === 0 ? (
+        <div className="card muted small">Nog geen bruikbare lopen. Na een paar rustige lopen uit intervals.icu zie je hier je trend.</div>
+      ) : (
+        <div className="card">
+          <div className="spread">
+            <div>
+              <div className="num" style={{ fontSize: '1.5rem', fontWeight: 600, fontFamily: 'var(--num)' }}>{last.toString().replace('.', ',')}%</div>
+              <div className="muted small">gemiddeld over je laatste {Math.min(4, list.length)} {list.length === 1 ? 'loop' : 'lopen'}</div>
+            </div>
+          </div>
+          <p className="small" style={{ margin: '8px 0 0' }}>{DRIFT_TEXT[driftLevel(last)]}</p>
+          {list.length >= 2 && (
+            <div style={{ height: 170 }} className="mt">
+              <ResponsiveContainer>
+                <ComposedChart data={data} margin={{ top: 8, right: 4, left: -22, bottom: 0 }}>
+                  <CartesianGrid stroke={GRID} vertical={false} />
+                  <XAxis dataKey="dag" tick={{ fontSize: 10 }} tickLine={false} axisLine={{ stroke: GRID }} interval="preserveEnd" minTickGap={14} />
+                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} unit="%" domain={[0, (max: number) => Math.max(12, Math.ceil(max))]} />
+                  <Tooltip formatter={(v, n) => [`${String(v).replace('.', ',')}%`, n === 'trend' ? 'Trend' : 'Deze loop']} />
+                  <ReferenceLine y={5} stroke={GREY} strokeDasharray="4 4" />
+                  <Bar isAnimationActive={false} dataKey="drift" fill={GREY} fillOpacity={0.3} radius={[3, 3, 0, 0]} maxBarSize={18} />
+                  <Line isAnimationActive={false} dataKey="trend" stroke={ACCENT} strokeWidth={2} dot={{ r: 2 }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          <p className="muted small" style={{ marginBottom: 0 }}>Grijze balken: per loop. Blauwe lijn: trend. Stippellijn: 5%. Warmte, weinig drinken en vermoeidheid geven ook meer drift.</p>
+        </div>
+      )}
     </>
   );
 }

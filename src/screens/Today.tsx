@@ -10,12 +10,13 @@ import { MetricEditor, StrengthLogger, TEST_METRIC, WorkoutEditor, METRICS, exer
 import { MoveSheet } from '../moves';
 import { RecoveryCard } from './RecoveryCard';
 import { PushupCard } from './PushupCard';
+import { WeekReviewCard } from './WeekReviewCard';
 import { usePullupSet } from '../pushups';
 import { isNative } from '../native';
 
 type Editor =
   | { type: 'workout'; initial: Partial<Workout> & { date: ISODate; kind: Workout['kind'] }; existing?: Workout; allowKind?: boolean }
-  | { type: 'strength'; title: string; exercises: Exercise[]; slotId?: string; existing?: Workout }
+  | { type: 'strength'; title: string; exercises: Exercise[]; slotId?: string; existing?: Workout; custom?: boolean }
   | { type: 'metric'; kind: MetricKind }
   | { type: 'move' };
 
@@ -174,6 +175,8 @@ export function Today() {
 
       {isToday && plan.status === 'actief' && <RecoveryCard />}
 
+      {date <= today() && <WeekReviewCard date={date} />}
+
       {date <= today() && <PushupCard date={date} />}
 
       {gtgDay(date) && !blocking && (
@@ -221,9 +224,17 @@ export function Today() {
         + Extra training toevoegen
       </button>
 
-      {editor?.type === 'workout' && <WorkoutEditor initial={editor.initial} existing={editor.existing} allowKind={editor.allowKind} onClose={() => setEditor(null)} />}
+      {editor?.type === 'workout' && (
+        <WorkoutEditor
+          initial={editor.initial}
+          existing={editor.existing}
+          allowKind={editor.allowKind}
+          onClose={() => setEditor(null)}
+          onStrength={(title, exercises) => setEditor({ type: 'strength', title, exercises, custom: true })}
+        />
+      )}
       {editor?.type === 'strength' && (
-        <StrengthLogger date={date} title={editor.title} exercises={editor.exercises} slotId={editor.slotId} existing={editor.existing} onClose={() => setEditor(null)} />
+        <StrengthLogger date={date} title={editor.title} exercises={editor.exercises} slotId={editor.slotId} existing={editor.existing} custom={editor.custom} onClose={() => setEditor(null)} />
       )}
       {editor?.type === 'metric' && <MetricEditor kind={editor.kind} date={date} onClose={() => setEditor(null)} />}
       {editor?.type === 'move' && (

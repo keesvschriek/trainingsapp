@@ -25,6 +25,9 @@ interface IcuActivity {
   total_elevation_gain?: number;
   average_heartrate?: number;
   icu_rpe?: number;
+  decoupling?: number | null;
+  icu_efficiency_factor?: number | null;
+  efficiency_factor?: number | null;
 }
 
 function kindFor(type = ''): WorkoutKind {
@@ -52,6 +55,8 @@ export function mapActivity(a: IcuActivity): Omit<Workout, 'id' | 'updatedAt'> {
     elevationM: a.total_elevation_gain ? Math.round(a.total_elevation_gain) : undefined,
     avgHr: a.average_heartrate ? Math.round(a.average_heartrate) : undefined,
     rpe: a.icu_rpe ?? undefined,
+    decoupling: typeof a.decoupling === 'number' ? Math.round(a.decoupling * 10) / 10 : undefined,
+    efficiency: (a.icu_efficiency_factor ?? a.efficiency_factor) ?? undefined,
     source: 'intervals',
     externalId: String(a.id),
   };
@@ -83,7 +88,9 @@ export async function importActivities(days = 42): Promise<{ added: number; upda
   const s = await getIntervalsSettings();
   const newest = today();
   const last = await getSetting<string>('intervalsLastImport', '');
-  const oldest = last && last > addDays(newest, -days) ? addDays(last, -3) : addDays(newest, -days);
+  // Eenmalig alles van de afgelopen weken opnieuw ophalen, zodat ook oudere lopen de hartslagdrift krijgen
+  const driftDone = await getSetting<boolean>('intervalsDriftV1', false);
+  const oldest = driftDone && last && last > addDays(newest, -days) ? addDays(last, -3) : addDays(newest, -days);
   const list = await fetchActivities(s, oldest, newest);
 
   let added = 0;
@@ -103,6 +110,7 @@ export async function importActivities(days = 42): Promise<{ added: number; upda
     }
   }
   await db.kv.put({ key: 'intervalsLastImport', value: newest });
+  await db.kv.put({ key: 'intervalsDriftV1', value: true });
   // Rusthartslag, HRV en slaap (alleen als je horloge dat meet); fouten hier zijn niet erg
   try {
     await importWellness(s, addDays(newest, -45), newest);

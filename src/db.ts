@@ -1,3 +1,4 @@
+import type { Exercise } from './plan';
 import Dexie, { type Table } from 'dexie';
 import type { ISODate } from './dates';
 
@@ -26,6 +27,15 @@ export interface Workout extends Base {
   source: 'manual' | 'intervals';
   externalId?: string;
   sport?: string; // type uit intervals.icu, bijv. Run, TrailRun, Ride
+  exercises?: Exercise[]; // eigen krachttraining: de gekozen oefeningen
+  decoupling?: number; // hartslagdrift in % (intervals.icu)
+  efficiency?: number; // efficiency factor (intervals.icu)
+}
+
+/** Eigen krachtworkout om later opnieuw te gebruiken. */
+export interface Template extends Base {
+  name: string;
+  exercises: Exercise[];
 }
 
 export interface StrengthSet extends Base {
@@ -91,6 +101,7 @@ class TrainingDB extends Dexie {
   blocks!: Table<Block, string>;
   moves!: Table<Move, string>;
   checkins!: Table<Checkin, string>;
+  templates!: Table<Template, string>;
   kv!: Table<KV, string>;
 
   constructor() {
@@ -107,12 +118,15 @@ class TrainingDB extends Dexie {
       moves: 'id, week, updatedAt',
       checkins: 'id, date, updatedAt',
     });
+    this.version(3).stores({
+      templates: 'id, updatedAt',
+    });
   }
 }
 
 export const db = new TrainingDB();
 
-export const SYNC_TABLES = ['workouts', 'sets', 'metrics', 'checks', 'blocks', 'moves', 'checkins'] as const;
+export const SYNC_TABLES = ['workouts', 'sets', 'metrics', 'checks', 'blocks', 'moves', 'checkins', 'templates'] as const;
 export type SyncTable = (typeof SYNC_TABLES)[number];
 
 export function newId(): string {

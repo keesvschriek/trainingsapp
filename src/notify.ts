@@ -1,7 +1,7 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { db, alive, getSetting } from './db';
 import { addDays, fromISO, today } from './dates';
-import { planForDay } from './plan';
+import { planForDay, weekOf } from './plan';
 import { isNative } from './native';
 
 // Ochtendmelding met de training van de dag. Er staan steeds 14 meldingen vooruit klaar;
@@ -46,6 +46,24 @@ export async function scheduleMorning(): Promise<number> {
       id: BASE_ID + i,
       title: 'Goedemorgen',
       body,
+      schedule: { at, allowWhileIdle: true },
+      smallIcon: 'ic_stat_training',
+      iconColor: '#1F4E79',
+    });
+  }
+  // Zondagavond: terugblik op de week
+  for (let i = 0, n = 0; i < DAYS && n < 2; i++) {
+    const date = addDays(today(), i);
+    const at = fromISO(date);
+    if (at.getDay() !== 0) continue;
+    at.setHours(19, 0, 0, 0);
+    if (at.getTime() <= Date.now() + 60_000) continue;
+    const week = weekOf(date);
+    if (week < 1) continue;
+    list.push({
+      id: BASE_ID + 60 + n++,
+      title: 'Je week zit erop',
+      body: `Bekijk je terugblik op week ${week}: wat je deed en wat er volgende week komt.`,
       schedule: { at, allowWhileIdle: true },
       smallIcon: 'ic_stat_training',
       iconColor: '#1F4E79',

@@ -31,7 +31,7 @@ export function NotifySection() {
         <p className="muted small">Alleen in de Android-app.</p>
       ) : (
         <>
-          <p className="muted small">Elke ochtend een melding met je training van die dag. Tik erop voor je check-in.</p>
+          <p className="muted small">Elke ochtend een melding met je training van die dag. Tik erop voor je check-in. Op zondag om 19:00 krijg je ook een melding voor je weekterugblik.</p>
           <label className="row" style={{ color: 'var(--ink)', fontSize: '1rem' }}>
             <input type="checkbox" checked={s.on} onChange={e => store({ ...s, on: e.target.checked })} style={{ width: 'auto' }} /> Ochtendmelding aan
           </label>
