@@ -35,7 +35,9 @@ Bijwerken
 In de app: Instellingen, Bijwerken via wifi. Alleen wat veranderd is wordt
 opgehaald en elk bestand wordt gecontroleerd. De vorige versie wordt bewaard;
 met Vorige versie terugzetten ga je terug. Je voortgang wordt nooit overschreven.
-Zonder wifi: download de nieuwe zip en herhaal stap 2.
+Zonder wifi: download de nieuwste zip van
+https://keesvschriek.github.io/trainingsapp/kobo/kees-study-kobo.zip
+en herhaal stap 2.
 
 Back-ups
 Je voortgang staat in .adds/koreader/settings/keesstudy.lua. Elke dag dat je de

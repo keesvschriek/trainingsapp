@@ -33,6 +33,9 @@ jobs:
           npx tsx scripts/export-kobo.ts kobo/app/data
           npx tsx scripts/export-kobo-map.ts kobo/app/data
           KOBO_VERSION="$(date -u +%Y-%m-%d)-$(git rev-parse --short HEAD)" node scripts/kobo-pages.mjs dist/kobo
+          # de zip om met de kabel te installeren, altijd de nieuwste
+          sudo apt-get install -y -qq zip >/dev/null
+          sh kobo/build.sh dist/kobo/kees-study-kobo.zip
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

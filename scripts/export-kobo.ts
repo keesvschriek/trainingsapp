@@ -18,7 +18,8 @@ const questions = [
 ];
 
 const data = {
-  version: new Date().toISOString().slice(0, 10),
+  // geen datum: anders ziet de Kobo elke dag een "nieuwe versie" terwijl er niets veranderd is
+  version: `${questions.length}`,
   groups: GROUPS,
   cats: CATS,
   questions,

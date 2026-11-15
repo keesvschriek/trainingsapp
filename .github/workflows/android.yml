@@ -3,6 +3,15 @@ name: Android-app bouwen
 on:
   push:
     branches: [main]
+    # Alleen een nieuwe telefoon-app als er aan de app zelf iets verandert.
+    # De Kobo-app gaat via GitHub Pages (bijwerken via wifi), quizpakketten haalt de app zelf op.
+    paths-ignore:
+      - 'kobo/**'
+      - 'quiz-packs/**'
+      - 'scripts/kobo-pages.mjs'
+      - 'scripts/export-kobo*.ts'
+      - 'scripts/pack-*.py'
+      - '**.md'
   workflow_dispatch:
 
 permissions:
