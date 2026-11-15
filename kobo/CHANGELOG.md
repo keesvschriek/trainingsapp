@@ -2,6 +2,12 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Toolbox en automatisch verversen
+- Tools: rekenmachine, stopwatch met rondetijden, tempo berekenen met tussentijden, omrekenen en een wereldklok
+- Intervaltimer ook onder Tools
+- Scherm wordt nu om de 8 schermen volledig ververst; in Instellingen te kiezen (nooit, 4, 8 of 15)
+- Grotere toetsen; back-ups staan nu onder Bijwerken en back-ups
+
 ## Krachttraining in Sport
 - Kracht, tests en wedstrijden uit je schema staan nu ook in Sport, met de oefeningen
 - Fout opgelost: Sport liep vast als intervals.icu een leeg veld meestuurde

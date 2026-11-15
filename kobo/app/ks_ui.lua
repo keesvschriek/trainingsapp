@@ -203,7 +203,7 @@ end
 --- Knop. opts: width, primary (zwart vlak), small, disabled, icon, minh
 function UI.button(label, callback, opts)
     opts = opts or {}
-    local size = opts.small and 17 or 20
+    local size = opts.size or (opts.small and 17 or 20)
     local padv = UI.px(opts.small and 11 or 17)
     local fg = opts.primary and UI.WHITE or (opts.disabled and UI.INK3 or UI.BLACK)
     local bg = opts.primary and UI.BLACK or UI.WHITE
@@ -244,7 +244,7 @@ function UI.buttonRow(list, width)
     local row = HorizontalGroup:new{}
     for i, b in ipairs(list) do
         if i > 1 then table.insert(row, HorizontalSpan:new{ width = gap }) end
-        table.insert(row, UI.button(b[1], b[2], { width = bw, primary = b.primary, small = b.small, disabled = b.disabled, icon = b.icon }))
+        table.insert(row, UI.button(b[1], b[2], { width = bw, primary = b.primary, small = b.small, disabled = b.disabled, icon = b.icon, size = b.size, minh = b.minh }))
     end
     return row
 end
@@ -432,7 +432,7 @@ end
 function UI.appIcon(icon, label, size, callback, dark, width)
     local box = UI.badge(icon, size, dark)
     local w = width or math.max(size, UI.px(120))
-    local g = UI.vgroup({ UI.center(box, w, size), UI.vspace(8), UI.center(UI.text(label, { size = 14, font = "medium", max_width = w }), w) }, "center")
+    local g = UI.vgroup({ UI.center(box, w, size), UI.vspace(8), UI.center(UI.text(label, { size = 13, font = "medium", max_width = w - UI.px(2) }), w) }, "center")
     return Tap:new{ callback = callback, label = label, g }
 end
 

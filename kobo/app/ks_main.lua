@@ -85,6 +85,16 @@ end
 --- Teken het huidige scherm opnieuw (na een tik). mode "page" = nieuw scherm.
 function App:render(mode)
     self:rebuild()
+    -- Om de zoveel nieuwe schermen één keer volledig verversen (tegen vage restjes).
+    if mode == "page" then
+        self.navs = (self.navs or 0) + 1
+        local every = Store.get("set.fullevery", 8)
+        if every > 0 and self.navs >= every then
+            self.navs = 0
+            UIManager:setDirty(self, "full")
+            return
+        end
+    end
     -- Altijd "partial": op de Elipsa 2E is dat de modus zonder knipperen (REAGL).
     -- "ui" laat het scherm zelf kiezen en dat knippert bij grijstinten; "full" geeft een zwarte flits.
     UIManager:setDirty(self, "partial")
@@ -258,7 +268,7 @@ local function homePage(app)
             { "chess", "Kees Study", function() app:go(M.studyFolder) end, true },
             { "run", "Sport", function() app:go(Sport.page) end },
             { "leaf", "Ontwikkeling", function() app:go(M.growFolder) end },
-            { "news", "Nieuws", function() app:go(News.page) end },
+            { "wrench", "Tools", function() app:go(require("ks_tools").menu) end },
             { "book", "Lezen", function() app:quit() end },
             { "cog", "Instellingen", function() app:go(Sys.settingsPage) end },
         }
@@ -347,6 +357,8 @@ function M.updatePage(app)
     end
     table.insert(items, UI.vspace(18))
     table.insert(items, UI.text("Wifi gaat vanzelf aan als dat nodig is. Je voortgang blijft bewaard.", { size = 16, color = UI.INK2, width = UI.INNER() }))
+    table.insert(items, UI.vspace(18))
+    table.insert(items, UI.row("Back-ups van je voortgang", "Elke dag een kopie, 7 dagen bewaard", "›", function() app:go(require("ks_system").backupPage) end, nil, "history"))
     return UI.page(UI.vgroup(items))
 end
 

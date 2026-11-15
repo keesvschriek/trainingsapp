@@ -113,8 +113,14 @@ local function tick()
         UIManager:suspend()
     elseif app and not state.suspended then
         -- alleen de statusbalk verversen: geen knipperen, de rest van het scherm blijft staan
-        local rect = Geom:new{ x = 0, y = 0, w = UI.W(), h = UI.px(UI.TOPPAD - 8) }
-        UIManager:setDirty(app, function() return "partial", rect end)
+        local top = app.stack and app.stack[#app.stack]
+        local ok, Tools = pcall(require, "ks_tools")
+        if ok and top == Tools.clock then
+            app:render("ui") -- wereldklok: hele scherm met de nieuwe tijden
+        else
+            local rect = Geom:new{ x = 0, y = 0, w = UI.W(), h = UI.px(UI.TOPPAD - 8) }
+            UIManager:setDirty(app, function() return "partial", rect end)
+        end
     end
     -- volgende keer net na de volgende minuutwissel
     UIManager:scheduleIn(61 - os.date("*t").sec, tick)
@@ -212,7 +218,7 @@ function Sys.settingsPage(app)
         Sys.applyFont()
         app:render("ui")
     end))
-    table.insert(items, UI.vspace(big and 12 or 18))
+    table.insert(items, UI.vspace(big and 8 or 12))
 
     table.insert(items, UI.section("Automatisch slapen na"))
     local sl, cur = {}, 2
@@ -224,9 +230,19 @@ function Sys.settingsPage(app)
         Store.set("set.sleep", Sys.SLEEP[i])
         app:refresh()
     end))
-    table.insert(items, UI.vspace(big and 14 or 22))
+    table.insert(items, UI.vspace(big and 8 or 12))
 
-    UI.rowPad = big and 16 or 22
+    table.insert(items, UI.section("Scherm volledig verversen, na zoveel schermen"))
+    local fe = Store.get("set.fullevery", 8)
+    local feList, feCur = { 0, 4, 8, 15 }, 3
+    for i, v in ipairs(feList) do if v == fe then feCur = i end end
+    table.insert(items, UI.segmented({ "Nooit", "Elke 4", "Elke 8", "Elke 15" }, feCur, function(i)
+        Store.set("set.fullevery", feList[i])
+        app:refresh()
+    end))
+    table.insert(items, UI.vspace(big and 12 or 16))
+
+    UI.rowPad = big and 12 or 16
     local _, total = weekBlock()
     table.insert(items, UI.row("Schermtijd", "Vandaag " .. Sys.fmt(Sys.secondsOn()) .. " · deze week " .. Sys.fmt(total), "›", function() app:go(Sys.screenPage) end, W, "clock"))
     local Sport = require("ks_sport")
@@ -239,8 +255,7 @@ function Sys.settingsPage(app)
         app:refresh()
         UIManager:scheduleIn(0.2, function() Net.toggle(function() app.wifiBusy = nil; app:refresh() end) end)
     end, W, "wifi"))
-    table.insert(items, UI.row("Bijwerken via wifi", "Versie " .. require("ks_update").localVersion(), "›", function() app:go(require("ks_main").updatePage) end, W, "download"))
-    table.insert(items, UI.row("Back-ups", "Elke dag een kopie, 7 dagen bewaard", "›", function() app:go(Sys.backupPage) end, W, "history"))
+    table.insert(items, UI.row("Bijwerken en back-ups", "Versie " .. require("ks_update").localVersion(), "›", function() app:go(require("ks_main").updatePage) end, W, "download"))
     UI.rowPad = nil
     return UI.page(UI.vgroup(items))
 end

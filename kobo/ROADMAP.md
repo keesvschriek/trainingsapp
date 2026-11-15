@@ -22,11 +22,31 @@ en alleen echte testresultaten melden.
 - Sport: intervals.icu (vandaag, komende dagen, week, vorm) en intervaltimer
 - Krant: NOS-feeds, ochtend- en avondeditie automatisch, offline lezen
 
-## Volgende ronde (gekozen door Kees)
-1. Synchronisatie twee kanten op voor sport en notities (privé, niet via de openbare repo)
-2. Leesstatistieken uit de Kobo-database (leestijd, voortgang, markeringen als citaten)
-3. Focustimer (pomodoro, historie) en dagplanner (taken, prioriteit, weekoverzicht, reflectie)
-4. Toolbox (rekenmachine, stopwatch, eenheden, wereldklok)
+- Sport: schema van twee weken en per dag bladeren; kracht en tests als notitie via de telefoon-app
+- Toolbox: rekenmachine, stopwatch, tempo berekenen, omrekenen, wereldklok, intervaltimer
+- Automatisch volledig verversen om de zoveel schermen (instelbaar)
+
+## Volgende ronde: telefoon en Kobo gelijktrekken (bewaard op 15 nov, nog niet gestart)
+Eén centrale plek: de Supabase-tabel `records` die de telefoon-app al gebruikt (per gebruiker
+afgeschermd, offline eerst, nieuwste wijziging wint). De Kobo krijgt dezelfde synchronisatie in Lua:
+eenmalig inloggen met e-mail en wachtwoord, daarna alleen een sleutel om ingelogd te blijven.
+
+1. Sport: op de Kobo een training afvinken met zwaarte (1-10) en een notitie, plus de ochtend-check-in
+   (slaap, benen, energie, rust). Dat zijn bestaande gegevens van de telefoon-app.
+2. Notities in beide apps. Typen op de telefoon, lezen en aanvullen op de Kobo (Kobo voegt alleen toe).
+3. Gedeelde ontwerpregels (Inter, Material Design-iconen, kaarten, zelfde opbouw en namen);
+   de telefoon-app in de nieuwe stijl.
+4. Gewoontes, quizvoortgang en dagteksten gedeeld.
+
+Open vragen voor Kees:
+- Staat synchroniseren op de telefoon aan (Instellingen, Synchroniseren, Laatste synchronisatie)?
+- Telefoon helemaal zwart-wit, of met één rustige accentkleur?
+- Nieuws en dagtekst ook op de telefoon, of alleen op de Kobo?
+- In Supabase het aanmaken van nieuwe accounts uitzetten voordat het adres en de openbare sleutel in de app komen.
+
+## Daarna
+- Leesstatistieken uit de Kobo-database (leestijd, voortgang, markeringen als citaten)
+- Focustimer (pomodoro, historie) en dagplanner (taken, prioriteit, weekoverzicht, reflectie)
 
 ## Later
 - Leren: gespreid herhalen, tips, vandaag in de geschiedenis
