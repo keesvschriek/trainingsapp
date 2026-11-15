@@ -73,7 +73,7 @@ export interface Block extends Base {
 /** Verschuiving in het schema. shift: dag a schuift een dag op (rest van de week schuift mee). swap: dag a en b ruilen. */
 export interface Move extends Base {
   week: number;
-  op: 'shift' | 'swap';
+  op: 'shift' | 'swap' | 'busy'; // busy: drukke week, alleen de kern blijft staan
   a: number; // 0 = maandag
   b?: number;
   at: number; // volgorde van toepassen

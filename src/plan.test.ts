@@ -204,3 +204,42 @@ describe('lichte week', () => {
     expect(h?.text).toContain('Lichte week');
   });
 });
+
+import { busyKeep, planForWeek as pfw, BUSY_NOTE } from './plan';
+describe('drukke week', () => {
+  const busy = [{ id: 'b', week: 2, op: 'busy' as const, a: 0, at: 1, updatedAt: 1 }];
+  it('houdt de lange loop (korter), één andere loop en één krachttraining over', () => {
+    const before = pfw(2);
+    const after = pfw(2, [], busy);
+    const train = (d: typeof after) => d.flatMap(x => x.items.filter(i => i.kind !== 'rest' && i.kind !== 'free' && !i.optional));
+    const kept = train(after);
+    expect(kept.filter(i => i.slotId === 'run-long')).toHaveLength(1);
+    expect(kept.filter(i => i.kind === 'run')).toHaveLength(2);
+    expect(kept.filter(i => i.kind === 'strength')).toHaveLength(1);
+    const longBefore = train(before).find(i => i.slotId === 'run-long')!.minutes!;
+    expect(kept.find(i => i.slotId === 'run-long')!.minutes).toBeLessThan(longBefore);
+    expect(after[0].weekNote).toBe(BUSY_NOTE);
+    expect(after.flatMap(d => d.items).some(i => i.title.startsWith('Vervallen'))).toBe(true);
+  });
+  it('raakt andere weken en testweken niet', () => {
+    expect(pfw(3, [], busy)[0].busy).toBeFalsy();
+    const test = [{ ...busy[0], week: 9 }];
+    expect(pfw(9, [], test).some(d => d.busy)).toBe(false);
+  });
+  it('kiest de kern ook als er geen kwaliteitsloop is', () => {
+    expect(busyKeep([[], [{ slotId: 'run-easy', kind: 'run', title: 'R' }], [{ slotId: 'kracht-rug', kind: 'strength', title: 'K' }]]).size).toBe(2);
+  });
+});
+
+describe('drukke week halverwege', () => {
+  it('laat gedane dagen staan en telt ze mee voor de kern', () => {
+    // Vanaf woensdag: maandag (kracht) en dinsdag (loop) zijn al geweest
+    const busy = [{ id: 'b', week: 2, op: 'busy' as const, a: 2, at: 1, updatedAt: 1 }];
+    const before = pfw(2);
+    const after = pfw(2, [], busy);
+    expect(after[0].items).toEqual(before[0].items);
+    expect(after[1].items).toEqual(before[1].items);
+    const rest = after.slice(2).flatMap(d => d.items.filter(i => i.kind !== 'rest' && i.kind !== 'free' && !i.optional));
+    expect(rest.map(i => i.slotId)).toEqual(['run-long']); // kracht en loop zijn al gedaan, alleen de lange loop blijft
+  });
+});

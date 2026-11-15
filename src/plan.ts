@@ -345,7 +345,7 @@ export function daysOfWeek(week: number, moves: Move[] = [], depth = 0): { days:
     }
   }
 
-  for (const m of live.filter(m => m.week === week).sort((x, y) => x.at - y.at)) {
+  for (const m of live.filter(m => m.week === week && m.op !== 'busy').sort((x, y) => x.at - y.at)) {
     moved = true;
     if (m.op === 'swap' && m.b != null) {
       [days[m.a], days[m.b]] = [days[m.b], days[m.a]];
@@ -376,6 +376,56 @@ export interface DayPlan {
   weekNote?: string;
   status: 'voor' | 'actief';
   moved?: boolean;
+  busy?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Drukke week: alleen de kern blijft staan
+// ---------------------------------------------------------------------------
+
+export const BUSY_NOTE = 'Drukke week: alleen de lange loop (iets korter), één andere loop en één krachttraining. De rest vervalt en telt niet als gemist.';
+
+export function isBusyWeek(week: number, moves: Move[] = []): boolean {
+  return busyFrom(week, moves) !== null;
+}
+
+/** Vanaf welke dag (0 = maandag) de drukke week geldt, of null. */
+export function busyFrom(week: number, moves: Move[] = []): number | null {
+  const m = moves.find(m => !m.deleted && m.op === 'busy' && m.week === week);
+  return m ? m.a : null;
+}
+
+/**
+ * Welke trainingen blijven staan in een drukke week: per dag de slotIds.
+ * Dagen voor `from` blijven zoals ze waren en tellen mee voor de kern.
+ */
+export function busyKeep(days: PlannedItem[][], from = 0): Set<string> {
+  const keep = new Set<string>();
+  const past = days.slice(0, from).flat().filter(i => !i.optional);
+  for (let d = 0; d < from; d++) for (const i of days[d]) keep.add(`${d}:${i.slotId}`);
+  const find = (pred: (i: PlannedItem) => boolean) => {
+    for (let d = from; d < days.length; d++) {
+      const it = days[d].find(i => !i.optional && pred(i));
+      if (it) return `${d}:${it.slotId}`;
+    }
+    return null;
+  };
+  const had = (pred: (i: PlannedItem) => boolean) => past.some(pred);
+  const long = had(i => i.slotId === 'run-long') ? null : find(i => i.slotId === 'run-long');
+  const run = had(i => i.kind === 'run' && i.slotId !== 'run-long') ? null : find(i => i.slotId === 'run-quality') ?? find(i => i.kind === 'run' && i.slotId !== 'run-long');
+  const strength = had(i => i.kind === 'strength') ? null : find(i => i.slotId === 'kracht-mix') ?? find(i => i.kind === 'strength');
+  for (const k of [long, run, strength]) if (k) keep.add(k);
+  return keep;
+}
+
+function applyBusy(items: PlannedItem[], wd: number, keep: Set<string>): PlannedItem[] {
+  return items.map(i => {
+    if (i.kind === 'rest' || i.kind === 'free' || i.kind === 'test') return i;
+    if (keep.has(`${wd}:${i.slotId}`)) {
+      return i.slotId === 'run-long' && i.minutes ? { ...i, minutes: Math.round((i.minutes * 0.8) / 5) * 5 } : i;
+    }
+    return { slotId: `vervallen-${i.slotId}`, kind: 'rest', title: `Vervallen: ${i.title.charAt(0).toLowerCase()}${i.title.slice(1)}`, detail: 'Drukke week. Bewust overgeslagen, telt niet als gemist.' };
+  });
 }
 
 const BLOCKING: Block['kind'][] = ['defensie', 'ziek', 'anders'];
@@ -409,6 +459,13 @@ export function planForDay(date: ISODate, events: Block[] = [], moves: Move[] = 
     items = items.map(i => (i.kind === 'run' && i.minutes ? { ...i, minutes: Math.round((i.minutes * 0.7) / 5) * 5 } : i));
   }
 
+  const from = busyFrom(week, moves);
+  const busy = from !== null && !spec.test;
+  if (busy && wd >= from) {
+    items = applyBusy(items, wd, busyKeep(weekDays.days, from));
+    weekNote = BUSY_NOTE;
+  }
+
   if (event && BLOCKING.includes(event.kind)) {
     const detail = event.kind === 'defensie' ? 'Geen training. Dit telt als belasting.' : event.kind === 'ziek' ? 'Herstellen. Niet inhalen.' : undefined;
     items = [rest(event.label, detail)];
@@ -422,7 +479,7 @@ export function planForDay(date: ISODate, events: Block[] = [], moves: Move[] = 
     if (before) items = [easy(20, true)];
   }
 
-  return { date, week, block: blockOfWeek(week), items, event, lightWeek, testWeek: !!spec.test, weekNote, status: 'actief', moved: weekDays.moved };
+  return { date, week, block: blockOfWeek(week), items, event, lightWeek, testWeek: !!spec.test, weekNote, status: 'actief', moved: weekDays.moved, busy };
 }
 
 export function planForWeek(week: number, events: Block[] = [], moves: Move[] = []): DayPlan[] {

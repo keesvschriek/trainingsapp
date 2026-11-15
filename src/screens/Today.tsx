@@ -7,7 +7,7 @@ import { planForDay, planForWeek, gtgDay, nextTestWeek, weekInBlock, type Planne
 import { matchDay, type ItemStatus } from '../match';
 import { Contour, Icon, Show3D, useBlocks, useMoves, fmt } from '../ui';
 import { MetricEditor, StrengthLogger, TEST_METRIC, WorkoutEditor, METRICS, exercisesFor, formatMetric } from '../editors';
-import { MoveSheet } from '../moves';
+import { BusyWeekSheet, MoveSheet, undoBusy } from '../moves';
 import { RecoveryCard } from './RecoveryCard';
 import { PushupCard } from './PushupCard';
 import { WeekReviewCard } from './WeekReviewCard';
@@ -18,7 +18,8 @@ type Editor =
   | { type: 'workout'; initial: Partial<Workout> & { date: ISODate; kind: Workout['kind'] }; existing?: Workout; allowKind?: boolean }
   | { type: 'strength'; title: string; exercises: Exercise[]; slotId?: string; existing?: Workout; custom?: boolean }
   | { type: 'metric'; kind: MetricKind }
-  | { type: 'move' };
+  | { type: 'move' }
+  | { type: 'busy' };
 
 const MONTHS = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
 const DAYS = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag'];
@@ -217,6 +218,11 @@ export function Today() {
             {runKm > 0 ? `${fmt.km(runKm)} gelopen. ` : ''}
             {!plan.testWeek && daysToTest > 0 ? `Volgende testweek: ${shortDate(testMonday)}, over ${daysToTest} dagen.` : ''}
           </p>
+          {!plan.testWeek && (plan.busy ? (
+            <button className="btn ghost small" onClick={() => void undoBusy(plan.week)}>Drukke week terugdraaien</button>
+          ) : (
+            <button className="btn ghost small" onClick={() => setEditor({ type: 'busy' })}>Drukke week? Schema inkorten</button>
+          ))}
         </>
       )}
 
@@ -237,6 +243,7 @@ export function Today() {
         <StrengthLogger date={date} title={editor.title} exercises={editor.exercises} slotId={editor.slotId} existing={editor.existing} custom={editor.custom} onClose={() => setEditor(null)} />
       )}
       {editor?.type === 'metric' && <MetricEditor kind={editor.kind} date={date} onClose={() => setEditor(null)} />}
+      {editor?.type === 'busy' && <BusyWeekSheet week={plan.week} events={events} moves={moves} onClose={() => setEditor(null)} />}
       {editor?.type === 'move' && (
         <MoveSheet date={date} week={plan.week} weekday={(diffDays(date, mondayOf(date)) + 7) % 7} events={events} moves={moves} onClose={() => setEditor(null)} />
       )}
