@@ -60,7 +60,7 @@ function U.check(callback)
             end
         end
         callback(true, { version = m.version, files = changed, bytes = bytes, changes = type(m.changes) == "table" and m.changes or nil })
-    end)
+    end, { onFail = function(msg) callback(false, msg) end })
 end
 
 local function readAll(path)
@@ -174,10 +174,11 @@ function U.apply(info, callback, progress)
             if not writeAll(file, body) then rmTree(tmp); return callback(false, "Kan " .. f.p .. " niet opslaan.") end
             if md5.sumFile(file) ~= f.md5 then rmTree(tmp); return callback(false, f.p .. " is niet goed binnengekomen. Probeer het opnieuw.") end
             staged[#staged + 1] = { p = f.p, from = file, to = target(f.p) }
+            Net.touch()
             UIManager:scheduleIn(0.05, step)
         end
         step()
-    end)
+    end, { onFail = function(msg) callback(false, msg) end })
 end
 
 return U

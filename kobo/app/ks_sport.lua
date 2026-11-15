@@ -99,11 +99,10 @@ end
 
 --- Ophalen met wifi (zelf aanzetten en daarna weer uit).
 function S.refresh(done)
-    require("ks_net").online(function(weDid)
+    require("ks_net").online(function()
         local ok, err = S.fetchNow()
-        require("ks_net").offIfWeTurnedOn(weDid)
         done(ok, err)
-    end)
+    end, { onFail = function(msg) done(false, msg) end })
 end
 
 -- Samenvattingen -------------------------------------------------------------

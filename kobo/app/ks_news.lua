@@ -161,13 +161,12 @@ function N.fetchNow()
 end
 
 function N.refresh(done, quiet)
-    require("ks_net").online(function(weDid)
+    require("ks_net").online(function()
         local ok, err = N.fetchNow()
         -- in dezelfde wifi-sessie ook de sporttraining bijwerken
         if require("ks_sport").connected() then pcall(require("ks_sport").fetchNow) end
-        require("ks_net").offIfWeTurnedOn(weDid)
         done(ok, err)
-    end, { quiet = quiet })
+    end, { quiet = quiet, onFail = function(msg) done(false, msg) end })
 end
 
 --- Moet de editie van nu nog opgehaald worden? (alleen ochtend en avond automatisch)

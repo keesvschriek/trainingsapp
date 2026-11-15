@@ -232,6 +232,13 @@ function Sys.settingsPage(app)
     local Sport = require("ks_sport")
     table.insert(items, UI.row("Sport", Sport.connected() and "Gekoppeld met intervals.icu" or "Nog niet gekoppeld", "›", function() app:go(Sys.sportPage) end, W, "run"))
     table.insert(items, UI.row("Nieuws", "Rubrieken en automatisch ophalen", "›", function() app:go(require("ks_news").settings) end, W, "news"))
+    local Net = require("ks_net")
+    local wifiOn = Net.isOn()
+    table.insert(items, UI.row("Wifi", app.wifiBusy and "Bezig..." or (wifiOn and "Aan · tik om uit te zetten" or "Uit · tik om aan te zetten"), wifiOn and "Aan" or "Uit", function()
+        app.wifiBusy = true
+        app:refresh()
+        UIManager:scheduleIn(0.2, function() Net.toggle(function() app.wifiBusy = nil; app:refresh() end) end)
+    end, W, "wifi"))
     table.insert(items, UI.row("Bijwerken via wifi", "Versie " .. require("ks_update").localVersion(), "›", function() app:go(require("ks_main").updatePage) end, W, "download"))
     table.insert(items, UI.row("Back-ups", "Elke dag een kopie, 7 dagen bewaard", "›", function() app:go(Sys.backupPage) end, W, "history"))
     UI.rowPad = nil

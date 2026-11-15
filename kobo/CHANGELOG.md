@@ -2,6 +2,12 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Betere wifi
+- Wifi gaat niet meer uit terwijl je iets aan het bijwerken bent
+- Na een minuut zonder netwerkgebruik gaat wifi uit, alleen als de app hem zelf had aangezet
+- Lukt verbinden niet, dan zie je na een minuut een melding in plaats van eindeloos wachten
+- Wifi met de hand aan en uit zetten in Instellingen
+
 ## Schema in Sport
 - Sport heeft een Schema: de komende twee weken, per dag één regel
 - Tik op een dag of op de training van vandaag voor alles wat er staat, met de hele omschrijving

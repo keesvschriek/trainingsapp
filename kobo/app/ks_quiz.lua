@@ -190,7 +190,7 @@ function Q.updatePacks(callback)
         Q.load(require("ks_main").dir)
         local added = #data.questions - before
         callback(true, added > 0 and (added .. " nieuwe vragen binnen.") or "Geen nieuwe vragen: je bent bij.")
-    end)
+    end, { onFail = function(msg) callback(false, msg) end })
 end
 
 return Q
