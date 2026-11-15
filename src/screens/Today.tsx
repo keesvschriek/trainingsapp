@@ -11,6 +11,8 @@ import { BusyWeekSheet, MoveSheet, undoBusy } from '../moves';
 import { RecoveryCard } from './RecoveryCard';
 import { PushupCard } from './PushupCard';
 import { WeekReviewCard } from './WeekReviewCard';
+import { MomentCard } from './MomentCard';
+import { topicFor, Why } from '../explain';
 import { usePullupSet } from '../pushups';
 import { isNative } from '../native';
 
@@ -155,7 +157,12 @@ export function Today() {
         </div>
       )}
 
-      {plan.weekNote && <div className="notice">{plan.weekNote}</div>}
+      {plan.weekNote && (
+        <div className="notice">
+          {plan.weekNote}
+          {(plan.busy || plan.testWeek || plan.lightWeek) && <Why topic={plan.busy ? 'busy' : plan.testWeek ? 'test' : 'light'} />}
+        </div>
+      )}
       {plan.moved && <div className="notice">Deze week is aangepast. Terugzetten kan via Verschuiven.</div>}
       {plan.event?.kind === 'vakantie' && <div className="notice">{plan.event.label}: extra ruimte voor een trailloop.</div>}
 
@@ -173,6 +180,11 @@ export function Today() {
           onMove={plan.status === 'actief' && !blocking ? () => setEditor({ type: 'move' }) : undefined}
         />
       )}
+
+      {isToday && plan.status === 'actief' && (() => {
+        const runSt = statuses.find(st => st.item.kind === 'run' && !st.item.optional);
+        return <MomentCard date={date} run={runSt?.item} done={!!runSt?.done} />;
+      })()}
 
       {isToday && plan.status === 'actief' && <RecoveryCard />}
 
@@ -338,6 +350,7 @@ function Hero(props: {
             </ul>
           )}
           {item.detail && <p className="muted" style={{ marginTop: 6 }}>{item.detail}</p>}
+          {topicFor(item) && <Why topic={topicFor(item)!} />}
         </div>
       )}
 

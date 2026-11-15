@@ -9,6 +9,8 @@ import { useBlocks, useMoves } from '../ui';
 import { loadSeries } from '../recovery';
 import { cssColor } from '../theme';
 import { DRIFT_TEXT, driftLevel, driftRuns, rolling } from '../aerobic';
+import { Why } from '../explain';
+import { euro, savedFor, useCar } from '../savings';
 import type { Workout } from '../db';
 import { dayTotal, goalStreak, lastDays, restReason, setsByDay, usePushupRecords, usePushupSettings } from '../pushups';
 
@@ -111,6 +113,7 @@ export function Progress() {
 
       <h2>Fitheid en vermoeidheid</h2>
       <p className="muted small">Blauw: fitheid (6 weken). Grijs: vermoeidheid (1 week). Stippellijn: verwachting voor de komende 7 dagen volgens je schema. Ligt grijs ver boven blauw, dan ben je vermoeid.</p>
+      <Why topic="load" />
       <div className="chart">
         <ResponsiveContainer>
           <LineChart data={formData} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
@@ -211,6 +214,8 @@ export function Progress() {
 
       <PushupStats />
 
+      <SavingsSection />
+
       <p className="muted small">Pull-ups tussendoor sinds de start: {gtgTotal}.</p>
 
       {add && <MetricEditor kind={add} onClose={() => setAdd(null)} />}
@@ -294,6 +299,7 @@ function DriftSection({ runs }: { runs: Workout[] }) {
             </div>
           </div>
           <p className="small" style={{ margin: '8px 0 0' }}>{DRIFT_TEXT[driftLevel(last)]}</p>
+          <Why topic="drift" extra={`Jij: gemiddeld ${String(last).replace('.', ',')}% over je laatste ${Math.min(4, list.length)} rustige lopen.`} />
           {list.length >= 2 && (
             <div style={{ height: 170 }} className="mt">
               <ResponsiveContainer>
@@ -312,6 +318,32 @@ function DriftSection({ runs }: { runs: Workout[] }) {
           <p className="muted small" style={{ marginBottom: 0 }}>Grijze balken: per loop. Blauwe lijn: trend. Stippellijn: 5%. Warmte, weinig drinken en vermoeidheid geven ook meer drift.</p>
         </div>
       )}
+    </>
+  );
+}
+
+function SavingsSection() {
+  const car = useCar();
+  const all = useLiveQuery(async () => (await db.workouts.toArray()).filter(alive).filter(w => w.carFree), [], [] as Workout[]);
+  if (all.length === 0) return null;
+  const t = today();
+  const month = savedFor(all, car, t.slice(0, 8) + '01', t);
+  const year = savedFor(all, car, t.slice(0, 5) + '01-01', t);
+  const total = savedFor(all, car);
+  const kg = (x: number) => `${String(Math.round(x)).replace('.', ',')} kg`;
+  return (
+    <>
+      <h2>Bespaard door te lopen of fietsen</h2>
+      <div className="card">
+        <div className="stat-row">
+          <div><div className="num">{euro(month.euro)}</div><div className="muted small">deze maand, {month.trips} {month.trips === 1 ? 'rit' : 'ritten'}</div></div>
+          <div><div className="num">{euro(year.euro)}</div><div className="muted small">dit jaar</div></div>
+          <div><div className="num">{kg(total.co2)}</div><div className="muted small">CO₂ minder, totaal</div></div>
+        </div>
+        <p className="muted small" style={{ marginBottom: 0 }}>
+          {total.trips} {total.trips === 1 ? "rit" : "ritten"} van {car.km} km zonder auto, samen {total.liters.toString().replace('.', ',')} liter brandstof. Op basis van {car.usage.toString().replace('.', ',')} l/100 km en {euro(car.price)} per liter. CO₂ inclusief winning en productie van de brandstof.
+        </p>
+      </div>
     </>
   );
 }

@@ -28,6 +28,7 @@ export interface Workout extends Base {
   externalId?: string;
   sport?: string; // type uit intervals.icu, bijv. Run, TrailRun, Ride
   exercises?: Exercise[]; // eigen krachttraining: de gekozen oefeningen
+  carFree?: boolean; // woon-werk gelopen of gefietst, de auto bleef staan
   decoupling?: number; // hartslagdrift in % (intervals.icu)
   efficiency?: number; // efficiency factor (intervals.icu)
 }

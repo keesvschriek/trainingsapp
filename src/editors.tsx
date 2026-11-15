@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { CATALOG, customExercise } from './catalog';
+import { Why } from './explain';
+import { RestTimer } from './trivia/RestTimer';
 import { db, newId, remove, save, alive, type Workout, type WorkoutKind, type StrengthSet, type Metric, type MetricKind, type Template } from './db';
 import { planForDay, type Exercise } from './plan';
 import { progressionHint, type Hint } from './progression';
@@ -47,6 +49,7 @@ export function WorkoutEditor(props: {
   const [rpe, setRpe] = useState(w.rpe?.toString() ?? '');
   const [rounds, setRounds] = useState(w.rounds?.toString() ?? '');
   const [notes, setNotes] = useState(w.notes ?? '');
+  const [carFree, setCarFree] = useState(!!w.carFree);
   const fromGarmin = props.existing?.source === 'intervals';
 
   async function submit() {
@@ -65,6 +68,7 @@ export function WorkoutEditor(props: {
       rpe: num(rpe),
       rounds: num(rounds),
       notes: notes.trim() || undefined,
+      carFree: carFree || undefined,
       source: props.existing?.source ?? 'manual',
     });
     props.onClose();
@@ -118,6 +122,12 @@ export function WorkoutEditor(props: {
           <div><label>Duur (min)</label><input inputMode="decimal" value={dur} onChange={e => setDur(e.target.value)} /></div>
           <div><label>Afstand (km)</label><input inputMode="decimal" value={dist} onChange={e => setDist(e.target.value)} /></div>
         </div>
+      )}
+      {(kind === 'run' || kind === 'other') && (
+        <label className="pick-row">
+          <input type="checkbox" checked={carFree} onChange={e => setCarFree(e.target.checked)} />
+          <span className="grow">Woon-werk: de auto bleef hierdoor staan</span>
+        </label>
       )}
       <label>Notities</label>
       <textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Hoe voelde het? Pijntjes?" />
@@ -246,6 +256,7 @@ export function StrengthLogger(props: { date: ISODate; title: string; exercises:
   const [rpe, setRpe] = useState(props.existing?.rpe?.toString() ?? '');
   const [prevInfo, setPrevInfo] = useState<Record<string, string>>({});
   const [hints, setHints] = useState<Record<string, Hint>>({});
+  const [resting, setResting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -344,7 +355,10 @@ export function StrengthLogger(props: { date: ISODate; title: string; exercises:
       action={props.existing && <button className="icon-btn" onClick={del} aria-label="Verwijderen">{Icon.trash}</button>}
       footer={<><button className="btn secondary" onClick={props.onClose}>Annuleren</button><button className="btn" onClick={submit} disabled={!rows}>Opslaan</button></>}
     >
-      <p className="muted small">{longDate(props.date)}. Stop elke set 1 tot 2 herhalingen voor je niet meer kunt. Vul 0 kg in bij lichaamsgewicht.</p>
+      <p className="muted small" style={{ marginBottom: 0 }}>{longDate(props.date)}. Stop elke set 1 tot 2 herhalingen voor je niet meer kunt. Vul 0 kg in bij lichaamsgewicht.</p>
+      <Why topic="nearFailure" />
+      <button className="btn secondary block rest-start" onClick={() => setResting(true)}>Rustpauze starten</button>
+      {resting && <RestTimer onClose={() => setResting(false)} />}
       {rows && exercises.map(ex => (
         <div className="ex" key={ex.name}>
           <div className="spread">
@@ -360,7 +374,10 @@ export function StrengthLogger(props: { date: ISODate; title: string; exercises:
               <Row key={i} i={i} s={s} onChange={(f, v) => update(ex.name, i, f, v)} onDrop={() => dropSet(ex.name, i)} />
             ))}
           </div>
-          <button className="btn ghost small" onClick={() => addSet(ex.name)}>+ set</button>
+          <div className="row" style={{ gap: 6 }}>
+            <button className="btn ghost small" onClick={() => addSet(ex.name)}>+ set</button>
+            <button className="btn ghost small" onClick={() => setResting(true)}>Rust</button>
+          </div>
         </div>
       ))}
       <div className="grid2">

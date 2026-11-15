@@ -6,6 +6,7 @@ import { loadSeries, recoveryFor, baseline, type Physio } from '../recovery';
 import { planForDay, weekOf } from '../plan';
 import { Icon, useBlocks, useMoves } from '../ui';
 import type { WellnessDay } from '../intervals';
+import { Why } from '../explain';
 
 const QUESTIONS: { key: keyof Pick<Checkin, 'sleep' | 'legs' | 'energy' | 'calm'>; label: string; low: string; high: string }[] = [
   { key: 'sleep', label: 'Slaap', low: 'slecht', high: 'top' },
@@ -124,6 +125,7 @@ export function RecoveryCard() {
       {!physioAvailable(physio) && (
         <p className="muted small">Rusthartslag en HRV tellen mee als je je horloge ook 's nachts draagt. Zonder dat werkt het ook, op gevoel en belasting.</p>
       )}
+      <Why topic="recovery" />
     </div>
   );
 }

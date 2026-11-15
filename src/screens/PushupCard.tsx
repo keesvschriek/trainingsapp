@@ -7,6 +7,7 @@ import { dayTotal, goalStreak, newSetId, restReason, setsByDay, usePushupRecords
 import { planForDay } from '../plan';
 import { useBlocks, useMoves } from '../ui';
 import { isNative } from '../native';
+import { Why } from '../explain';
 
 /** Kaart op Vandaag: push-ups tussendoor bijhouden met knoppen. */
 export function PushupCard({ date }: { date: ISODate }) {
@@ -64,6 +65,7 @@ export function PushupCard({ date }: { date: ISODate }) {
         </div>
       )}
 
+      <Why topic="pushups" />
       {custom === null ? (
         <div className="pu-actions">
           <button className="btn secondary small" onClick={undo} disabled={sets.length === 0}>Ongedaan</button>

@@ -312,3 +312,42 @@ input[type='checkbox'] { accent-color: var(--accent); width: 18px; height: 18px;
 .review .num { font-family: var(--num); font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .review-list { margin: 0; padding-left: 18px; font-size: 0.9rem; }
 .review-list li { margin: 3px 0; }
+
+/* App-slot */
+.lock { position: fixed; inset: 0; z-index: 1000; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px); }
+.lock-title { font-family: var(--num); font-size: 1.8rem; font-weight: 600; margin-bottom: 6px; }
+.lock-dots { display: flex; gap: 14px; margin: 26px 0 8px; }
+.lock-dots span { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--accent); }
+.lock-dots span.on { background: var(--accent); }
+.lock-msg { color: var(--bad); min-height: 1.4em; }
+.lock-pad { display: grid; grid-template-columns: repeat(3, 76px); gap: 14px; margin-top: 18px; }
+.lock-key { height: 76px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 1.6rem; font-family: var(--num); cursor: pointer; }
+.lock-key.small { font-size: 0.78rem; font-family: inherit; border: 0; background: transparent; color: var(--accent); font-weight: 600; }
+.lock-help { max-width: 300px; text-align: center; margin-top: 26px; }
+
+/* Werkdag en beste loopmoment */
+.moment .spread { align-items: center; }
+.moment-body { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.moment-time { font-size: 0.95rem; }
+
+/* Uitleglaag */
+.why { margin-top: 8px; }
+.why-btn { background: none; border: 0; padding: 0; color: var(--accent); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-align: left; }
+.why-body { margin-top: 6px; padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; font-size: 0.9rem; }
+.why-body p { margin: 0 0 6px; }
+.why-body p:last-child { margin-bottom: 0; }
+.why-mine { font-weight: 600; }
+
+/* Rustpauze met trivia */
+.resttimer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 900; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.12); padding: 14px 16px calc(env(safe-area-inset-bottom) + 16px); border-radius: 18px 18px 0 0; max-height: 75vh; overflow: auto; }
+.resttimer-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.resttimer-clock { font-family: var(--num); font-size: 2.2rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.resttimer-clock.done { color: var(--accent); font-size: 1.6rem; }
+.quiz { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.quiz-q { font-weight: 650; font-size: 1.02rem; margin: 4px 0 10px; }
+.quiz-opts { display: grid; gap: 8px; }
+.quiz-opt { text-align: left; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; cursor: pointer; }
+.quiz-opt.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 18%, var(--surface)); font-weight: 600; }
+.quiz-opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 15%, var(--surface)); }
+.quiz-opt.dim { opacity: 0.55; }
+.quiz-opt:disabled { cursor: default; }

@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import { App } from './App';
+import { LockGate } from './lock';
 import { isNative, setupBackButton } from './native';
 import { setupWidget } from './widget';
 import { initTheme } from './theme';
@@ -18,6 +19,8 @@ if (navigator.storage?.persist) void navigator.storage.persist();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <LockGate>
+      <App />
+    </LockGate>
   </StrictMode>,
 );
