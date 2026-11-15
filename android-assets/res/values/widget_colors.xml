@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="w_bg">#FFFFFF</color>
+    <color name="w_line">#E4E0D8</color>
+    <color name="w_ink">#1A1E23</color>
+    <color name="w_muted">#646D76</color>
+    <color name="w_accent">#1F4E79</color>
+    <color name="w_on_accent">#FFFFFF</color>
+    <color name="w_track">#E2EAF3</color>
+    <string name="widget_description">Training van vandaag en push-ups tussendoor</string>
+</resources>

@@ -144,6 +144,7 @@ export async function getSetting<T>(key: string, fallback: T): Promise<T> {
 
 export async function setSetting(key: string, value: unknown) {
   await db.kv.put({ key, value });
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('settings-changed'));
 }
 
 export const alive = <T extends Base>(r: T | undefined): r is T => !!r && !r.deleted;

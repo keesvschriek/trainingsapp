@@ -45,6 +45,27 @@ jobs:
         run: |
           npx cap add android
           cp -r android-assets/res/* android/app/src/main/res/
+          # Eigen Java-code: MainActivity met de widget-koppeling, de widget zelf
+          SRC=android/app/src/main/java/nl/keesvschriek/trainingsapp
+          ls "$SRC"
+          cp android-assets/java/*.java "$SRC"/
+          # Widget aanmelden in het manifest
+          python3 - <<'PY'
+          p = 'android/app/src/main/AndroidManifest.xml'
+          s = open(p).read()
+          receiver = '''
+                  <receiver android:name=".TrainingWidget" android:exported="false" android:label="Training">
+                      <intent-filter>
+                          <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                      </intent-filter>
+                      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_training_info" />
+                  </receiver>
+          '''
+          assert '</application>' in s
+          s = s.replace('</application>', receiver + '    </application>', 1)
+          open(p, 'w').write(s)
+          PY
+          grep -n "TrainingWidget" android/app/src/main/AndroidManifest.xml
           sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/" android/app/build.gradle
           sed -i "s/versionName \"1.0\"/versionName \"1.${{ github.run_number }}\"/" android/app/build.gradle
           npx cap sync android
