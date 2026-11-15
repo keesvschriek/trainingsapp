@@ -2,6 +2,11 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Schema in Sport
+- Sport heeft een Schema: de komende twee weken, per dag één regel
+- Tik op een dag of op de training van vandaag voor alles wat er staat, met de hele omschrijving
+- Met Vorige en Volgende blader je door de dagen; ook wat je gedaan hebt staat erbij
+
 ## Nieuw ontwerp, sport en krant
 - Nieuw ontwerp: lettertype Inter, iconen, afgeronde kaarten en een rij apps onderaan
 - Beginscherm met dagtekst, training van vandaag, gewoontes (ring) en het nieuws

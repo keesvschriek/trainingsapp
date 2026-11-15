@@ -72,7 +72,7 @@ end
 function S.fetchNow()
     if not S.connected() then return false, "Nog niet gekoppeld." end
     local now = os.time()
-    local events, err = api("/events?oldest=" .. iso(now) .. "&newest=" .. iso(now + 7 * 86400))
+    local events, err = api("/events?oldest=" .. iso(now - 7 * 86400) .. "&newest=" .. iso(now + 21 * 86400))
     if not events then return false, err end
     local acts = api("/activities?oldest=" .. iso(now - 28 * 86400) .. "&newest=" .. iso(now)) or {}
     local well = api("/wellness?oldest=" .. iso(now - 42 * 86400) .. "&newest=" .. iso(now)) or {}
@@ -319,7 +319,8 @@ function S.page(app)
         table.insert(tg, UI.hgroup({ UI.icon("circle_check", 22, UI.WHITE, { bg = UI.BLACK }), UI.hspace(8),
             UI.text("Gedaan: " .. table.concat(bits, " · "), { size = 17, color = UI.WHITE, bg = UI.BLACK, width = W - UI.px(48 + 30) }) }))
     end
-    table.insert(items, UI.card(UI.vgroup(tg), { dark = true, pad = UI.px(22) }))
+    table.insert(items, UI.Tap:new{ label = "Vandaag", callback = function() app.sportDay = 0; app:go(S.day) end,
+        UI.card(UI.vgroup(tg), { dark = true, pad = UI.px(22) }) })
     table.insert(items, UI.vspace(14))
 
     -- Deze week + vorm, naast elkaar
@@ -398,7 +399,129 @@ function S.page(app)
                 end)
             end)
         end, icon = "sync" },
-        { "Intervaltimer", function() app:go(require("ks_timer").menu) end, icon = "timer" },
+        { "Schema", function() app:go(S.schedule) end, icon = "calendar", primary = true },
+        { "Timer", function() app:go(require("ks_timer").menu) end, icon = "timer" },
+    })
+    return UI.page(UI.vgroup(items), footer)
+end
+
+-- Schema: twee weken overzicht, en per dag alles wat er staat --------------------
+
+local MONTHS = { "januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december" }
+
+local function dayTs(offset)
+    local t = os.date("*t")
+    return os.time{ year = t.year, month = t.month, day = t.day + offset, hour = 12 }
+end
+
+local function dayLabel(offset)
+    local ts = dayTs(offset)
+    local t = os.date("*t", ts)
+    local name = DAYS[t.wday]
+    if offset == 0 then name = "Vandaag"
+    elseif offset == 1 then name = "Morgen"
+    elseif offset == -1 then name = "Gisteren"
+    else name = name:sub(1, 1):upper() .. name:sub(2) end
+    return name, DAYS[t.wday] .. " " .. t.day .. " " .. MONTHS[t.month]
+end
+
+function S.actsOn(date)
+    local list = {}
+    for _, a in ipairs((S.cache() or {}).acts or {}) do if a.date == date then table.insert(list, a) end end
+    return list
+end
+
+--- Eén dag, met Vorige en Volgende.
+function S.day(app)
+    local W = UI.INNER()
+    local off = app.sportDay or 0
+    local date = iso(dayTs(off))
+    local name, full = dayLabel(off)
+    local items = { UI.header(name, function() app:back() end, full) }
+    local list = S.eventsOn(date)
+    local acts = S.actsOn(date)
+    if #list == 0 and #acts == 0 then
+        table.insert(items, UI.vspace(30))
+        table.insert(items, UI.center(UI.icon("coffee", 54, UI.INK3), W))
+        table.insert(items, UI.vspace(12))
+        local cached = S.cache()
+        local far = cached and (dayTs(off) > (cached.at or 0) + 21 * 86400)
+        table.insert(items, UI.center(UI.text(far and "Zo ver vooruit is nog niets opgehaald." or "Rustdag. Er staat niets gepland.", { size = 19, color = UI.INK2 }), W))
+    end
+    for i, e in ipairs(list) do
+        if i > 1 then table.insert(items, UI.vspace(14)) end
+        local g = {
+            UI.hgroup({ UI.icon(sportIcon(e.type), 30), UI.hspace(12), UI.text(e.name, { font = "display", size = 26, width = W - UI.px(44 + 44) }) }, "top"),
+        }
+        local bits = {}
+        if S.fmtDur(e.dur) then table.insert(bits, S.fmtDur(e.dur)) end
+        if tonumber(e.load) then table.insert(bits, "belasting " .. math.floor(e.load + 0.5)) end
+        if #bits > 0 then table.insert(g, UI.vspace(4)); table.insert(g, UI.text(table.concat(bits, " · "), { size = 17, color = UI.INK2 })) end
+        if e.desc and e.desc ~= "" then
+            table.insert(g, UI.vspace(12))
+            table.insert(g, UI.text(e.desc, { size = 19, width = W - UI.px(44), line_height = 0.4, height = #list > 1 and UI.px(150) or UI.px(420) }))
+        end
+        table.insert(items, UI.card(UI.vgroup(g)))
+    end
+    if #acts > 0 then
+        table.insert(items, UI.section("Gedaan"))
+        for _, a in ipairs(acts) do
+            local bits = {}
+            if km(a.dist) then table.insert(bits, km(a.dist)) end
+            if S.fmtDur(a.dur) then table.insert(bits, S.fmtDur(a.dur)) end
+            if tonumber(a.hr) then table.insert(bits, math.floor(a.hr + 0.5) .. " bpm") end
+            table.insert(items, UI.row(a.name or "Activiteit", table.concat(bits, " · "), nil, nil, W, "circle_check"))
+        end
+    end
+    local footer = UI.buttonRow({
+        { "Vorige", function() app.sportDay = off - 1; app:refresh() end, icon = "chevron_left", small = true, disabled = off <= -7 },
+        { off == 0 and "Schema" or "Vandaag", function()
+            if off == 0 then app:replace(S.schedule) else app.sportDay = 0; app:refresh() end
+        end, small = true },
+        { "Volgende", function() app.sportDay = off + 1; app:refresh() end, icon = "chevron_right", small = true, primary = true, disabled = off >= 13 },
+    })
+    return UI.page(UI.vgroup(items), footer)
+end
+
+--- Overzicht van de komende twee weken, per dag één regel. Tik voor de hele dag.
+function S.schedule(app)
+    local W = UI.INNER()
+    -- 0 = vandaag en de 6 dagen erna, 7 = de week daarna.
+    -- Verder niet: de telefoon-app zet 14 dagen vooruit in intervals.icu.
+    local start = app.sportWeek or 0
+    local items = { UI.header("Schema", function() app.sportWeek = nil; app:back() end,
+        start == 0 and "Vandaag en de komende 6 dagen" or (dayLabel(start) and select(2, dayLabel(start)) .. " tot " .. select(2, dayLabel(start + 6)))) }
+    if not S.cache() then
+        table.insert(items, UI.text("Je schema is nog niet opgehaald. Tik in Sport op Bijwerken.", { size = 19, width = W }))
+        return UI.page(UI.vgroup(items))
+    end
+    UI.rowPad = 22
+    for off = start, start + 6 do
+        local name = dayLabel(off)
+        local ts = dayTs(off)
+        local short = SHORT[tonumber(os.date("%w", ts)) + 1] .. " " .. os.date("%d", ts):gsub("^0", "")
+        local list = S.eventsOn(iso(ts))
+        local title, sub, icon
+        if #list > 0 then
+            local names = {}
+            for _, e in ipairs(list) do table.insert(names, e.name) end
+            title = table.concat(names, " + ")
+            local dur = 0
+            for _, e in ipairs(list) do dur = dur + (tonumber(e.dur) or 0) end
+            sub = (off <= 1 and (name .. " · ") or "") .. short .. (S.fmtDur(dur) and (" · " .. S.fmtDur(dur)) or "")
+            icon = sportIcon(list[1].type)
+        else
+            title = "Rust"
+            sub = (off <= 1 and (name .. " · ") or "") .. short
+            icon = "coffee"
+        end
+        local o = off
+        table.insert(items, UI.row(title, sub, "›", function() app.sportDay = o; app:go(S.day) end, W, icon))
+    end
+    UI.rowPad = nil
+    local footer = UI.buttonRow({
+        { "Eerder", function() app.sportWeek = start - 7; app:refresh() end, small = true, disabled = start <= 0, icon = "chevron_left" },
+        { "Later", function() app.sportWeek = start + 7; app:refresh() end, small = true, primary = start < 7, disabled = start >= 7, icon = "chevron_right" },
     })
     return UI.page(UI.vgroup(items), footer)
 end
