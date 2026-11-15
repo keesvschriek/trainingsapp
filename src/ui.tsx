@@ -1,4 +1,5 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
+import { motionKeyFor } from './three/keys';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, alive, type Block, type Move } from './db';
 
@@ -88,3 +89,22 @@ export const fmt = {
   km: (v?: number) => (v == null ? '' : `${v.toLocaleString('nl-NL', { maximumFractionDigits: 1 })} km`),
   n1: (v?: number) => (v == null ? '' : v.toLocaleString('nl-NL', { maximumFractionDigits: 1 })),
 };
+
+const ExerciseViewer = lazy(() => import('./three/ExerciseViewer'));
+
+/** Knopje "3D" naast een oefening, opent de pop die de oefening voordoet. */
+export function Show3D(props: { name: string }) {
+  const [open, setOpen] = useState(false);
+  const key = motionKeyFor(props.name);
+  if (!key) return null;
+  return (
+    <>
+      <button className="btn secondary small btn-3d" onClick={e => { e.stopPropagation(); setOpen(true); }} aria-label={`3D-uitleg ${props.name}`}>3D</button>
+      {open && (
+        <Suspense fallback={<div className="sheet"><div className="content empty">Laden...</div></div>}>
+          <ExerciseViewer motionKey={key} name={props.name} onClose={() => setOpen(false)} />
+        </Suspense>
+      )}
+    </>
+  );
+}

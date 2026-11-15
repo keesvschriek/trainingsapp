@@ -5,7 +5,7 @@ import { db, alive, save, type Workout, type Metric, type MetricKind } from '../
 import { addDays, dayShort, diffDays, fromISO, mondayOf, today, minutesToText, shortDate, type ISODate } from '../dates';
 import { planForDay, planForWeek, gtgDay, nextTestWeek, weekInBlock, type PlannedItem, type Exercise } from '../plan';
 import { matchDay, type ItemStatus } from '../match';
-import { Contour, Icon, useBlocks, useMoves, fmt } from '../ui';
+import { Contour, Icon, Show3D, useBlocks, useMoves, fmt } from '../ui';
 import { MetricEditor, StrengthLogger, TEST_METRIC, WorkoutEditor, METRICS, exercisesFor, formatMetric } from '../editors';
 import { MoveSheet } from '../moves';
 import { RecoveryCard } from './RecoveryCard';
@@ -311,7 +311,7 @@ function Hero(props: {
         <div className="details">
           {item.exercises && (
             <ul className="exlist">
-              {item.exercises.map(e => <li key={e.name}><strong>{e.name}</strong> {e.sets} x {e.reps}{!['lichaamsgewicht', 'band'].includes(e.weight) ? `, ${e.weight}` : ''}</li>)}
+              {item.exercises.map(e => <li key={e.name} className="spread"><span><strong>{e.name}</strong> {e.sets} x {e.reps}{!['lichaamsgewicht', 'band'].includes(e.weight) ? `, ${e.weight}` : ''}</span><Show3D name={e.name} /></li>)}
             </ul>
           )}
           {item.detail && <p className="muted" style={{ marginTop: 6 }}>{item.detail}</p>}

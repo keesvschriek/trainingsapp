@@ -281,3 +281,9 @@ input[type='checkbox'] { accent-color: var(--accent); width: 18px; height: 18px;
 .stat .l { color: var(--muted); font-size: 0.76rem; }
 
 .chart { height: 210px; margin: 4px -8px 8px; }
+
+/* 3D-uitleg */
+.viewer3d { width: 100%; height: 46vh; min-height: 300px; border-radius: 14px; display: block; touch-action: none; border: 1px solid var(--line); }
+.cue { font-weight: 600; min-height: 46px; margin-top: 8px; font-size: 1rem; }
+.active-muscles { color: var(--bad); font-weight: 600; }
+.btn-3d { padding: 3px 8px; font-size: 0.75rem; font-weight: 700; }

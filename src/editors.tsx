@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { db, newId, remove, save, alive, type Workout, type WorkoutKind, type StrengthSet, type Metric, type MetricKind } from './db';
 import { planForDay, type Exercise } from './plan';
 import { progressionHint, type Hint } from './progression';
-import { Icon, Sheet, num } from './ui';
+import { Icon, Sheet, Show3D, num } from './ui';
 import { longDate, today, type ISODate } from './dates';
 
 const KIND_LABEL: Record<WorkoutKind, string> = { run: 'Lopen', strength: 'Kracht', boxing: 'Boksen', other: 'Overig' };
@@ -238,7 +238,7 @@ export function StrengthLogger(props: { date: ISODate; title: string; exercises:
         <div className="ex" key={ex.name}>
           <div className="spread">
             <h3>{ex.name}</h3>
-            <span className="muted small">{ex.sets} x {ex.reps}</span>
+            <span className="row" style={{ flexWrap: 'nowrap' }}><span className="muted small">{ex.sets} x {ex.reps}</span><Show3D name={ex.name} /></span>
           </div>
           <div className="muted small">{ex.weight}</div>
           {prevInfo[ex.name] && <div className="small muted">{prevInfo[ex.name]}</div>}
