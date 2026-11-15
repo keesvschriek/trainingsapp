@@ -8,6 +8,7 @@ npx tsx scripts/export-kobo.ts kobo/app/data
 npx tsx scripts/export-kobo-map.ts kobo/app/data
 mkdir -p "$TMP/.adds/keesstudy" "$TMP/.adds/koreader/patches" "$TMP/.adds/nm" "$TMP/extra/kfmon/.adds/kfmon/config" "$TMP/extra/kfmon/.adds/keesstudy"
 cp -r kobo/app "$TMP/.adds/keesstudy/app"
+echo "$(date -u +%Y-%m-%d)-$(git rev-parse --short HEAD 2>/dev/null || echo lokaal)" > "$TMP/.adds/keesstudy/app/version.txt"
 cp kobo/install/patches/2-kees-study.lua "$TMP/.adds/koreader/patches/"
 cp kobo/install/nm/kees_study "$TMP/.adds/nm/"
 cp kobo/install/start.sh "$TMP/extra/kfmon/.adds/keesstudy/"

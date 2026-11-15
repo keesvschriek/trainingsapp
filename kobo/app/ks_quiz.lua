@@ -5,7 +5,7 @@ local json = require("json")
 local Store = require("ks_store")
 
 local Q = {}
-Q.PACKS_URL = "https://raw.githubusercontent.com/keesvschriek/trainingsapp/main/quiz-packs/index.json"
+Q.PACKS_URL = os.getenv("KEES_STUDY_PACKS_URL") or "https://raw.githubusercontent.com/keesvschriek/trainingsapp/main/quiz-packs/index.json"
 
 local data -- { cats, groups, questions, countries }
 
@@ -176,20 +176,13 @@ end
 
 --- Haal pakketten op via wifi. callback(ok, bericht)
 function Q.updatePacks(callback)
-    local NetworkMgr = require("ui/network/manager")
-    NetworkMgr:runWhenOnline(function()
-        local http = require("socket.http")
-        local ltn12 = require("ltn12")
-        local socket = require("socket")
-        local socketutil = require("socketutil")
-        local sink = {}
-        socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
-        local code = socket.skip(1, http.request{ url = Q.PACKS_URL .. "?t=" .. os.time(), method = "GET", sink = ltn12.sink.table(sink) })
-        socketutil:reset_timeout()
-        if code ~= 200 then return callback(false, "Ophalen mislukt (" .. tostring(code) .. ").") end
-        local body = table.concat(sink)
-        local ok, d = pcall(json.decode, body)
-        if not ok or type(d) ~= "table" or type(d.packs) ~= "table" then return callback(false, "Onverwacht bestand ontvangen.") end
+    local Net = require("ks_net")
+    Net.online(function()
+        local ok, body = Net.get(Q.PACKS_URL .. "?t=" .. os.time())
+        if not ok then return callback(false, body) end
+        local good, d = pcall(json.decode, body)
+        if not good or type(d) ~= "table" or type(d.packs) ~= "table" then return callback(false, "Onverwacht bestand ontvangen.") end
+        Q.load(require("ks_main").dir)
         local before = #data.questions
         local f = io.open(packsPath(), "wb")
         if f then f:write(body); f:close() end

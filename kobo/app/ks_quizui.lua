@@ -173,9 +173,11 @@ function M.home(app)
     table.insert(items, UI.row("Nieuwe vragen ophalen", "Via wifi, uit dezelfde pakketten als Kees Study", "", function()
         app.quizMsg = "Bezig met ophalen..."
         app:refresh()
-        Q.updatePacks(function(_, msg)
-            app.quizMsg = msg
-            app:refresh()
+        require("ui/uimanager"):scheduleIn(0.2, function()
+            Q.updatePacks(function(_, msg)
+                app.quizMsg = msg
+                app:refresh()
+            end)
         end)
     end))
     if app.quizMsg then
