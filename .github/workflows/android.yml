@@ -103,6 +103,7 @@ jobs:
         run: |
           sudo apt-get install -y -qq luajit zip >/dev/null
           luajit kobo/test/chess_test.lua
+          luajit kobo/test/ai_test.lua
           luajit kobo/test/lessons_test.lua | tail -1
           luajit kobo/test/lessons_test.lua | grep -q " 0 fouten"
           sh kobo/build.sh kees-study-kobo.zip

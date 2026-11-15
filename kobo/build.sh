@@ -5,6 +5,7 @@ set -e
 OUT=${1:-kees-study-kobo.zip}
 TMP=$(mktemp -d)
 npx tsx scripts/export-kobo.ts kobo/app/data
+npx tsx scripts/export-kobo-map.ts kobo/app/data
 mkdir -p "$TMP/.adds/keesstudy" "$TMP/.adds/koreader/patches" "$TMP/.adds/nm" "$TMP/extra/kfmon/.adds/kfmon/config" "$TMP/extra/kfmon/.adds/keesstudy"
 cp -r kobo/app "$TMP/.adds/keesstudy/app"
 cp kobo/install/patches/2-kees-study.lua "$TMP/.adds/koreader/patches/"

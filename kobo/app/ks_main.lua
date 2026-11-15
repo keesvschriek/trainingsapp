@@ -79,7 +79,12 @@ local function homePage(app)
         UI.vspace(22),
         UI.line(UI.INNER(), UI.BLACK, UI.px(2)),
         UI.row("Schaken leren", ChessUI.summary(), "›", function() app:go(ChessUI.lessonList) end),
+        UI.row("Tegen de computer", require("ks_play").summary(), "›", function()
+            local g = require("ks_store").get("play.game")
+            app:go((g and not g.over) and require("ks_play").game or require("ks_play").menu)
+        end),
         UI.row("Quiz", QuizUI.summary(), "›", function() app:go(QuizUI.home) end),
+        UI.row("Topografie op de kaart", "Landen aanwijzen en herkennen, per werelddeel", "›", function() app:go(require("ks_mapui").menu) end),
     })
     local footer = UI.vgroup({
         UI.text("Afsluiten brengt je terug naar je Kobo-bibliotheek.", { size = 15, color = UI.INK2, width = UI.INNER() }),

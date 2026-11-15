@@ -64,9 +64,9 @@ function C.toFEN(s)
 end
 
 local function copy(s)
-    local b = {}
-    for k, v in pairs(s.board) do b[k] = v end
-    return { board = b, turn = s.turn, castle = s.castle, ep = s.ep, half = s.half, full = s.full }
+    local b, src = {}, s.board
+    for i = 1, 64 do b[i] = src[i] end
+    return { board = b, turn = s.turn, castle = s.castle, ep = s.ep, half = s.half, full = s.full, kw = s.kw, kb = s.kb }
 end
 
 -- Bestaat het veld (f + df, r + dr)? Geeft het veldnummer terug of nil.
@@ -81,46 +81,73 @@ local KING = { {1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1} }
 local ROOK = { {1,0},{-1,0},{0,1},{0,-1} }
 local BISHOP = { {1,1},{1,-1},{-1,1},{-1,-1} }
 
+-- Vooraf berekend per veld: sprongen van paard en koning, en stralen voor toren en loper.
+local NJ, KJ, RRAYS, BRAYS = {}, {}, {}, {}
+for sq = 1, 64 do
+    NJ[sq], KJ[sq], RRAYS[sq], BRAYS[sq] = {}, {}, {}, {}
+    for _, d in ipairs(KNIGHT) do local t = step(sq, d[1], d[2]); if t then NJ[sq][#NJ[sq] + 1] = t end end
+    for _, d in ipairs(KING) do local t = step(sq, d[1], d[2]); if t then KJ[sq][#KJ[sq] + 1] = t end end
+    for _, pair in ipairs({ { ROOK, RRAYS }, { BISHOP, BRAYS } }) do
+        for _, d in ipairs(pair[1]) do
+            local ray, t = {}, step(sq, d[1], d[2])
+            while t do ray[#ray + 1] = t; t = step(t, d[1], d[2]) end
+            if #ray > 0 then pair[2][sq][#pair[2][sq] + 1] = ray end
+        end
+    end
+end
+
+local function rayHit(b, rays, a, q)
+    for i = 1, #rays do
+        local ray = rays[i]
+        for j = 1, #ray do
+            local p = b[ray[j]]
+            if p then
+                if p == a or p == q then return true end
+                break
+            end
+        end
+    end
+    return false
+end
+
 --- Wordt veld sq aangevallen door kleur by?
 function C.attacked(s, sq, by)
     local b = s.board
-    local up = by == "w" and 1 or -1
-    -- pionnen
-    for _, df in ipairs({ -1, 1 }) do
-        local from = step(sq, df, -up)
-        if from and b[from] == (by == "w" and "P" or "p") then return true end
-    end
-    for _, d in ipairs(KNIGHT) do
-        local t = step(sq, d[1], d[2])
-        if t and b[t] == (by == "w" and "N" or "n") then return true end
-    end
-    for _, d in ipairs(KING) do
-        local t = step(sq, d[1], d[2])
-        if t and b[t] == (by == "w" and "K" or "k") then return true end
-    end
-    local function ray(dirs, a, q)
-        for _, d in ipairs(dirs) do
-            local t = step(sq, d[1], d[2])
-            while t do
-                local p = b[t]
-                if p then
-                    if p == a or p == q then return true end
-                    break
-                end
-                t = step(t, d[1], d[2])
-            end
+    local white = by == "w"
+    local f = (sq - 1) % 8
+    -- pionnen: een witte pion valt schuin omhoog aan, staat dus een rij lager
+    if white then
+        if sq > 8 then
+            if f > 0 and b[sq - 9] == "P" then return true end
+            if f < 7 and b[sq - 7] == "P" then return true end
         end
-        return false
+    else
+        if sq <= 56 then
+            if f > 0 and b[sq + 7] == "p" then return true end
+            if f < 7 and b[sq + 9] == "p" then return true end
+        end
     end
-    if by == "w" then
-        return ray(ROOK, "R", "Q") or ray(BISHOP, "B", "Q")
+    local n, k = white and "N" or "n", white and "K" or "k"
+    local nj = NJ[sq]
+    for i = 1, #nj do if b[nj[i]] == n then return true end end
+    local kj = KJ[sq]
+    for i = 1, #kj do if b[kj[i]] == k then return true end end
+    if white then
+        return rayHit(b, RRAYS[sq], "R", "Q") or rayHit(b, BRAYS[sq], "B", "Q")
     end
-    return ray(ROOK, "r", "q") or ray(BISHOP, "b", "q")
+    return rayHit(b, RRAYS[sq], "r", "q") or rayHit(b, BRAYS[sq], "b", "q")
 end
 
 function C.kingSquare(s, color)
     local k = color == "w" and "K" or "k"
-    for i = 1, 64 do if s.board[i] == k then return i end end
+    local cached = color == "w" and s.kw or s.kb
+    if cached and s.board[cached] == k then return cached end
+    for i = 1, 64 do
+        if s.board[i] == k then
+            if color == "w" then s.kw = i else s.kb = i end
+            return i
+        end
+    end
 end
 
 function C.inCheck(s, color)
@@ -164,9 +191,10 @@ local function pseudo(s)
                     end
                 end
             elseif kind == "n" or kind == "k" then
-                for _, d in ipairs(kind == "n" and KNIGHT or KING) do
-                    local t = step(sq, d[1], d[2])
-                    if t and (not b[t] or color_of(b[t]) == them) then add(sq, t) end
+                local jumps = kind == "n" and NJ[sq] or KJ[sq]
+                for i = 1, #jumps do
+                    local t = jumps[i]
+                    if not b[t] or color_of(b[t]) == them then add(sq, t) end
                 end
                 if kind == "k" then
                     local rights = s.castle
@@ -184,16 +212,18 @@ local function pseudo(s)
                     end
                 end
             else
-                local dirs = kind == "r" and ROOK or kind == "b" and BISHOP or { ROOK[1], ROOK[2], ROOK[3], ROOK[4], BISHOP[1], BISHOP[2], BISHOP[3], BISHOP[4] }
-                for _, d in ipairs(dirs) do
-                    local t = step(sq, d[1], d[2])
-                    while t do
+                local lists = {}
+                if kind ~= "b" then for _, r in ipairs(RRAYS[sq]) do lists[#lists + 1] = r end end
+                if kind ~= "r" then for _, r in ipairs(BRAYS[sq]) do lists[#lists + 1] = r end end
+                for i = 1, #lists do
+                    local ray = lists[i]
+                    for j = 1, #ray do
+                        local t = ray[j]
                         if b[t] then
                             if color_of(b[t]) == them then add(sq, t) end
                             break
                         end
                         add(sq, t)
-                        t = step(t, d[1], d[2])
                     end
                 end
             end
@@ -223,6 +253,7 @@ function C.make(s, m)
         else b[m.to + 1] = b[m.to - 2]; b[m.to - 2] = nil end
     end
     n.ep = m.flag == "double" and (m.from + m.to) / 2 or nil
+    if p == "K" then n.kw = m.to elseif p == "k" then n.kb = m.to end
     -- rokaderechten
     if p == "K" then n.castle = strip(n.castle, "KQ") elseif p == "k" then n.castle = strip(n.castle, "kq") end
     for _, sqr in ipairs({ m.from, m.to }) do
@@ -237,10 +268,31 @@ end
 
 function C.legal(s, from)
     local out = {}
-    for _, m in ipairs(pseudo(s)) do
+    local b = s.board
+    local me = s.turn
+    local them = me == "w" and "b" or "w"
+    local ksq = C.kingSquare(s, me)
+    local K = me == "w" and "K" or "k"
+    local list = pseudo(s)
+    for i = 1, #list do
+        local m = list[i]
         if not from or m.from == from then
-            local n = C.make(s, m)
-            if not C.inCheck(n, s.turn) then out[#out + 1] = m end
+            -- zet tijdelijk op het bord zelf uitvoeren, controleren en terugzetten (sneller dan kopiëren)
+            local piece, captured = b[m.from], b[m.to]
+            local epSq, epPiece
+            b[m.to] = piece
+            b[m.from] = nil
+            if m.flag == "ep" then
+                epSq = m.to + (me == "w" and -8 or 8)
+                epPiece = b[epSq]
+                b[epSq] = nil
+            end
+            local k = piece == K and m.to or ksq
+            local illegal = k ~= nil and C.attacked(s, k, them)
+            b[m.from] = piece
+            b[m.to] = captured
+            if epSq then b[epSq] = epPiece end
+            if not illegal then out[#out + 1] = m end
         end
     end
     return out

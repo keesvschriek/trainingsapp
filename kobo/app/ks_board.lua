@@ -23,6 +23,7 @@ local Board = InputContainer:extend{
     last = nil,      -- { from, to } van de laatste zet
     wrong = nil,     -- veld met een kruis (foute keuze)
     onTap = nil,     -- function(sq)
+    flip = false,    -- zwart onderaan
 }
 
 -- Lettergrootte zo kiezen dat een teken ongeveer de gegeven hoogte in pixels krijgt
@@ -46,6 +47,7 @@ function Board:squareAt(x, y)
     local f = math.floor((x - self.dimen.x) / self.sqpx)
     local r = 7 - math.floor((y - self.dimen.y) / self.sqpx)
     if f < 0 or f > 7 or r < 0 or r > 7 then return nil end
+    if self.flip then f, r = 7 - f, 7 - r end
     return r * 8 + f + 1
 end
 
@@ -77,7 +79,9 @@ function Board:paintTo(bb, x, y)
     for r = 0, 7 do
         for f = 0, 7 do
             local sq = r * 8 + f + 1
-            local px, py = x + f * s, y + (7 - r) * s
+            local vf, vr = f, r -- plaats op het scherm
+            if self.flip then vf, vr = 7 - f, 7 - r end
+            local px, py = x + vf * s, y + (7 - vr) * s
             local light = (r + f) % 2 == 1
             bb:paintRect(px, py, s, s, light and LIGHT or DARK)
             if self.last and (self.last.from == sq or self.last.to == sq) then
@@ -116,8 +120,8 @@ function Board:paintTo(bb, x, y)
             end
             -- coördinaten: cijfers in de a-lijn, letters op rij 1
             local cc = light and Blitbuffer.COLOR_GRAY_6 or LIGHT
-            if f == 0 then drawText(bb, self.coordFace, tostring(r + 1), px + 4, py + 3, cc) end
-            if r == 0 then
+            if vf == 0 then drawText(bb, self.coordFace, tostring(r + 1), px + 4, py + 3, cc) end
+            if vr == 0 then
                 local m = RenderText:sizeUtf8Text(0, 1000, self.coordFace, "h", true, false)
                 drawText(bb, self.coordFace, ("abcdefgh"):sub(f + 1, f + 1), px + s - m.x - 5, py + s - (m.y_top + m.y_bottom) - 4, cc)
             end

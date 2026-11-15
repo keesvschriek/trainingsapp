@@ -164,6 +164,7 @@ function M.home(app)
     end))
     table.insert(items, UI.row("Per categorie", "Geschiedenis, Defensie, sport en meer", "›", function() app.catPage = 1; app:go(categories) end))
     table.insert(items, UI.row("Hoofdsteden", "Per werelddeel of de hele wereld", "›", function() app:go(capitalsMenu) end))
+    table.insert(items, UI.row("Topografie op de kaart", "Landen aanwijzen en herkennen", "›", function() app:go(require("ks_mapui").menu) end))
     if wrongN > 0 then
         table.insert(items, UI.row("Fouten herhalen", wrongN .. " vragen die je fout had", "", function()
             app:go(M.run("Fouten herhalen", "wrong", function() return Q.wrongList(10) end))

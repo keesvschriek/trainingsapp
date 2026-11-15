@@ -1,5 +1,7 @@
 KEES STUDY OP DE KOBO
 
+In de app: schaaklessen, tegen de computer spelen, quiz en topografie op de kaart.
+
 Wat je nodig hebt
 - KOReader op de Kobo (die gebruikt Kees Study als motor; je ziet er niets van).
 - NickelMenu. Dat zit meestal al bij KOReader. Je herkent het aan het menu-icoon
