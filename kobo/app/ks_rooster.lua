@@ -200,6 +200,22 @@ function R.page(app)
     return UI.page(UI.vgroup(items), footer)
 end
 
+-- Een lange link typen op e-ink is lastig. Daarom kan hij ook uit een tekstbestand komen dat je
+-- via USB in de hoofdmap van de Kobo zet. Na het inlezen wordt het bestand gewist.
+R.LINKFILE = os.getenv("KEES_STUDY_LINKFILE") or "/mnt/onboard/rooster-link.txt"
+
+function R.importFile()
+    local f = io.open(R.LINKFILE, "rb")
+    if not f then return false, "Geen bestand rooster-link.txt gevonden in de hoofdmap van de Kobo." end
+    local t = (f:read("*a") or ""):gsub("^\239\187\191", ""):gsub("%s", "")
+    f:close()
+    os.remove(R.LINKFILE)
+    if not (t:match("^https://") or t:match("^webcal://") or (os.getenv("KS_TEST") and t:match("^http://"))) then return false, "In het bestand staat geen geldige link. Het bestand is gewist." end
+    Store.set("rooster.url", t)
+    save({ events = {} })
+    return true
+end
+
 local function askLink(app)
     local InputDialog = require("ui/widget/inputdialog")
     local dlg
@@ -232,7 +248,7 @@ function R.settings(app)
     local on = R.connected()
     table.insert(items, UI.text(on and "Gekoppeld. De link staat alleen op deze Kobo." or "Nog niet gekoppeld.", { size = 20, font = "medium", width = W }))
     table.insert(items, UI.vspace(12))
-    table.insert(items, UI.text("Zo koppel je: open de Zermelo WebApp, ga naar Instellingen en maak een iCal-link. Typ die hier over.", { size = 17, color = UI.INK2, width = W }))
+    table.insert(items, UI.text("Zo koppel je: maak in de Zermelo WebApp onder Instellingen een iCal-link. Zet die link in een tekstbestand rooster-link.txt in de hoofdmap van de Kobo (via USB) en tik op Link uit bestand. Het bestand wordt daarna gewist. Overtypen kan ook.", { size = 17, color = UI.INK2, width = W }))
     table.insert(items, UI.vspace(12))
     table.insert(items, UI.card(UI.text("Van elke les bewaart de Kobo alleen de tijd, de titel en het lokaal, voor de komende 7 dagen. Opmerkingen en deelnemers worden weggegooid. Staat er een naam in de titel van een afspraak, dan zie je die wel. Lekt de link uit, maak dan in Zermelo een nieuwe en wis deze.",
         { size = 16, width = W - UI.px(44), bg = UI.FILL }), { fill = true, border = 0 }))
@@ -242,7 +258,15 @@ function R.settings(app)
         table.insert(items, UI.vspace(10))
     end
     table.insert(items, UI.buttonRow({
-        { on and "Andere link" or "Link invoeren", function() askLink(app) end, primary = not on },
+        { "Link uit bestand", function()
+            local ok, err = R.importFile()
+            app.roosterMsg = ok and "Link bewaard en bestand gewist. Tik op Nu ophalen." or err
+            app:refresh()
+        end, primary = not on },
+        { "Overtypen", function() askLink(app) end },
+    }))
+    table.insert(items, UI.vspace(12))
+    table.insert(items, UI.buttonRow({
         { "Nu ophalen", function()
             app.roosterMsg = "Bezig met ophalen..."
             app:refresh()

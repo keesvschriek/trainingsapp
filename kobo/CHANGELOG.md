@@ -4,6 +4,7 @@ Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je i
 
 ## Rooster, op deze dag en Kamervragen
 - Je lesrooster uit Zermelo op het startscherm (wat is nu, wat komt hierna) en per dag; koppelen bij Instellingen, Rooster
+- De link kan uit een bestand rooster-link.txt in de hoofdmap van de Kobo komen (via USB), dan hoef je hem niet over te typen; het bestand wordt daarna gewist
 - De Kobo bewaart alleen tijd, titel en lokaal voor 7 dagen; de link staat alleen op de Kobo
 - Op deze dag: gebeurtenissen, geboren en overleden van vandaag (Wikipedia), in de krant en bij Ontwikkeling
 - Tik op een gebeurtenis om hem als leerkaart te bewaren (stapel Op deze dag)
