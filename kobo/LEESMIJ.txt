@@ -50,3 +50,14 @@ Verwijder op de Kobo:
 - .adds/keesstudy
 - .adds/koreader/patches/2-kees-study.lua
 - .adds/nm/kees_study
+
+VANAF JE TELEFOON NAAR DE KOBO
+Zo zet je een link of tekst (bijvoorbeeld je Zermelo-roosterlink) op de Kobo zonder te typen.
+1. Kobo en telefoon hebben allebei internet nodig. Hetzelfde wifi-netwerk is niet nodig.
+2. Kobo: Instellingen, Rooster, Vanaf je telefoon. Er verschijnt een QR-code en een code van 8 tekens.
+3. Telefoon: scan de QR-code met de camera en open de pagina "Naar de Kobo". De code staat er al in.
+   Geen camera? Ga naar keesvschriek.github.io/trainingsapp/kobo/stuur.html en typ de code over.
+4. Plak de link en tik op Versturen.
+5. Binnen een paar seconden staat er Gelukt op de Kobo. Tik op Klaar, daarna op Nu ophalen.
+De Kobo wacht 10 minuten. De tekst gaat versleuteld via ntfy.sh; alleen de Kobo met deze code kan hem lezen.
+Lukt het niet, dan kan het ook met de kabel: zet de link in rooster-link.txt in de hoofdmap van de Kobo.
