@@ -55,6 +55,8 @@ In de Android-app werkt dit direct. **Alleen in de webversie** kan een CORS-fout
 4. In de app: **Instellingen > Synchroniseren**, vul beide in, kies **Account aanmaken**, bevestig de mail en log in.
 5. Op je laptop: open dezelfde link, vul dezelfde gegevens in en log in. Alles komt binnen.
 
+Makkelijker: zet de Project URL en de anon key als repository-secrets `SUPABASE_URL` en `SUPABASE_ANON_KEY` (Settings > Secrets and variables > Actions). De builds nemen ze dan mee en de app vraagt alleen nog je e-mail en wachtwoord. Maak je account dan in Supabase bij Authentication > Users > Add user (met Auto confirm) en zet daarna Allow new users to sign up uit.
+
 De anon/publishable key mag in de app staan: de tabel is afgeschermd met Row Level Security, dus alleen jij ziet je eigen gegevens.
 
 Let op: een gratis Supabase-project wordt gepauzeerd na een week zonder gebruik. Je gegevens blijven bewaard en je zet het project terug met **Resume project** in het dashboard. De app werkt intussen gewoon door op je telefoon.
