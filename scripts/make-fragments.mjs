@@ -31,6 +31,25 @@ async function fetchText(id) {
   throw new Error('geen tekst voor ' + id);
 }
 
+// Delen die je niet als fragment wilt: inhoudsopgave, register, noten, bronnen
+const SKIP_SECTION = /^(contents|table of contents|index|notes|footnotes|bibliography|appendix|glossary|chronolog|inhoud|register|aanteekening|aantekening|noten|bijlage|transcriber)/i;
+
+// Lijkt dit stuk op gewone lopende tekst?
+function isProse(lines, joined) {
+  const letters = joined.replace(/[^\p{L}]/gu, '');
+  if (letters.length < 200) return false;
+  const lower = joined.replace(/[^\p{Ll}]/gu, '').length;
+  if (lower / letters.length < 0.85) return false;                 // veel hoofdletters: titels, opsommingen
+  const digits = joined.replace(/[^0-9]/g, '').length;
+  if (digits / joined.length > 0.02) return false;                  // paginanummers, jaartallen-lijsten
+  const avgLine = lines.reduce((a, l) => a + l.length, 0) / lines.length;
+  if (lines.length > 2 && avgLine < 45) return false;               // korte regels: inhoudsopgave of gedicht
+  const sentences = (joined.match(/[.!?]["')\]]?(\s|$)/g) || []).length;
+  if (sentences < 2) return false;
+  if (/\.{4,}|\bp\.\s*\d|\bibid\b|\bop\. cit\b/i.test(joined)) return false;
+  return true;
+}
+
 const isHeading = (l) => l.length > 0 && l.length <= 70 &&
   ((l === l.toUpperCase() && /\p{L}/u.test(l)) || /^(chapter|book)\b/i.test(l));
 
@@ -41,16 +60,19 @@ function cut(text) {
   const b = text.search(/\*\*\* ?END OF/);
   if (b >= 0) text = text.slice(0, b);
   const all = [];
-  let where = null, pos = 0;
+  let where = null, pos = 0, skipping = false;
   for (const block of text.split(/\n\s*\n/)) {
     pos += block.length + 2;
     const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
     // kopjes bovenaan een blok (bijv. "39. GREAT SIMPLIFICATION") apart houden
-    while (lines.length > 1 && isHeading(lines[0])) where = lines.shift().slice(0, 60);
+    while (lines.length > 1 && isHeading(lines[0])) { where = lines.shift().slice(0, 60); skipping = SKIP_SECTION.test(where); }
     const joined = lines.join(' ').replace(/\s+/g, ' ').trim();
-    if (lines.length <= 2 && isHeading(joined)) { where = joined.slice(0, 60); continue; }
+    if (lines.length <= 2 && isHeading(joined)) { where = joined.slice(0, 60); skipping = SKIP_SECTION.test(where); continue; }
+    if (skipping) continue;
+    const frac = pos / text.length;
+    if (frac < 0.03 || frac > 0.94) continue;                       // voorwerk en nawerk overslaan
     const n = joined.split(' ').filter(Boolean).length;
-    if (n >= 60 && n <= 230 && !/Gutenberg|http/.test(joined) && !joined.startsWith('[')) {
+    if (n >= 60 && n <= 230 && !/Gutenberg|http/.test(joined) && !joined.startsWith('[') && isProse(lines, joined)) {
       all.push({ t: joined.replace(/\[\d+\]/g, '').replace(/_/g, ''), w: where, p: Math.floor((pos / text.length) * 100) });
     }
   }
@@ -64,7 +86,7 @@ for (const id of BOOKS) {
   try {
     const frags = cut(await fetchText(id));
     if (frags.length < 5) throw new Error('te weinig fragmenten');
-    writeFileSync(`kobo/fragments/${id}.json`, JSON.stringify({ id, frags }));
+    writeFileSync(`kobo/fragments/${id}.json`, JSON.stringify({ id, v: 2, frags }));
     console.log(id, frags.length, 'fragmenten');
   } catch (e) { console.log('MISLUKT', id, String(e)); failed++; }
   await new Promise((res) => setTimeout(res, 2000));

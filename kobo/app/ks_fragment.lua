@@ -14,6 +14,8 @@ local F = {}
 F.PAGES = os.getenv("KEES_STUDY_FRAG_URL") or "https://keesvschriek.github.io/trainingsapp/kobo/fragments/"
 F.BASE = os.getenv("KEES_STUDY_GUTENBERG_URL") or "https://www.gutenberg.org/cache/epub/"
 F.KEEP = 250
+--- Versie van de fragmenten; oudere (met inhoudsopgaves en bronnenlijsten) worden opnieuw opgehaald.
+F.V = 2
 
 -- Alleen werken waarvan schrijver en vertaler al lang overleden zijn.
 F.BOOKS = {
@@ -33,7 +35,7 @@ function F.frags(id)
     if not f then return nil end
     local ok, d = pcall(require("json").decode, f:read("*a"))
     f:close()
-    if ok and type(d) == "table" and type(d.frags) == "table" then loaded[id] = d.frags; return d.frags end
+    if ok and type(d) == "table" and type(d.frags) == "table" and d.v == F.V then loaded[id] = d.frags; return d.frags end
     return nil
 end
 
@@ -65,7 +67,13 @@ function F.cut(text)
             where = joined:sub(1, 60)
         else
             local n = words(joined)
-            if n >= 60 and n <= 230 and not joined:find("Gutenberg") and not joined:match("^%[") and not joined:find("http") then
+            local frac = pos / total
+            local _, upper = joined:gsub("%u", "")
+            local _, lowerN = joined:gsub("%l", "")
+            local _, digits = joined:gsub("%d", "")
+            local _, ends = joined:gsub("[%.!%?]%s", "")
+            local prose = lowerN > 0 and upper / (upper + lowerN) < 0.15 and digits / #joined < 0.02 and ends >= 1
+            if frac > 0.03 and frac < 0.94 and prose and n >= 60 and n <= 230 and not joined:find("Gutenberg") and not joined:match("^%[") and not joined:find("http") then
                 -- voetnootcijfers en rare tekens weg
                 joined = joined:gsub("%[%d+%]", ""):gsub("_", "")
                 table.insert(all, { t = joined, w = where, p = math.floor(pos / total * 100) })
@@ -82,7 +90,7 @@ end
 local function store(book, frags)
     local f = io.open(file(book.id) .. ".tmp", "wb")
     if not f then return false, "Kon niet opslaan." end
-    f:write(require("json").encode({ frags = frags }))
+    f:write(require("json").encode({ v = F.V, frags = frags }))
     f:close()
     os.rename(file(book.id) .. ".tmp", file(book.id))
     loaded[book.id] = frags
@@ -94,7 +102,7 @@ function F.fetch(book)
     local ok, body = Net.get(F.PAGES .. book.id .. ".json")
     if ok then
         local good, d = pcall(require("json").decode, body)
-        if good and type(d) == "table" and type(d.frags) == "table" and #d.frags >= 5 then return store(book, d.frags) end
+        if good and type(d) == "table" and type(d.frags) == "table" and #d.frags >= 5 and d.v == F.V then return store(book, d.frags) end
     end
     local url = F.BASE .. book.id .. "/pg" .. book.id .. ".txt"
     ok, body = Net.get(url, { ["User-Agent"] = "KeesStudy/1.0 (Kobo e-reader, persoonlijk gebruik)" })

@@ -24,6 +24,30 @@ function App:init()
     self.dimen = Geom:new{ x = 0, y = 0, w = UI.W(), h = UI.H() }
     self.stack = {}
     self.navs = 0
+    self.ges_events = { SwipePage = { require("ui/gesturerange"):new{ ges = "swipe", range = self.dimen } } }
+end
+
+--- Vegen, overal in de app: naar links = verder, naar rechts = vorige (of terug als er geen vorige is).
+--- Werkt via de knoppen die op het scherm staan, dus elk scherm met Vorige/Verder doet automatisch mee.
+local NEXT = { "^Verder", "^Volgende", "^Volgend" }
+local PREV = { "^Vorige", "^Vorig" }
+local function findTap(patterns)
+    for i = #UI.painted, 1, -1 do
+        local t = UI.painted[i]
+        for _, p in ipairs(patterns) do
+            if type(t.label) == "string" and t.label:find(p) and t.callback then return t end
+        end
+    end
+end
+function App:onSwipePage(_, ges)
+    if ges.direction == "west" then
+        local t = findTap(NEXT)
+        if t then t.callback() return true end
+    elseif ges.direction == "east" then
+        local t = findTap(PREV)
+        if t then t.callback() return true end
+        if #self.stack > 1 then self:back() return true end
+    end
 end
 
 --- Ga naar een nieuw scherm. builder(app) geeft een widget terug en mag later opnieuw worden aangeroepen.
