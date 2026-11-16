@@ -13,7 +13,7 @@ export function NotifySection() {
   async function store(next: NotifySettings) {
     setS(next);
     await setSetting('notify', next);
-    if (next.on) {
+    if (next.on || next.evening) {
       const ok = await requestNotifyPermission();
       if (!ok) {
         setMsg({ text: 'Geen toestemming voor meldingen. Zet die aan bij Android-instellingen > Apps > Training > Meldingen.', err: true });
@@ -21,16 +21,26 @@ export function NotifySection() {
       }
     }
     const n = await scheduleMorning();
-    setMsg(next.on ? { text: `${n} ochtendmeldingen ingepland.` } : { text: 'Meldingen uit.' });
+    setMsg(next.on || next.evening ? { text: `${n} meldingen ingepland.` } : { text: 'Meldingen uit.' });
   }
 
   return (
     <>
-      <h2>Ochtendmelding</h2>
+      <h2>Meldingen</h2>
       {!isNative ? (
         <p className="muted small">Alleen in de Android-app.</p>
       ) : (
         <>
+          <label className="row" style={{ color: 'var(--ink)', fontSize: '1rem' }}>
+            <input type="checkbox" checked={!!s.evening} onChange={e => store({ ...s, evening: e.target.checked })} style={{ width: 'auto' }} /> Seintje na school
+          </label>
+          <p className="muted small">Alleen als je training of een opvolgpunt van die dag nog open staat. Geen melding als alles klaar is.</p>
+          <div className="grid2">
+            <div>
+              <label>Tijd</label>
+              <input type="time" value={s.eveningTime ?? '18:00'} onChange={e => e.target.value && store({ ...s, eveningTime: e.target.value })} />
+            </div>
+          </div>
           <p className="muted small">Elke ochtend een melding met je training van die dag. Tik erop voor je check-in. Op zondag om 19:00 krijg je ook een melding voor je weekterugblik.</p>
           <label className="row" style={{ color: 'var(--ink)', fontSize: '1rem' }}>
             <input type="checkbox" checked={s.on} onChange={e => store({ ...s, on: e.target.checked })} style={{ width: 'auto' }} /> Ochtendmelding aan

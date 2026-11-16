@@ -12,6 +12,8 @@ import { RecoveryCard } from './RecoveryCard';
 import { PushupCard } from './PushupCard';
 import { WeekReviewCard } from './WeekReviewCard';
 import { MomentCard } from './MomentCard';
+import { OpvolgCard } from './Opvolg';
+import { ModuleCard } from './ModuleCard';
 import { topicFor, Why } from '../explain';
 import { usePullupSet } from '../pushups';
 import { isNative } from '../native';
@@ -180,6 +182,10 @@ export function Today() {
           onMove={plan.status === 'actief' && !blocking ? () => setEditor({ type: 'move' }) : undefined}
         />
       )}
+
+      {isToday && <OpvolgCard />}
+
+      {isToday && <ModuleCard />}
 
       {isToday && plan.status === 'actief' && (() => {
         const runSt = statuses.find(st => st.item.kind === 'run' && !st.item.optional);

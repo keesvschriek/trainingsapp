@@ -106,7 +106,8 @@ local function newToday()
 end
 
 --- Een sessie: eerst wat al moet, dan nieuwe kaarten tot het dagmaximum.
-function C.session(keys, extra)
+function C.session(keys, extra, max)
+    max = max or C.SESSION
     local bx, t = boxes(), today()
     local due, fresh = {}, {}
     for _, k in ipairs(keys) do
@@ -123,10 +124,10 @@ function C.session(keys, extra)
     table.sort(due, function(a, b) return bx[a.id].b < bx[b.id].b end)
     require("ks_quiz").shuffle(fresh)
     local out = {}
-    for _, c in ipairs(due) do if #out < C.SESSION then table.insert(out, c) end end
+    for _, c in ipairs(due) do if #out < max then table.insert(out, c) end end
     local room = extra and C.NEW_PER_DAY or math.max(0, C.NEW_PER_DAY - newToday())
     for _, c in ipairs(fresh) do
-        if #out < C.SESSION and room > 0 then table.insert(out, c); room = room - 1 end
+        if #out < max and room > 0 then table.insert(out, c); room = room - 1 end
     end
     return out
 end
@@ -284,8 +285,16 @@ function C.pick(app)
     return UI.page(UI.vgroup(items), footer)
 end
 
-function C.start(app, keys, title, extra)
-    local list = C.session(keys, extra)
+--- Korte ronde van 10 kaarten (avond). Is er niets te herhalen, dan 10 nieuwe.
+function C.ten(app)
+    local keys = {}
+    for k in pairs(C.picked()) do table.insert(keys, k) end
+    local extra = #C.session(keys, false, 10) == 0
+    C.start(app, keys, "10 kaarten", extra, 10)
+end
+
+function C.start(app, keys, title, extra, max)
+    local list = C.session(keys, extra, max)
     app.cs = { list = list, i = 1, title = title, shown = false, typed = nil, ok = nil, goed = 0, fout = 0, twijfel = 0, again = {} }
     app:go(C.card)
 end

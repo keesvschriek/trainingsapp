@@ -69,6 +69,13 @@ export interface Block extends Base {
   end: ISODate;
   label: string;
   kind: BlockKind;
+  packed?: string[]; // ids uit de paklijst die al zijn ingepakt
+}
+
+/** Vaste paklijst voor Defensie-modules. */
+export interface PackItem extends Base {
+  text: string;
+  order: number;
 }
 
 /** Verschuiving in het schema. shift: dag a schuift een dag op (rest van de week schuift mee). swap: dag a en b ruilen. */
@@ -89,6 +96,17 @@ export interface Checkin extends Base {
   calm: number;
 }
 
+/** Opvolgpunt: iets wat je niet wilt vergeten. Geen leerlingnamen, hooguit initialen of een rol. */
+export interface Opvolg extends Base {
+  title: string;
+  due: ISODate;
+  group?: string; // werkgroep of overleg, bijv. 'Burgerschap'
+  done: boolean;
+  doneAt?: number;
+  createdAt: number;
+  from?: 'telefoon' | 'kobo';
+}
+
 export interface KV {
   key: string;
   value: unknown;
@@ -103,6 +121,8 @@ class TrainingDB extends Dexie {
   moves!: Table<Move, string>;
   checkins!: Table<Checkin, string>;
   templates!: Table<Template, string>;
+  opvolg!: Table<Opvolg, string>;
+  pack!: Table<PackItem, string>;
   kv!: Table<KV, string>;
 
   constructor() {
@@ -122,12 +142,18 @@ class TrainingDB extends Dexie {
     this.version(3).stores({
       templates: 'id, updatedAt',
     });
+    this.version(4).stores({
+      opvolg: 'id, due, updatedAt',
+    });
+    this.version(5).stores({
+      pack: 'id, order, updatedAt',
+    });
   }
 }
 
 export const db = new TrainingDB();
 
-export const SYNC_TABLES = ['workouts', 'sets', 'metrics', 'checks', 'blocks', 'moves', 'checkins', 'templates'] as const;
+export const SYNC_TABLES = ['workouts', 'sets', 'metrics', 'checks', 'blocks', 'moves', 'checkins', 'templates', 'opvolg', 'pack'] as const;
 export type SyncTable = (typeof SYNC_TABLES)[number];
 
 export function newId(): string {

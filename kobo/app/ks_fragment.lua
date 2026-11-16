@@ -170,6 +170,7 @@ function F.page(app)
     local bi = F.bookIndex(app)
     local book = F.BOOKS[bi]
     local frags = F.frags(book.id)
+    pcall(function() require("ks_avond").setLastRead({ kind = "frag", book = bi, title = book.author .. ", " .. book.title }) end)
     local items = { UI.header("Fragment", function() app.fragBook = nil; app.fragMsg = nil; app:back() end, book.author .. ", " .. book.title .. " (" .. book.note .. ")") }
     table.insert(items, UI.vspace(10))
     local footer

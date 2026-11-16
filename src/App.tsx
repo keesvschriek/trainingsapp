@@ -3,6 +3,7 @@ import { Today } from './screens/Today';
 import { Schedule } from './screens/Schedule';
 import { Log } from './screens/Log';
 import { Settings } from './screens/Settings';
+import { OpvolgScreen } from './screens/Opvolg';
 import { Icon } from './ui';
 import { currentUser, scheduleSync, sync } from './sync';
 import { getIntervalsSettings, importActivities } from './intervals';
@@ -15,15 +16,37 @@ import { scheduleMorning } from './notify';
 const QuizHome = lazy(() => import('./quiz/QuizHome').then(m => ({ default: m.QuizHome })));
 const Progress = lazy(() => import('./screens/Progress').then(m => ({ default: m.Progress })));
 
-type Route = 'vandaag' | 'schema' | 'logboek' | 'voortgang' | 'quiz' | 'instellingen';
+type Route = 'vandaag' | 'schema' | 'logboek' | 'voortgang' | 'quiz' | 'instellingen' | 'opvolgen' | 'meer';
+// Vandaag is het hoofdscherm. De rest staat onder Meer.
 const TABS: { id: Route; label: string; icon: ReactNode }[] = [
   { id: 'vandaag', label: 'Vandaag', icon: Icon.today },
-  { id: 'schema', label: 'Schema', icon: Icon.plan },
-  { id: 'logboek', label: 'Logboek', icon: Icon.log },
-  { id: 'voortgang', label: 'Voortgang', icon: Icon.chart },
-  { id: 'quiz', label: 'Quiz', icon: Icon.quiz },
+  { id: 'opvolgen', label: 'Opvolgen', icon: Icon.check },
+  { id: 'meer', label: 'Meer', icon: Icon.plan },
 ];
-const TITLES: Record<Route, string> = { vandaag: 'Vandaag', schema: 'Schema', logboek: 'Logboek', voortgang: 'Voortgang', quiz: 'Quiz', instellingen: 'Instellingen' };
+const MORE: { id: Route; label: string; sub: string; icon: ReactNode }[] = [
+  { id: 'schema', label: 'Schema', sub: 'Je trainingsweken en blokken', icon: Icon.plan },
+  { id: 'logboek', label: 'Logboek', sub: 'Wat je hebt gedaan', icon: Icon.log },
+  { id: 'voortgang', label: 'Voortgang', sub: 'Testen, records en grafieken', icon: Icon.chart },
+  { id: 'quiz', label: 'Quiz', sub: 'Leren op je telefoon', icon: Icon.quiz },
+  { id: 'instellingen', label: 'Instellingen', sub: 'Sync, Kobo, meldingen, Garmin', icon: Icon.gear },
+];
+const tabOf = (r: Route): Route => (r === 'vandaag' || r === 'opvolgen' ? r : 'meer');
+
+function More({ go }: { go: (r: Route) => void }) {
+  return (
+    <div className="card">
+      {MORE.map(m => (
+        <button key={m.id} className="list-row more-row" onClick={() => go(m.id)}>
+          <span className="more-ic">{m.icon}</span>
+          <span className="grow"><span>{m.label}</span><br /><span className="muted small">{m.sub}</span></span>
+          <span className="muted">{Icon.right}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const TITLES: Record<Route, string> = { vandaag: 'Vandaag', schema: 'Schema', logboek: 'Logboek', voortgang: 'Voortgang', quiz: 'Quiz', instellingen: 'Instellingen', opvolgen: 'Opvolgen', meer: 'Meer' };
 
 function readRoute(): Route {
   const r = location.hash.replace('#/', '') as Route;
@@ -100,7 +123,12 @@ export function App() {
   return (
     <div className="app">
       <div className="topbar">
-        <h1>{TITLES[route]}</h1>
+        <div className="row" style={{ gap: 4, alignItems: 'center' }}>
+          {tabOf(route) === 'meer' && route !== 'meer' && route !== 'instellingen' && (
+            <button className="icon-btn" onClick={() => go('meer')} aria-label="Terug">{Icon.left}</button>
+          )}
+          <h1>{TITLES[route]}</h1>
+        </div>
         <div className="right">
           <span className={`sync-dot ${syncState}`} title={syncState === 'ok' ? 'Gesynchroniseerd' : syncState === 'err' ? 'Synchronisatie mislukt' : 'Niet gesynchroniseerd'} />
           <button className="icon-btn" onClick={() => go(route === 'instellingen' ? 'vandaag' : 'instellingen')} aria-label="Instellingen">
@@ -120,11 +148,13 @@ export function App() {
         {route === 'voortgang' && <Suspense fallback={<div className="empty">Laden...</div>}><Progress /></Suspense>}
         {route === 'quiz' && <Suspense fallback={<div className="empty">Laden...</div>}><QuizHome /></Suspense>}
         {route === 'instellingen' && <Settings />}
+        {route === 'opvolgen' && <OpvolgScreen />}
+        {route === 'meer' && <More go={go} />}
       </main>
       <div className="tabbar">
         <nav>
           {TABS.map(t => (
-            <button key={t.id} className={route === t.id ? 'active' : ''} onClick={() => go(t.id)}>
+            <button key={t.id} className={tabOf(route) === t.id ? 'active' : ''} onClick={() => go(t.id)}>
               {t.icon}
               <span>{t.label}</span>
             </button>

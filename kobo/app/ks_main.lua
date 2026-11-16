@@ -214,6 +214,9 @@ function M.growFolder(app)
     local done, total = safe(H.summary, 0)
     local items = {
         UI.header("Ontwikkeling", function() app:back() end, "Elke dag een beetje"),
+        UI.row("Opvolgen", safe(require("ks_opvolg").homeLine, ""), "›", function() app.ovPg = 1; app.ovLast = nil; app:go(require("ks_opvolg").page) end, nil, "list_checks"),
+        UI.row("Defensie-module", safe(require("ks_module").homeLine, nil) or "Aftellen en paklijst", "›", function() app:go(require("ks_module").page) end, nil, "flag"),
+        UI.row("Dag afsluiten", safe(require("ks_avond").summary, ""), "›", function() app:go(require("ks_avond").page) end, nil, "moon"),
         UI.row("Dagtekst", "Vandaag: " .. tostring(who), "›", function() remember("Dagtekst"); app:go(D.page) end, nil, "quote"),
         UI.row("Gewoontes", ("%d van %d gedaan vandaag"):format(done or 0, total or 0), "›", function() remember("Gewoontes"); app:go(H.page) end, nil, "list_checks"),
         UI.row("Weekoverzicht", "Training, gewoontes en schermtijd van deze week", "›", function() app:go(require("ks_week").page) end, nil, "calendar"),
@@ -253,6 +256,18 @@ local function homePage(app)
             table.insert(items, UI.Tap:new{ label = "Rooster", callback = function() app.roosterDay = 0; app:go(require("ks_rooster").page) end,
                 UI.hgroup({ UI.icon("calendar", 19, UI.INK2), UI.hspace(8), UI.text(nextLes, { size = 16, color = UI.INK2, max_width = W - UI.px(40) }) }) })
         end
+        local ovLine = safe(require("ks_opvolg").homeLine)
+        if ovLine then
+            table.insert(items, UI.vspace(6))
+            table.insert(items, UI.Tap:new{ label = "Opvolgen", callback = function() app.ovPg = 1; app.ovLast = nil; app:go(require("ks_opvolg").page) end,
+                UI.hgroup({ UI.icon("list_checks", 19, UI.INK2), UI.hspace(8), UI.text(ovLine, { size = 16, color = UI.INK2, max_width = W - UI.px(60) }), UI.icon("chevron_right", 18, UI.INK3) }) })
+        end
+        local modLine = safe(require("ks_module").homeLine)
+        if modLine then
+            table.insert(items, UI.vspace(6))
+            table.insert(items, UI.Tap:new{ label = "Module", callback = function() app:go(require("ks_module").page) end,
+                UI.hgroup({ UI.icon("flag", 19, UI.INK2), UI.hspace(8), UI.text(modLine, { size = 16, color = UI.INK2, max_width = W - UI.px(60) }), UI.icon("chevron_right", 18, UI.INK3) }) })
+        end
         local Sync = require("ks_sync")
         if Sync.connected() and tonumber(os.date("%H")) < 12 and not safe(Sync.checkin) then
             table.insert(items, UI.vspace(6))
@@ -271,6 +286,41 @@ local function homePage(app)
         table.insert(items, UI.Tap:new{ label = "Dagtekst", callback = function() remember("Dagtekst"); app:go(D.page) end,
             UI.card(quote, { pad = UI.px(18) }) })
         table.insert(items, UI.vspan(gap))
+
+        -- Avond: dag afsluiten, verder lezen, 10 kaarten
+        local A = require("ks_avond")
+        if A.isEvening() then
+            local function half_card(icon, label, title, sub, cb)
+                local v = UI.vgroup({
+                    UI.hgroup({ UI.icon(icon, 20, UI.INK2), UI.hspace(8), UI.text(label, { size = 15, color = UI.INK2 }) }),
+                    UI.vspace(6),
+                    UI.text(title, { font = "medium", size = 21, width = half - UI.px(40), height = UI.px(56) }),
+                    UI.vspace(2),
+                    UI.text(sub or "", { size = 15, color = UI.INK2, width = half - UI.px(40), height = UI.px(42) }),
+                })
+                return { v = v, cb = cb, label = label }
+            end
+            local e = safe(A.entry)
+            local lr = safe(A.lastRead)
+            local C = require("ks_cards")
+            local row1 = {
+                half_card("moon", "Dag afsluiten", (e and e.done) and "Afgesloten" or "Hoe was je dag?", safe(A.summary, ""), function() app:go(A.page) end),
+                half_card("book", "Verder lezen", lr and lr.title or "Iets om te lezen", lr and (lr.kind == "frag" and "Fragment van de dag" or "Te lezen") or "Fragment, stukken, Op deze dag", function() A.continueReading(app) end),
+            }
+            local row2 = {
+                half_card("brain", "Kort leren", "10 leerkaarten", safe(C.summary, ""), function() C.ten(app) end),
+                half_card("list_checks", "Opvolgen", (#safe(require("ks_opvolg").open, {}) .. " open"), "Tik voor je lijst", function() app.ovPg = 1; app.ovLast = nil; app:go(require("ks_opvolg").page) end),
+            }
+            for _, r in ipairs({ row1, row2 }) do
+                local h = math.max(r[1].v:getSize().h, r[2].v:getSize().h) + UI.px(36)
+                table.insert(items, UI.hgroup({
+                    UI.Tap:new{ label = r[1].label, callback = r[1].cb, UI.card(r[1].v, { width = half, height = h }) },
+                    UI.hspan(gap),
+                    UI.Tap:new{ label = r[2].label, callback = r[2].cb, UI.card(r[2].v, { width = half, height = h }) },
+                }, "top"))
+                table.insert(items, UI.vspan(gap))
+            end
+        end
 
         -- Training en gewoontes naast elkaar
         local name, sub, icon = safe(Sport.today, "Sport")
@@ -315,7 +365,8 @@ local function homePage(app)
         }, "top"))
         table.insert(items, UI.vspan(gap))
 
-        -- Nieuws
+        -- Nieuws (niet 's avonds: dan is het rustig)
+        if not require("ks_avond").isEvening() then
         local nd = News.data()
         local edName = nd.edition or (News.edition())
         local nv = { UI.hgroup({ UI.icon("news", 20, UI.INK2), UI.hspace(8),
@@ -333,6 +384,7 @@ local function homePage(app)
         end
         if shown == 0 then table.insert(nv, UI.text("Nog niet opgehaald. Tik om de krant te openen.", { size = 17, color = UI.INK2, width = W - UI.px(44) })) end
         table.insert(items, UI.Tap:new{ label = "Nieuws", callback = function() app:go(News.page) end, UI.card(UI.vgroup(nv)) })
+        end
         table.insert(items, UI.vspace(level >= 2 and 18 or 26))
 
         local top = UI.vgroup(items)

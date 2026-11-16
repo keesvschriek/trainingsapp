@@ -179,6 +179,7 @@ function R.open(app, it)
     m.done = true
     setMeta(it.name, m)
     app.readMsg = nil
+    pcall(function() require("ks_avond").setLastRead({ kind = "doc", name = it.name, title = m.title or it.title }) end)
     app.rdDoc = doc
     app.rdPages = nil
     app:go(require("ks_reader").page)

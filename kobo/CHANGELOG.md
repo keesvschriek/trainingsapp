@@ -2,8 +2,15 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Opvolgen, avond en Defensie
+- Opvolgen: punten die je niet wilt vergeten, ook in de app op je telefoon. Eindig een regel met morgen, vr of volgende week voor de datum
+- Overleg: kies de werkgroep en tik actiepunten achter elkaar in
+- Na 20:00 een rustiger beginscherm: dag afsluiten, verder lezen, 10 leerkaarten, opvolgen
+- Dag afsluiten: wat ging goed, wat moet morgen (wordt een opvolgpunt) en je energie
+- Volgende Defensie-module met aftellen en paklijst, gedeeld met de telefoon
+- Geen geflits meer, ook niet na licht/donker wisselen
+
 ## Koppeling met de telefoon-app
-- Geen geflits meer: licht/donker wisselen zette de flitsteller van KOReader terug (elke 6 schermen een flits). Automatisch volledig verversen staat standaard uit.
 - Instellingen, Telefoon-app: één keer koppelen; in de app op je telefoon typ je alleen de code van de Kobo en je wachtwoord
 - Trainingen uit de app afvinken op de Kobo, met zwaarte (1-10) en een notitie; dat komt bij de training in de app
 - Ochtend-check-in op de Kobo (slaap, benen, energie, rust); 's ochtends staat er een herinnering op het startscherm
