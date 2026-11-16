@@ -116,8 +116,11 @@ function S.start(opts)
         send(c, "200 OK", form())
     end
 
+    local lastTouch = 0
     local function poll()
         if S.sess ~= sess or not sess.srv then return end
+        -- wifi niet laten uitgaan zolang de pagina open staat
+        if os.time() - lastTouch >= 10 then lastTouch = os.time(); pcall(function() require("ks_net").touch() end) end
         for _ = 1, 4 do
             local c = sess.srv:accept()
             if not c then break end

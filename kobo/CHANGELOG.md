@@ -8,6 +8,7 @@ Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je i
 - Te lezen: achtergrondstukken met literatuurlijst, die openen in de lezer; de eerste gaat over de Betuwe als front in 1944-1945
 - Op deze dag: tik op een regel om hem als leerkaart te bewaren of het Wikipedia-artikel als boek te lezen
 - Roosterlink vanaf je telefoon: de Kobo zet even een pagina open op je eigen wifi, met een code
+- Wifi blijft nu aan zolang die pagina openstaat (ging eerst na een minuut uit)
 
 ## Licht en donker
 - Weergave licht, donker of automatisch (donker van 20:00 tot 06:00), in het lichtpaneel bovenin
