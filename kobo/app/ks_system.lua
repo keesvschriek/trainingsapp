@@ -261,11 +261,11 @@ function Sys.settingsPage(app)
     table.insert(items, UI.vspace(big and 8 or 12))
 
     table.insert(items, UI.section("Scherm volledig verversen, na zoveel schermen"))
-    local fe = Store.get("set.fullevery", 8)
-    local feList, feCur = { 0, 4, 8, 15 }, 3
+    local fe = Store.get("set.fullevery2", 0)
+    local feList, feCur = { 0, 4, 8, 15 }, 1
     for i, v in ipairs(feList) do if v == fe then feCur = i end end
     table.insert(items, UI.segmented({ "Nooit", "Elke 4", "Elke 8", "Elke 15" }, feCur, function(i)
-        Store.set("set.fullevery", feList[i])
+        Store.set("set.fullevery2", feList[i])
         app:refresh()
     end))
     table.insert(items, UI.vspace(big and 12 or 16))

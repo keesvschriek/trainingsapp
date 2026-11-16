@@ -109,11 +109,14 @@ end
 
 --- Teken het huidige scherm opnieuw (na een tik). mode "page" = nieuw scherm.
 function App:render(mode)
+    -- KOReader zet de teller voor flitsende verversingen terug bij licht/donker
+    -- wisselen (ToggleNightMode). Daarom hier elke keer weer uit.
+    UIManager.FULL_REFRESH_COUNT = 0
     self:rebuild()
     -- Om de zoveel nieuwe schermen één keer volledig verversen (tegen vage restjes).
     if mode == "page" then
         self.navs = (self.navs or 0) + 1
-        local every = Store.get("set.fullevery", 8)
+        local every = Store.get("set.fullevery2", 0)
         -- in donker blijven er sneller restjes staan: dan twee keer zo vaak
         if every > 0 and require("ks_light").isDark() then every = math.max(2, math.floor(every / 2)) end
         if every > 0 and self.navs >= every then

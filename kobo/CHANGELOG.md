@@ -3,6 +3,7 @@
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
 ## Koppeling met de telefoon-app
+- Geen geflits meer: licht/donker wisselen zette de flitsteller van KOReader terug (elke 6 schermen een flits). Automatisch volledig verversen staat standaard uit.
 - Instellingen, Telefoon-app: één keer koppelen; in de app op je telefoon typ je alleen de code van de Kobo en je wachtwoord
 - Trainingen uit de app afvinken op de Kobo, met zwaarte (1-10) en een notitie; dat komt bij de training in de app
 - Ochtend-check-in op de Kobo (slaap, benen, energie, rust); 's ochtends staat er een herinnering op het startscherm

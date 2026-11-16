@@ -80,6 +80,7 @@ function L.setDark(on)
         UIManager:ToggleNightMode(on)
         G_reader_settings:saveSetting("night_mode", on)
     end)
+    UIManager.FULL_REFRESH_COUNT = 0
     UIManager:setDirty("all", "full")
 end
 
@@ -220,7 +221,7 @@ end
 
 function Panel:update()
     self:build()
-    UIManager:setDirty(self, function() return "ui", self.cardRect end)
+    UIManager:setDirty(self, function() return "partial", self.cardRect end)
 end
 
 function Panel:onTapOutside(_, ges)
@@ -234,7 +235,7 @@ function L.showPanel(app)
     L.app = app
     local p = Panel:new{}
     UIManager:show(p)
-    UIManager:setDirty(p, function() return "ui", p.cardRect end)
+    UIManager:setDirty(p, function() return "partial", p.cardRect end)
 end
 
 return L

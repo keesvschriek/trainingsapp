@@ -24,7 +24,7 @@ local function refreshSpot(app, name, mode)
     app:rebuild()
     local r = T.spots and T.spots[name]
     if r then
-        UIManager:setDirty(app, function() return mode or "ui", r end)
+        UIManager:setDirty(app, function() return mode or "partial", r end)
     else
         app:render("ui")
     end
