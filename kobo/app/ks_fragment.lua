@@ -9,6 +9,9 @@ local UI = require("ks_ui")
 
 local F = {}
 
+-- Eerst de kant-en-klare fragmenten van onze eigen GitHub Pages (klein en betrouwbaar),
+-- anders zelf knippen uit de tekst van Project Gutenberg.
+F.PAGES = os.getenv("KEES_STUDY_FRAG_URL") or "https://keesvschriek.github.io/trainingsapp/kobo/fragments/"
 F.BASE = os.getenv("KEES_STUDY_GUTENBERG_URL") or "https://www.gutenberg.org/cache/epub/"
 F.KEEP = 250
 
@@ -75,14 +78,7 @@ function F.cut(text)
     return out
 end
 
-function F.fetch(book)
-    local url = F.BASE .. book.id .. "/pg" .. book.id .. ".txt"
-    local ok, body = require("ks_net").get(url, { ["User-Agent"] = "KeesStudy/1.0 (Kobo e-reader, persoonlijk gebruik)" })
-    if not ok then return false, body end
-    local frags = F.cut(body)
-    body = nil
-    collectgarbage()
-    if #frags < 5 then return false, "Kon geen fragmenten uit dit boek halen." end
+local function store(book, frags)
     local f = io.open(file(book.id) .. ".tmp", "wb")
     if not f then return false, "Kon niet opslaan." end
     f:write(require("json").encode({ frags = frags }))
@@ -90,6 +86,27 @@ function F.fetch(book)
     os.rename(file(book.id) .. ".tmp", file(book.id))
     loaded[book.id] = frags
     return true
+end
+
+function F.fetch(book)
+    local Net = require("ks_net")
+    local ok, body = Net.get(F.PAGES .. book.id .. ".json")
+    if ok then
+        local good, d = pcall(require("json").decode, body)
+        if good and type(d) == "table" and type(d.frags) == "table" and #d.frags >= 5 then return store(book, d.frags) end
+    end
+    local url = F.BASE .. book.id .. "/pg" .. book.id .. ".txt"
+    ok, body = Net.get(url, { ["User-Agent"] = "KeesStudy/1.0 (Kobo e-reader, persoonlijk gebruik)" })
+    if not ok then
+        local msg = tostring(body)
+        if msg:find("503") then msg = "Project Gutenberg is even niet bereikbaar (503). Probeer het later nog eens." end
+        return false, msg
+    end
+    local frags = F.cut(body)
+    body = nil
+    collectgarbage()
+    if #frags < 5 then return false, "Kon geen fragmenten uit dit boek halen." end
+    return store(book, frags)
 end
 
 local function dayNum() local t = os.date("*t"); return math.floor(os.time{ year = t.year, month = t.month, day = t.day, hour = 12 } / 86400) end

@@ -11,6 +11,8 @@ on:
       - 'scripts/kobo-pages.mjs'
       - 'scripts/export-kobo*.ts'
       - 'scripts/pack-*.py'
+      - 'scripts/make-fragments.mjs'
+      - '.github/workflows/fragments.yml'
       - '**.md'
   workflow_dispatch:
 

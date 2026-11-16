@@ -27,6 +27,10 @@ add('kobo/install/nm/kees_study', 'nm/kees_study');
 mkdirSync(join(out, 'reading'), { recursive: true });
 for (const f of readdirSync('kobo/reading')) if (/\.(html|json)$/.test(f)) copyFileSync(join('kobo/reading', f), join(out, 'reading', f));
 
+// Fragmenten (alleen fragmenten, geen hele boeken)
+mkdirSync(join(out, 'fragments'), { recursive: true });
+try { for (const f of readdirSync('kobo/fragments')) if (/\.json$/.test(f)) copyFileSync(join('kobo/fragments', f), join(out, 'fragments', f)); } catch {}
+
 // Wat er nieuw is: de punten onder de eerste ## in kobo/CHANGELOG.md
 const log = readFileSync('kobo/CHANGELOG.md', 'utf8').split('\n## ')[1] ?? '';
 const changes = log.split('\n').filter((l) => l.startsWith('- ')).map((l) => l.slice(2).trim());
