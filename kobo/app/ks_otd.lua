@@ -50,6 +50,16 @@ function O.clean(s)
     return s
 end
 
+-- eerste link in de regel die geen jaartal of datum is: dat is meestal het artikel over de gebeurtenis
+local function firstArticle(raw)
+    for target in raw:gmatch("%[%[([^%]|#]+)") do
+        local t = target:gsub("^%s+", ""):gsub("%s+$", "")
+        if not t:match("^%d+$") and not t:match("^%d+ v%.?%s*Chr") and not t:match("^%d+ %l+$") and not t:lower():match("^bestand:") then
+            return t
+        end
+    end
+end
+
 local function yearOf(s)
     local y = s:match("^(%d+)%s*v%.?%s*Chr%.?")
     if y then return -tonumber(y), s:gsub("^%d+%s*v%.?%s*Chr%.?", "", 1) end
@@ -80,16 +90,17 @@ function O.parse(text)
             else
                 local stars, rest = line:match("^(%*+)%s*(.*)$")
                 if stars then
+                    local art = firstArticle(rest)
                     local txt = O.clean(rest)
                     if #stars == 1 then
                         local y, after = yearOf(txt)
                         if y then
                             after = after:gsub("^%s*[%-–—:]%s*", "")
                             curYear = y
-                            if after ~= "" then table.insert(out, { y = y, t = after, sec = sec, sub = sub }) end
+                            if after ~= "" then table.insert(out, { y = y, t = after, sec = sec, sub = sub, a = art }) end
                         end
                     elseif curYear and txt ~= "" then
-                        table.insert(out, { y = curYear, t = txt, sec = sec, sub = sub })
+                        table.insert(out, { y = curYear, t = txt, sec = sec, sub = sub, a = art })
                     end
                 end
             end
@@ -163,13 +174,13 @@ function O.page(app)
         (d.title or O.title()) .. " · Wikipedia" .. (today and "" or " · nog niet opgehaald vandaag")) }
     table.insert(items, UI.segmented(TABS, tab, function(i) app.otdTab = i; app.otdPg = 1; app:refresh() end))
     table.insert(items, UI.vspace(8))
-    table.insert(items, UI.text("Tik op een regel om hem als leerkaart te bewaren.", { size = 15, color = UI.INK3 }))
+    table.insert(items, UI.text("Tik op een regel: bewaren als leerkaart of het hele artikel lezen.", { size = 15, color = UI.INK3 }))
     table.insert(items, UI.vspace(6))
     local blocks, lastSub = {}, nil
     for _, it in ipairs(today and d.items or {}) do
         if it.sec == TABS[tab] then
             local saved = O.isSaved(it)
-            local row = UI.Tap:new{ label = it.t, callback = function() O.toggle(it); app:refresh() end,
+            local row = UI.Tap:new{ label = it.t, callback = function() app.otdSel = it; app.otdMsg = nil; app:go(O.detail) end,
                 UI.vgroup({
                     UI.vspace(8),
                     UI.hgroup({
@@ -221,6 +232,44 @@ function O.page(app)
         { np > 1 and ("Verder " .. pg .. "/" .. np) or "Verder", function() app.otdPg = pg + 1; app:refresh() end, small = true, primary = pg < np, disabled = pg >= np },
     })
     return UI.page(UI.vgroup(items), footer)
+end
+
+function O.detail(app)
+    local W = UI.INNER()
+    local it = app.otdSel
+    local items = { UI.header(O.yearText(it.y), function() app.otdSel = nil; app.otdMsg = nil; app:back() end, it.sec .. (it.sub and (" · " .. it.sub) or "")) }
+    table.insert(items, UI.vspace(10))
+    table.insert(items, UI.text(it.t, { font = "serif", size = 24, width = W }))
+    table.insert(items, UI.vspace(24))
+    local saved = O.isSaved(it)
+    table.insert(items, UI.button(saved and "Leerkaart verwijderen" or "Bewaar als leerkaart", function() O.toggle(it); app:refresh() end,
+        { width = W, icon = "star", primary = not saved }))
+    if it.a then
+        table.insert(items, UI.vspace(12))
+        table.insert(items, UI.button("Lees het artikel: " .. it.a, function()
+            app.otdMsg = "Artikel wordt opgehaald..."
+            app:refresh()
+            UIManager:scheduleIn(0.2, function()
+                require("ks_reading").saveWikipedia(app, it.a, function(ok, file, err)
+                    if ok then
+                        app.otdMsg = "Bewaard in Te lezen."
+                        app:refresh()
+                        require("ks_reading").open(app, file)
+                    else
+                        app.otdMsg = "Dat lukte niet" .. (err and (": " .. err) or ".")
+                        app:refresh()
+                    end
+                end)
+            end)
+        end, { width = W, icon = "book" }))
+        table.insert(items, UI.vspace(6))
+        table.insert(items, UI.text("Het artikel komt als boek in Te lezen, zodat je het ook later nog hebt.", { size = 15, color = UI.INK3, width = W }))
+    end
+    if app.otdMsg then
+        table.insert(items, UI.vspace(14))
+        table.insert(items, UI.text(app.otdMsg, { size = 17, font = "bold", width = W }))
+    end
+    return UI.page(UI.vgroup(items))
 end
 
 return O

@@ -106,7 +106,24 @@ function Sys.touch()
     state.lastAction = now
 end
 
+--- Staat de lezer van KOReader open (een boek uit Te lezen)? Dan niet tekenen en niet in slaap vallen.
+function Sys.reading()
+    local R = package.loaded["apps/reader/readerui"]
+    return R and R.instance ~= nil
+end
+
 local function tick()
+    if Sys.reading() then
+        -- in de lezer telt elke tik (zie inputHook); wel in slaap na de ingestelde tijd
+        local mins = Sys.sleepMinutes()
+        if mins > 0 and not state.suspended and os.time() - state.lastAction >= mins * 60 then
+            Store.flush()
+            UIManager:suspend()
+        end
+        state.lastTick = os.time()
+        UIManager:scheduleIn(61 - os.date("*t").sec, tick)
+        return
+    end
     Sys.account()
     pcall(function() require("ks_light").applyPhase() end)
     local app = Sys.app
@@ -154,12 +171,16 @@ function Sys.onResume()
     state.lastTick, state.lastAction = now, now
     pcall(function() require("ks_sleep").hide() end)
     pcall(function() require("ks_light").applyPhase() end)
-    if Sys.app then Sys.app:render("ui") end
+    if Sys.app and not Sys.reading() then Sys.app:render("ui") end
     UIManager:scheduleIn(3, Sys.autoRound)
 end
 
+-- Ook tikken in de lezer van KOReader tellen als bezig zijn.
+local inputHook = { onInputEvent = function() if Sys.reading() then state.lastAction = os.time() end end }
+
 function Sys.start(app)
     Sys.app = app
+    pcall(function() UIManager.event_hook:registerWidget("InputEvent", inputHook) end)
     Sys.applyFont()
     prune()
     local now = os.time()

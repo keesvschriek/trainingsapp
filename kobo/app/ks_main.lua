@@ -165,6 +165,19 @@ function M.studyFolder(app)
     return UI.page(UI.vgroup(items))
 end
 
+--- Map "Lezen": fragmenten, te lezen, en je eigen boeken.
+function M.readFolder(app)
+    local items = {
+        UI.header("Lezen", function() app:back() end, "Rustig lezen, zonder scrollen"),
+        UI.row("Fragment van de dag", safe(require("ks_fragment").summary, ""), "›", function() app:go(require("ks_fragment").page) end, nil, "feather"),
+        UI.row("Te lezen", safe(require("ks_reading").summary, ""), "›", function() app.readPg = 1; app:go(require("ks_reading").page) end, nil, "news"),
+        UI.row("Op deze dag", safe(require("ks_otd").summary, ""), "›", function() app.otdPg = 1; app:go(require("ks_otd").page) end, nil, "history"),
+        UI.vspace(20),
+        UI.row("Naar je boeken", "Sluit de app en ga naar de Kobo-bibliotheek", "›", function() app:quit() end, nil, "book"),
+    }
+    return UI.page(UI.vgroup(items))
+end
+
 --- Map "Ontwikkeling": dagtekst en gewoontes.
 function M.growFolder(app)
     local D = require("ks_dagtekst")
@@ -298,7 +311,7 @@ local function homePage(app)
             { "run", "Sport", function() app:go(Sport.page) end },
             { "leaf", "Ontwikkeling", function() app:go(M.growFolder) end },
             { "wrench", "Tools", function() app:go(require("ks_tools").menu) end },
-            { "book", "Lezen", function() app:quit() end },
+            { "book", "Lezen", function() app:go(M.readFolder) end },
             { "cog", "Instellingen", function() app:go(Sys.settingsPage) end },
         }
         local col = math.floor(W / 6)

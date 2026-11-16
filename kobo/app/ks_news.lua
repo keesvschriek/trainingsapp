@@ -173,6 +173,10 @@ function N.refresh(done, quiet)
         if O.due() then pcall(O.fetchNow) end
         local R = require("ks_rooster")
         if R.due() then pcall(R.fetchNow) end
+        -- te lezen en het fragment van de dag (hooguit één boek per keer)
+        local RD = require("ks_reading")
+        if RD.due() then pcall(RD.fetchNow) end
+        pcall(require("ks_fragment").autoFetch)
         done(ok, err)
     end, { quiet = quiet, onFail = function(msg) done(false, msg) end })
 end

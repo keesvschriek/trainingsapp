@@ -2,6 +2,13 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Lezen
+- Lezen in het dock opent nu een map: Fragment van de dag, Te lezen, Op deze dag en Naar je boeken
+- Fragment van de dag: korte stukken uit Thucydides, Clausewitz, Marcus Aurelius, Sun Tzu, Machiavelli en Multatuli (Project Gutenberg); de Kobo bewaart alleen fragmenten
+- Te lezen: achtergrondstukken met literatuurlijst, die openen in de lezer; de eerste gaat over de Betuwe als front in 1944-1945
+- Op deze dag: tik op een regel om hem als leerkaart te bewaren of het Wikipedia-artikel als boek te lezen
+- Roosterlink vanaf je telefoon: de Kobo zet even een pagina open op je eigen wifi, met een code
+
 ## Licht en donker
 - Weergave licht, donker of automatisch (donker van 20:00 tot 06:00), in het lichtpaneel bovenin
 - In automatisch kun je het even omzetten met Nu donker of Nu licht; dat geldt tot de volgende wissel

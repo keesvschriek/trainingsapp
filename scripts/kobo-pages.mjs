@@ -23,6 +23,10 @@ add('kobo/install/patches/2-kees-study.lua', 'patches/2-kees-study.lua');
 // NickelMenu-item (de app slaat dit over als NickelMenu er niet is)
 add('kobo/install/nm/kees_study', 'nm/kees_study');
 
+// Te lezen: achtergrondstukken los van de app (geen nieuwe versie nodig)
+mkdirSync(join(out, 'reading'), { recursive: true });
+for (const f of readdirSync('kobo/reading')) if (/\.(html|json)$/.test(f)) copyFileSync(join('kobo/reading', f), join(out, 'reading', f));
+
 // Wat er nieuw is: de punten onder de eerste ## in kobo/CHANGELOG.md
 const log = readFileSync('kobo/CHANGELOG.md', 'utf8').split('\n## ')[1] ?? '';
 const changes = log.split('\n').filter((l) => l.startsWith('- ')).map((l) => l.slice(2).trim());
