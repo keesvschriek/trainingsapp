@@ -15,7 +15,7 @@ export function applyTheme(pref: ThemePref) {
   if (pref === 'system') delete root.dataset.theme;
   else root.dataset.theme = pref;
   const dark = isDark(pref);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0d1116' : '#f5f3ee');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#000000' : '#ffffff');
   if (isNative) {
     void SystemBars.setStyle({ style: dark ? SystemBarsStyle.Dark : SystemBarsStyle.Light }).catch(() => undefined);
   }
@@ -35,5 +35,5 @@ export async function setThemePref(pref: ThemePref) {
 
 /** Kleuren uit de CSS, voor grafieken. */
 export function cssColor(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#1f4e79';
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#111111';
 }

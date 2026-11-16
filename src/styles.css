@@ -2,32 +2,33 @@
 @import '@fontsource/inter/latin-500.css';
 @import '@fontsource/inter/latin-600.css';
 @import '@fontsource/inter/latin-700.css';
-@import '@fontsource/barlow-condensed/latin-500.css';
-@import '@fontsource/barlow-condensed/latin-600.css';
 
 /* ------------------------------------------------------------------
-   Kleuren: licht (papier) en donker. Eén accentkleur (blauw);
-   groen/oranje/rood alleen voor herstel.
+   Kleuren: dezelfde stijl als de Kobo ("rustig grijs").
+   Wit papier, zachtgrijze vlakken met een dunne lijn, zwarte inkt.
+   Zwart is het enige accent; groen/oranje/rood alleen voor herstel.
 ------------------------------------------------------------------ */
 :root {
-  --bg: #f5f3ee;
+  --bg: #ffffff;
   --surface: #ffffff;
-  --surface-2: #efece5;
-  --ink: #1a1e23;
-  --muted: #646d76;
-  --line: #ddd8ce;
-  --accent: #1f4e79;
-  --accent-soft: #e2eaf3;
+  --surface-2: #f2f2f2;
+  --card: #eeeeee;
+  --edge: #bbbbbb;
+  --ink: #111111;
+  --muted: #5f5f5f;
+  --line: #dddddd;
+  --accent: #111111;
+  --accent-soft: #eeeeee;
   --accent-ink: #ffffff;
-  --good: #2e6b4d;
-  --warn: #9a6200;
-  --bad: #a33a2a;
-  --warn-bg: #fbf1de;
-  --contour: rgba(31, 78, 121, 0.10);
-  --shadow: 0 1px 2px rgba(26, 30, 35, 0.05), 0 6px 18px rgba(26, 30, 35, 0.05);
-  --radius: 14px;
-  --tabbar: 64px;
-  --num: 'Barlow Condensed', 'Inter', system-ui, sans-serif;
+  --good: #3b6b4e;
+  --warn: #8a6a2a;
+  --bad: #9a3b30;
+  --warn-bg: #f4efe4;
+  --contour: rgba(0, 0, 0, 0.05);
+  --shadow: none;
+  --radius: 12px;
+  --tabbar: 62px;
+  --num: 'Inter', system-ui, sans-serif;
   color-scheme: light;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--ink);
@@ -37,15 +38,15 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #0d1116; --surface: #151b22; --surface-2: #1c232c; --ink: #e7ebef; --muted: #8d98a4; --line: #26303b;
-    --accent: #82b3e3; --accent-soft: #1b2b3c; --accent-ink: #0d1116; --good: #73c296; --warn: #e3ab4c; --bad: #e57f6f;
-    --warn-bg: #2a2214; --contour: rgba(130, 179, 227, 0.08); --shadow: none; color-scheme: dark;
+    --bg: #000000; --surface: #000000; --surface-2: #161616; --card: #161616; --edge: #4a4a4a; --ink: #f2f2f2; --muted: #a6a6a6; --line: #2e2e2e;
+    --accent: #f2f2f2; --accent-soft: #222222; --accent-ink: #000000; --good: #8cc4a2; --warn: #d6b56e; --bad: #e0907f;
+    --warn-bg: #221d14; --contour: rgba(255, 255, 255, 0.05); --shadow: none; color-scheme: dark;
   }
 }
 :root[data-theme='dark'] {
-  --bg: #0d1116; --surface: #151b22; --surface-2: #1c232c; --ink: #e7ebef; --muted: #8d98a4; --line: #26303b;
-  --accent: #82b3e3; --accent-soft: #1b2b3c; --accent-ink: #0d1116; --good: #73c296; --warn: #e3ab4c; --bad: #e57f6f;
-  --warn-bg: #2a2214; --contour: rgba(130, 179, 227, 0.08); --shadow: none; color-scheme: dark;
+  --bg: #000000; --surface: #000000; --surface-2: #161616; --card: #161616; --edge: #4a4a4a; --ink: #f2f2f2; --muted: #a6a6a6; --line: #2e2e2e;
+    --accent: #f2f2f2; --accent-soft: #222222; --accent-ink: #000000; --good: #8cc4a2; --warn: #d6b56e; --bad: #e0907f;
+    --warn-bg: #221d14; --contour: rgba(255, 255, 255, 0.05); --shadow: none; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -403,3 +404,49 @@ input[type='checkbox'] { accent-color: var(--accent); width: 18px; height: 18px;
 .map-zoom { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .map-zoom button { width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 1.2rem; line-height: 1; cursor: pointer; box-shadow: var(--shadow); }
 .map-ask { font-size: 1.05rem; margin: 4px 0; }
+
+
+/* ------------------------------------------------------------------
+   Kobo-stijl: vlakken, randen, knoppen en de tabbalk zoals op de Kobo.
+   (Staat onderaan zodat het de regels hierboven overschrijft.)
+------------------------------------------------------------------ */
+body { font-size: 15px; }
+h1 { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.015em; }
+h2 { font-size: 0.95rem; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+h3 { font-weight: 500; }
+.fig .num, .rowcard .big, .mini-stats .v, .recovery .score, .counter .num, .stat .v, .stat-row .num, .review .num,
+.quiz-score, .math-q, .resttimer-clock, .lock-title, .quiz-bar, .sets input, .pushups .pu-main, .ws-day .n { font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+.card, .hero, .rowcard, .tile { background: var(--card); border: 1px solid var(--edge); box-shadow: none; border-radius: var(--radius); }
+.card.soft { background: var(--surface-2); border: 1px solid var(--line); }
+.card.warn, .hero.warn { background: var(--warn-bg); border: 1px solid var(--edge); }
+.hero { border-radius: 14px; }
+.hero .contour { display: none; }
+.hero-title { font-weight: 600; }
+.hero-kind svg { color: var(--muted); }
+
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 10px; font-weight: 600; }
+.btn.secondary { background: var(--surface); color: var(--ink); border-color: var(--edge); font-weight: 500; }
+.btn.ghost { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--edge); }
+.btn.danger { background: var(--surface); }
+
+.seg { background: var(--surface); border: 1px solid var(--edge); border-radius: 10px; padding: 0; gap: 0; overflow: hidden; }
+.seg button { border-radius: 0; color: var(--ink); padding: 9px 4px; }
+.seg button.active { background: var(--accent); color: var(--accent-ink); box-shadow: none; font-weight: 600; border-radius: 8px; }
+
+.check { border: 1px solid var(--muted); }
+.ws-day.sel { background: var(--card); box-shadow: inset 0 0 0 1px var(--edge); }
+
+.topbar { background: var(--bg); }
+.tabbar { background: var(--bg); border-top: 1px solid var(--line); }
+.tabbar button { color: var(--muted); font-weight: 400; }
+.tabbar button.active { color: var(--ink); font-weight: 600; }
+.tabbar button.active::before { display: none; }
+
+.notice { background: var(--card); border: 1px solid var(--line); }
+.update-bar { background: var(--card); color: var(--ink); border-bottom: 1px solid var(--line); }
+.why-body { border-left: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.week.current { border-color: var(--edge); box-shadow: inset 3px 0 0 var(--accent); }
+input:focus, select:focus, textarea:focus { outline: 1px solid var(--ink); }
+.resttimer { box-shadow: none; border-top: 1px solid var(--edge); }
+.map-zoom button { box-shadow: none; border-color: var(--edge); }

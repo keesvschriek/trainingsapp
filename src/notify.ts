@@ -48,7 +48,7 @@ export async function scheduleMorning(): Promise<number> {
       body,
       schedule: { at, allowWhileIdle: true },
       smallIcon: 'ic_stat_training',
-      iconColor: '#1F4E79',
+      iconColor: '#111111',
     });
   }
   // Zondagavond: terugblik op de week
@@ -66,7 +66,7 @@ export async function scheduleMorning(): Promise<number> {
       body: `Bekijk je terugblik op week ${week}: wat je deed en wat er volgende week komt.`,
       schedule: { at, allowWhileIdle: true },
       smallIcon: 'ic_stat_training',
-      iconColor: '#1F4E79',
+      iconColor: '#111111',
     });
   }
   if (list.length) await LocalNotifications.schedule({ notifications: list });
