@@ -59,6 +59,7 @@ function F.cut(text)
         pos = pos + #block + 2
         local lines = {}
         for l in block:gmatch("[^\n]+") do table.insert(lines, (l:gsub("^%s+", ""):gsub("%s+$", ""))) end
+        while #lines > 1 and isHeading(lines[1]) do where = table.remove(lines, 1):sub(1, 60) end
         local joined = table.concat(lines, " "):gsub("%s+", " "):gsub("^ ", ""):gsub(" $", "")
         if #lines <= 2 and isHeading(joined) then
             where = joined:sub(1, 60)

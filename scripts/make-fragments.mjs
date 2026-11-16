@@ -45,6 +45,8 @@ function cut(text) {
   for (const block of text.split(/\n\s*\n/)) {
     pos += block.length + 2;
     const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+    // kopjes bovenaan een blok (bijv. "39. GREAT SIMPLIFICATION") apart houden
+    while (lines.length > 1 && isHeading(lines[0])) where = lines.shift().slice(0, 60);
     const joined = lines.join(' ').replace(/\s+/g, ' ').trim();
     if (lines.length <= 2 && isHeading(joined)) { where = joined.slice(0, 60); continue; }
     const n = joined.split(' ').filter(Boolean).length;
