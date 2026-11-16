@@ -82,9 +82,21 @@ function Q.pick(cats, n)
     end
     shuffle(fresh)
     table.sort(old, function(a, b) return seen[a.id] < seen[b.id] end) -- langst geleden eerst
-    local out = {}
-    for _, q in ipairs(fresh) do if #out < n then out[#out + 1] = q end end
-    for _, q in ipairs(old) do if #out < n then out[#out + 1] = q end end
+    -- eerst nieuwe vragen, dan vragen die je langer dan een week niet zag, pas dan recentere
+    local week = os.time() - 7 * 86400
+    local older, recent = {}, {}
+    for _, q in ipairs(old) do if (tonumber(seen[q.id]) or 0) < week then older[#older + 1] = q else recent[#recent + 1] = q end end
+    local out, answers = {}, {}
+    local function add(q)
+        -- hetzelfde antwoord maar één keer per ronde (zelfde feit, andere vraag)
+        local key = type(q.a) == "table" and type(q.a[1]) == "string" and q.a[1]:lower() or q.id
+        if #out >= n or answers[key] then return end
+        answers[key] = true
+        out[#out + 1] = q
+    end
+    for _, q in ipairs(fresh) do add(q) end
+    for _, q in ipairs(older) do add(q) end
+    for _, q in ipairs(recent) do add(q) end
     return out
 end
 

@@ -21,10 +21,12 @@ end
 
 local N = 12
 local DIRS = { { 1, 0 }, { 0, 1 }, { 1, 1 }, { 1, -1 } } -- rechts, omlaag, schuin omlaag, schuin omhoog
+local DIRS_ALL = { { 1, 0 }, { 0, 1 }, { 1, 1 }, { 1, -1 }, { -1, 0 }, { 0, -1 }, { -1, -1 }, { -1, 1 } } -- ook achterstevoren
 local FILL = "AAAAABBCDDDEEEEEEEEEEFGGHHIIIIIJJKKLLLMMNNNNNNOOOOOPPRRRRRSSSSTTTTTUUVVWWZ"
 
 --- Maakt een rooster met alle woorden erin. Geeft grid (rijen van letters) en posities.
-function P.makeGrid(words, seed)
+function P.makeGrid(words, seed, dirs)
+    local DIRS = dirs or DIRS
     math.randomseed(seed or os.time())
     for _ = 1, 200 do
         local g = {}
@@ -116,13 +118,73 @@ local function newGame(themeIdx)
     return { theme = themeIdx, grid = g, pos = pos, found = {}, seed = seed }
 end
 
+-- Willekeurige woorden ------------------------------------------------------------------
+
+local wordList
+local function allWords()
+    if not wordList then
+        wordList = {}
+        for w in require("ks_words_data"):gmatch("%u+") do wordList[#wordList + 1] = w end
+    end
+    return wordList
+end
+P.allWords = allWords
+
+P.LEVELS = {
+    { name = "Makkelijk", n = 8, dirs = DIRS, sub = "8 woorden, van links naar rechts en van boven naar onder" },
+    { name = "Normaal", n = 12, dirs = DIRS, sub = "12 woorden, ook schuin" },
+    { name = "Moeilijk", n = 14, dirs = DIRS_ALL, sub = "14 woorden, ook achterstevoren" },
+}
+
+--- Nieuw rooster met willekeurige woorden. Woorden van de laatste rondes komen niet terug.
+function P.randomGame(level)
+    local L = P.LEVELS[level] or P.LEVELS[2]
+    if level == 1 then L = { n = 8, dirs = { { 1, 0 }, { 0, 1 } } } end
+    local list = allWords()
+    local recent = Store.get("ws.recent", {})
+    local skip = {}
+    for _, w in ipairs(recent) do skip[w] = true end
+    local seed = os.time()
+    math.randomseed(seed)
+    for _ = 1, 20 do
+        local words, used = {}, {}
+        local tries = 0
+        while #words < L.n and tries < 2000 do
+            tries = tries + 1
+            local w = list[math.random(#list)]
+            if not skip[w] and not used[w] and #w <= 10 then
+                -- niet twee woorden die in elkaar zitten (zoals RADIO en RADIOS)
+                local clash = false
+                for _, o in ipairs(words) do if o:find(w, 1, true) or w:find(o, 1, true) then clash = true break end end
+                if not clash then used[w] = true; words[#words + 1] = w end
+            end
+        end
+        local g, pos = P.makeGrid(words, seed, L.dirs)
+        if g then
+            for _, w in ipairs(words) do table.insert(recent, w) end
+            while #recent > 600 do table.remove(recent, 1) end
+            Store.set("ws.recent", recent)
+            local wl = {}
+            for i, w in ipairs(words) do wl[i] = { w, "" } end
+            table.sort(wl, function(a, b) return a[1] < b[1] end)
+            -- posities horen bij de gesorteerde lijst
+            local byWord = {}
+            for i, w in ipairs(words) do byWord[w] = pos[i] end
+            local pos2 = {}
+            for i, w in ipairs(wl) do pos2[i] = byWord[w[1]] end
+            return { random = true, level = level, words = wl, grid = g, pos = pos2, found = {}, seed = seed }
+        end
+        seed = seed + 1
+    end
+end
+
 function P.wordsearch(app)
     local W = UI.INNER()
     local d = data()
     local st = app.ws or Store.get("ws.game")
     if not st or not st.grid then st = newGame(1) end
     app.ws = st
-    local th = d.themes[st.theme]
+    local th = st.random and { name = "Woordzoeker · " .. ((P.LEVELS[st.level] or {}).name or "willekeurig"):lower(), words = st.words } or d.themes[st.theme]
     local foundCells = {}
     local nFound = 0
     for wi, _ in pairs(st.found) do
@@ -172,7 +234,7 @@ function P.wordsearch(app)
     end
     -- uitleg bij het laatst gevonden woord
     local info
-    if app.wsLast and th.words[app.wsLast] then
+    if app.wsLast and th.words[app.wsLast] and th.words[app.wsLast][2] ~= "" then
         local w = th.words[app.wsLast]
         info = UI.card(UI.vgroup({
             UI.text(w[1]:sub(1, 1) .. w[1]:sub(2):lower(), { font = "bold", size = 18, bg = UI.FILL }),
@@ -187,8 +249,8 @@ function P.wordsearch(app)
     local done = nFound == #th.words
     local header = UI.header(th.name, function() app:back() end, done and "Alle woorden gevonden." or (nFound .. " van " .. #th.words .. " gevonden"))
     local footer = UI.buttonRow({
-        { "Ander thema", function() app:go(P.themes) end, small = true },
-        { "Nieuw rooster", function() app.ws = newGame(st.theme); app.wsLast = nil; Store.set("ws.game", app.ws); app:refresh() end, small = true, primary = done },
+        { st.random and "Ander niveau" or "Ander thema", function() app:go(P.themes) end, small = true },
+        { "Nieuw rooster", function() app.ws = st.random and P.randomGame(st.level) or newGame(st.theme); app.wsLast = nil; Store.set("ws.game", app.ws); app:refresh() end, small = true, primary = done },
     })
     local listW = UI.vgroup(list)
     local infoH = UI.px(104)
@@ -200,8 +262,17 @@ end
 
 function P.themes(app)
     local d = data()
-    local items = { UI.header("Woordzoeker", function() app:back() end, "Kies een thema. Bij elk gevonden woord lees je wat erachter zit.") }
+    local items = { UI.header("Woordzoeker", function() app:back() end, "Willekeurige woorden, of een thema waarbij je bij elk woord leest wat erachter zit.") }
     UI.rowPad = 20
+    table.insert(items, UI.section("Willekeurige woorden (" .. #allWords() .. " in de lijst)", UI.INNER()))
+    for i, L in ipairs(P.LEVELS) do
+        table.insert(items, UI.row(L.name, L.sub, "›", function()
+            app.ws = P.randomGame(i); app.wsLast = nil; Store.set("ws.game", app.ws)
+            app:replace(P.wordsearch)
+        end))
+    end
+    table.insert(items, UI.vspace(10))
+    table.insert(items, UI.section("Geschiedenis", UI.INNER()))
     for i, th in ipairs(d.themes) do
         table.insert(items, UI.row(th.name, #th.words .. " woorden", "›", function()
             app.ws = newGame(i); app.wsLast = nil; Store.set("ws.game", app.ws)

@@ -2,6 +2,14 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Leerlijnen
+- Leerlijnen voor NAVO-alfabet, Defensie, Geschiedenis en Topografie: stap voor stap, de volgende stap gaat open als je 80% van de vorige beheerst
+- Opbouwend per feit: eerst meerkeuze, dan andersom, dan zelf typen (of zelf ophalen bij lange antwoorden)
+- Wat goed ging komt pas na 1, 2, 4, 8, 16 en 32 dagen terug; vragen met hetzelfde antwoord tellen als één feit
+- NAVO-alfabet: per groep letters, daarna ontcijferen en spellen
+- Quiz: eerst nieuwe vragen, dan wat je langer dan een week niet zag; hetzelfde antwoord maar één keer per ronde
+- Woordzoeker met willekeurige woorden uit een lijst van 6000, in drie niveaus
+
 ## Je week
 - Je week in één blik: per dag je lessen, training, module en punten. Op zondag vanaf 12:00 de komende week
 - Training ruilen met een andere dag. De app op je telefoon zet het daarna in intervals.icu en op je Garmin

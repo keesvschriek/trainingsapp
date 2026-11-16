@@ -71,3 +71,7 @@ De Kobo bewaart je wachtwoord niet. Geen app bij de hand: scan de QR-code op de 
 VAN TELEFOON NAAR KOBO
 In Chrome of een andere app: Delen, kies K, dan Lezen op de Kobo. Of in de app K: Meer, Naar de Kobo.
 Op de Kobo: tik rechtsboven op het pijltje om meteen te synchroniseren. Het stuk staat dan bij Lezen, Te lezen.
+
+BRONNEN WOORDENLIJST
+De woordzoeker gebruikt 6000 Nederlandse woorden uit de frequentielijst van Hermit Dave (FrequencyWords, CC BY-SA 4.0,
+op basis van OpenSubtitles), gefilterd op de woordenlijst van OpenTaal (dictionary-nl, BSD / CC BY 3.0).

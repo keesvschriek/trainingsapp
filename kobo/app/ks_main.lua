@@ -174,7 +174,8 @@ function M.studyFolder(app)
     local QuizUI = require("ks_quizui")
     local items = {
         UI.header("Kees Study", function() app:back() end, "Schaken, quiz, leerkaarten, topografie en puzzels"),
-        UI.row("Schaken leren", safe(ChessUI.summary, ""), "›", function() remember("Schaken leren"); app:go(ChessUI.lessonList) end, nil, "school"),
+        UI.row("Leerlijnen", safe(require("ks_leer").summary, "NAVO, Defensie, Geschiedenis, Topografie"), "›", function() remember("Leerlijnen"); app:go(require("ks_leer").home) end, nil, "school"),
+        UI.row("Schaken leren", safe(ChessUI.summary, ""), "›", function() remember("Schaken leren"); app:go(ChessUI.lessonList) end, nil, "chess"),
         UI.row("Tegen de computer", safe(require("ks_play").summary, ""), "›", function()
             remember("Tegen de computer")
             local g = Store.get("play.game")
@@ -184,7 +185,7 @@ function M.studyFolder(app)
         UI.row("Quiz", safe(QuizUI.summary, ""), "›", function() remember("Quiz"); app:go(QuizUI.home) end, nil, "help"),
         UI.row("Leerkaarten", safe(require("ks_cards").summary, ""), "›", function() remember("Leerkaarten"); app:go(require("ks_cards").home) end, nil, "brain"),
         UI.row("Topografie op de kaart", "Landen aanwijzen en herkennen, per werelddeel", "›", function() remember("Topografie"); app:go(require("ks_mapui").menu) end, nil, "earth"),
-        UI.row("Woordzoeker", "Bij elk woord de gebeurtenis erachter", "›", function()
+        UI.row("Woordzoeker", "Willekeurige woorden of een geschiedenisthema", "›", function()
             local g = Store.get("ws.game")
             app:go(g and g.grid and require("ks_puzzles").wordsearch or require("ks_puzzles").themes)
         end, nil, "list_checks"),
