@@ -2,6 +2,12 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Puzzels en geschiedenis
+- Woordzoeker met acht thema's (o.a. Eerste Wereldoorlog, Interbellum, Gouden Eeuw); bij elk gevonden woord de gebeurtenis erachter
+- Tijdlijn met grote gebeurtenissen van de Oudheid tot nu, en een spel: zet ze op volgorde
+- Schaakpuzzel van de dag van Lichess, ook zonder wifi op te lossen
+- Alles te vinden in Kees Study
+
 ## Licht, slaapscherm en weekoverzicht
 - Tik op de bovenbalk voor licht: helderheid, warmte, wifi en slaapscherm
 - Avondlicht automatisch: van 20:00 tot 06:00 warmer en zachter licht

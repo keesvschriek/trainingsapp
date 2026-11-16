@@ -143,15 +143,21 @@ function M.studyFolder(app)
     local ChessUI = require("ks_chessui")
     local QuizUI = require("ks_quizui")
     local items = {
-        UI.header("Kees Study", function() app:back() end, "Schaken, quiz en topografie"),
+        UI.header("Kees Study", function() app:back() end, "Schaken, quiz, topografie, puzzels en geschiedenis"),
         UI.row("Schaken leren", safe(ChessUI.summary, ""), "›", function() remember("Schaken leren"); app:go(ChessUI.lessonList) end, nil, "school"),
         UI.row("Tegen de computer", safe(require("ks_play").summary, ""), "›", function()
             remember("Tegen de computer")
             local g = Store.get("play.game")
             app:go((g and not g.over) and require("ks_play").game or require("ks_play").menu)
         end, nil, "chess"),
+        UI.row("Schaakpuzzel van de dag", "Van Lichess, ook zonder wifi op te lossen", "›", function() app:go(require("ks_lichess").page) end, nil, "target"),
         UI.row("Quiz", safe(QuizUI.summary, ""), "›", function() remember("Quiz"); app:go(QuizUI.home) end, nil, "help"),
         UI.row("Topografie op de kaart", "Landen aanwijzen en herkennen, per werelddeel", "›", function() remember("Topografie"); app:go(require("ks_mapui").menu) end, nil, "earth"),
+        UI.row("Woordzoeker", "Bij elk woord de gebeurtenis erachter", "›", function()
+            local g = Store.get("ws.game")
+            app:go(g and g.grid and require("ks_puzzles").wordsearch or require("ks_puzzles").themes)
+        end, nil, "list_checks"),
+        UI.row("Tijdlijn", "Grote gebeurtenissen, en zet ze op volgorde", "›", function() app:go(require("ks_puzzles").timeline) end, nil, "history"),
     }
     return UI.page(UI.vgroup(items))
 end
