@@ -89,8 +89,27 @@ function R.summary()
     return n > 0 and (n .. " nieuw · " .. l[1].title) or (#l .. " stukken")
 end
 
+-- De lezer van KOReader stuurt je bij "naar de bibliotheek" (het huisje of mapje bovenin, of
+-- aan het eind van het boek) naar zijn eigen bestandsbeheer. Zolang de app draait, sluiten we
+-- dan alleen het boek, zodat je terug bent in de app.
+local function keepInApp()
+    local ReaderUI = require("apps/reader/readerui")
+    if ReaderUI._ksPatched then return end
+    ReaderUI._ksPatched = true
+    local orig = ReaderUI.showFileManager
+    ReaderUI.showFileManager = function(self, ...)
+        if require("ks_system").app then
+            -- onHome heeft het boek al gesloten; als dat nog niet zo is, nu sluiten
+            if ReaderUI.instance == self and self.dialog then pcall(function() self:onClose() end) end
+            return
+        end
+        return orig(self, ...)
+    end
+end
+
 --- Openen in de lezer. Na het sluiten kom je terug in de app.
 function R.open(app, it)
+    keepInApp()
     local m = meta()[it.name] or { title = it.title, sub = it.sub }
     m.new = nil
     m.done = true
