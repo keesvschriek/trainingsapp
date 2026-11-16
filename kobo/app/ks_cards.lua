@@ -63,6 +63,11 @@ function C.decks()
         end
         return out
     end })
+    table.insert(list, { key = "otd", name = "Op deze dag (bewaard)", group = "Extra", cards = function()
+        local out = {}
+        for _, c in ipairs(require("ks_otd").saved()) do table.insert(out, { id = "otd:" .. c.id, front = c.front, back = c.back, why = c.why }) end
+        return out
+    end })
     table.insert(list, { key = "navo", name = "NAVO-alfabet", group = "Extra", cards = function()
         local out = {}
         for i, w in ipairs(NAVO) do
@@ -207,7 +212,7 @@ end
 
 --- Welke stapels doen mee in "Vandaag leren" (standaard: geschiedenis, NAVO-alfabet en jaartallen)
 function C.picked()
-    return Store.get("cards.picked", { ["cat:geschiedenis"] = true, jaartallen = true, navo = true })
+    return Store.get("cards.picked", { ["cat:geschiedenis"] = true, jaartallen = true, navo = true, otd = true })
 end
 
 -- Schermen ---------------------------------------------------------------------------------

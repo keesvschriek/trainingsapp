@@ -174,6 +174,7 @@ function M.growFolder(app)
         UI.row("Dagtekst", "Vandaag: " .. tostring(who), "›", function() remember("Dagtekst"); app:go(D.page) end, nil, "quote"),
         UI.row("Gewoontes", ("%d van %d gedaan vandaag"):format(done or 0, total or 0), "›", function() remember("Gewoontes"); app:go(H.page) end, nil, "list_checks"),
         UI.row("Weekoverzicht", "Training, gewoontes en schermtijd van deze week", "›", function() app:go(require("ks_week").page) end, nil, "calendar"),
+        UI.row("Op deze dag", safe(require("ks_otd").summary, ""), "›", function() app.otdPg = 1; app:go(require("ks_otd").page) end, nil, "history"),
     }
     return UI.page(UI.vgroup(items))
 end
@@ -203,7 +204,13 @@ local function homePage(app)
         table.insert(items, UI.text(greeting() .. ", Kees", { font = "display", size = 40, width = W }))
         table.insert(items, UI.vspace(2))
         table.insert(items, UI.text(M.dateText(), { size = 19, color = UI.INK2, font = "medium" }))
-        table.insert(items, UI.vspace(22))
+        local nextLes = safe(require("ks_rooster").next)
+        if nextLes then
+            table.insert(items, UI.vspace(6))
+            table.insert(items, UI.Tap:new{ label = "Rooster", callback = function() app.roosterDay = 0; app:go(require("ks_rooster").page) end,
+                UI.hgroup({ UI.icon("calendar", 20, UI.INK2), UI.hspace(8), UI.text(nextLes, { size = 17, color = UI.INK2, max_width = W - UI.px(40) }) }) })
+        end
+        table.insert(items, UI.vspace(level >= 2 and 14 or 22))
 
         -- Dagtekst: grijze kaart met citaat
         local who, first = safe(D.summary, "Dagtekst")

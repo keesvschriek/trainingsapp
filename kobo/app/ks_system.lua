@@ -254,6 +254,7 @@ function Sys.settingsPage(app)
     table.insert(items, UI.row("Schermtijd", "Vandaag " .. Sys.fmt(Sys.secondsOn()) .. " · deze week " .. Sys.fmt(total), "›", function() app:go(Sys.screenPage) end, W, "clock"))
     local Sport = require("ks_sport")
     table.insert(items, UI.row("Sport", Sport.connected() and "Gekoppeld met intervals.icu" or "Nog niet gekoppeld", "›", function() app:go(Sys.sportPage) end, W, "run"))
+    table.insert(items, UI.row("Rooster", require("ks_rooster").connected() and "Gekoppeld met Zermelo" or "Nog niet gekoppeld", "›", function() app:go(require("ks_rooster").settings) end, W, "calendar"))
     table.insert(items, UI.row("Nieuws", "Rubrieken en automatisch ophalen", "›", function() app:go(require("ks_news").settings) end, W, "news"))
     table.insert(items, UI.row("Bijwerken en back-ups", "Versie " .. require("ks_update").localVersion(), "›", function() app:go(require("ks_main").updatePage) end, W, "download"))
     UI.rowPad = nil

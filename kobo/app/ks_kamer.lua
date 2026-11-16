@@ -118,13 +118,86 @@ function K.fetchNow()
                     if pa ~= pb then return pa < pb end
                     return a.i < b.i
                 end)
-                save({ at = os.time(), datum = str(act.Datum) and act.Datum:sub(1, 10) or nil, items = items })
+                local d = K.data()
+                d.at, d.datum, d.items = os.time(), str(act.Datum) and act.Datum:sub(1, 10) or nil, items
+                save(d)
                 return true
             end
         end
     end
-    save({ at = os.time(), datum = str(acts[1].Datum) and acts[1].Datum:sub(1, 10) or nil, items = {} })
+    local d = K.data()
+    d.at, d.datum, d.items = os.time(), str(acts[1].Datum) and acts[1].Datum:sub(1, 10) or nil, {}
+    save(d)
     return true
+end
+
+-- Kamervragen ----------------------------------------------------------------------------
+
+K.TOPICS = {
+    { key = "defensie", name = "Defensie", f = { "defensie" }, w = { "defensie", "krijgsmacht", "militair", "navo", "veteraan", "munitie", "f-35", "dienstplicht", "reservist" } },
+    { key = "onderwijs", name = "Onderwijs", f = { "onderwijs" }, w = { "onderwijs", "school", "leraar", "leraren", "docent", "leerling", "examen", "mbo", "hbo" } },
+    { key = "internationaal", name = "Buitenland", f = { "buitenlandse zaken", "buitenlandse handel", "ontwikkelingshulp", "ontwikkelingssamenwerking" },
+        w = { "oekraïne", "rusland", "israël", "gaza", "china", "verenigde staten", "amerikaanse", "ambassade", "sancties", "europese unie", "navo", "vn-", "verenigde naties" } },
+    { key = "sport", name = "Sport", f = { "sport" }, w = { "sport", "voetbal", "olympisch", "knvb", "wielren", "schaats", "dopings" } },
+}
+
+--- Bij welke onderwerpen hoort een vraag? Eerst op de bewindspersoon, dan op woorden in het onderwerp.
+function K.topicsOf(onderwerp, gerichtAan)
+    local o, g = (onderwerp or ""):lower(), (gerichtAan or ""):lower()
+    local out = {}
+    for _, t in ipairs(K.TOPICS) do
+        local hit = false
+        for _, f in ipairs(t.f) do if g:find(f, 1, true) then hit = true end end
+        if not hit then for _, w in ipairs(t.w) do if o:find(w, 1, true) then hit = true end end end
+        if hit then out[t.key] = true end
+    end
+    return out
+end
+
+local VQ = "$select=Id,Nummer,Onderwerp,GestartOp,Afgedaan&$expand=ZaakActor($select=Relatie,ActorNaam,ActorFractie,Functie)"
+
+function K.fetchVragen()
+    local since = os.date("!%Y-%m-%dT00:00:00Z", os.time() - 14 * 86400)
+    local q, err = get("Zaak?$filter=Verwijderd eq false and Soort eq 'Schriftelijke vragen' and GestartOp ge " .. since .. "&$orderby=GestartOp desc&$top=250&" .. VQ)
+    if not q then
+        q, err = get("Zaak?$filter=Verwijderd eq false and Soort eq 'Schriftelijke vragen' and GestartOp ge " .. since .. "&$orderby=GestartOp desc&$top=250&$expand=ZaakActor")
+    end
+    if not q then return false, err end
+    local out = {}
+    for _, z in ipairs(type(q.value) == "table" and q.value or {}) do
+        local ind, gericht = {}, {}
+        for _, a in ipairs(type(z.ZaakActor) == "table" and z.ZaakActor or {}) do
+            local rel = str(a.Relatie) or ""
+            if rel == "Indiener" or rel == "Medeindiener" then
+                local n = str(a.ActorNaam) or ""
+                local fr = str(a.ActorFractie)
+                table.insert(ind, n .. (fr and (" (" .. fr .. ")") or ""))
+            elseif rel == "Gericht aan" then
+                table.insert(gericht, (str(a.Functie) or "") .. " " .. (str(a.ActorNaam) or ""))
+            end
+        end
+        local ond = str(z.Onderwerp) or ""
+        local tp = K.topicsOf(ond, table.concat(gericht, "; "))
+        if next(tp) and ond ~= "" then
+            table.insert(out, {
+                o = ond, d = str(z.GestartOp) and z.GestartOp:sub(1, 10) or nil, t = tp,
+                ind = table.concat(ind, ", "), aan = gericht[1] and gericht[1]:gsub("^%s+", "") or nil,
+                af = z.Afgedaan == true or nil,
+            })
+        end
+    end
+    local d = K.data()
+    d.vragen, d.vragenAt = out, os.time()
+    save(d)
+    return true
+end
+
+--- Stemmingen en Kamervragen samen.
+function K.fetchAll()
+    local ok1, e1 = K.fetchNow()
+    local ok2, e2 = K.fetchVragen()
+    if not ok1 and not ok2 then return false, e1 or e2 end
+    return true, (not ok1 and ("Stemmingen: " .. tostring(e1))) or (not ok2 and ("Kamervragen: " .. tostring(e2))) or nil
 end
 
 --- Elke zes uur hooguit één keer, als onderdeel van de krantenronde.
@@ -136,7 +209,7 @@ end
 
 function K.refresh(done)
     require("ks_net").online(function()
-        local ok, err = K.fetchNow()
+        local ok, err = K.fetchAll()
         done(ok, err)
     end, { onFail = function(msg) done(false, msg) end })
 end
@@ -156,16 +229,49 @@ function K.summary()
     if not d.items then return "Nog niet opgehaald" end
     local aan = 0
     for _, it in ipairs(d.items) do if it.uitslag:lower():find("aangenomen") then aan = aan + 1 end end
-    return ("%s · %d besluiten, %d aangenomen"):format(K.dateText(d.datum), #d.items, aan)
+    local v = d.vragen and (" · " .. #d.vragen .. " Kamervragen") or ""
+    return ("%s · %d besluiten, %d aangenomen%s"):format(K.dateText(d.datum), #d.items, aan, v)
 end
 
 function K.page(app)
     local W = UI.INNER()
     local d = K.data()
-    local items = { UI.header("In de Kamer", function() app.kamerPg = nil; app.kamerMsg = nil; app:back() end,
-        d.items and ("Stemmingen van " .. K.dateText(d.datum) .. " · Tweede Kamer") or "De laatste stemmingen in de Tweede Kamer") }
+    local tab = app.kamerTab or 1
+    local sub
+    if tab == 1 then
+        sub = d.items and ("Stemmingen van " .. K.dateText(d.datum) .. " · Tweede Kamer") or "De laatste stemmingen in de Tweede Kamer"
+    else
+        sub = "Schriftelijke vragen van de afgelopen twee weken"
+    end
+    local items = { UI.header("In de Kamer", function() app.kamerPg = nil; app.kamerMsg = nil; app.kamerTab = nil; app.kamerTopic = nil; app:back() end, sub) }
+    table.insert(items, UI.segmented({ "Stemmingen", "Kamervragen" }, tab, function(i) app.kamerTab = i; app.kamerPg = 1; app:refresh() end))
+    table.insert(items, UI.vspace(10))
     local blocks = {}
-    for _, it in ipairs(d.items or {}) do
+    if tab == 2 then
+        local names = { "Alles" }
+        for _, t in ipairs(K.TOPICS) do table.insert(names, t.name) end
+        local ti = app.kamerTopic or 1
+        table.insert(items, UI.segmented(names, ti, function(i) app.kamerTopic = i; app.kamerPg = 1; app:refresh() end))
+        table.insert(items, UI.vspace(10))
+        local want = ti > 1 and K.TOPICS[ti - 1].key or nil
+        for _, v in ipairs(d.vragen or {}) do
+            if not want or (type(v.t) == "table" and v.t[want]) then
+                local tags = {}
+                for _, t in ipairs(K.TOPICS) do if type(v.t) == "table" and v.t[t.key] then table.insert(tags, t.name) end end
+                table.insert(blocks, UI.vgroup({
+                    UI.text(K.dateText(v.d) .. "  ·  " .. table.concat(tags, ", ") .. (v.af and "  ·  beantwoord" or ""), { size = 15, color = UI.INK2, width = W }),
+                    UI.vspace(4),
+                    UI.text(v.o, { size = 19, font = "medium", width = W, height = UI.px(84) }),
+                    (v.ind ~= "" and UI.text("Van " .. v.ind .. (v.aan and (", aan " .. v.aan) or ""), { size = 15, color = UI.INK2, width = W, height = UI.px(42) })) or UI.vspace(0),
+                    UI.vspace(12), UI.line(W), UI.vspace(12),
+                }))
+            end
+        end
+        if #blocks == 0 then
+            table.insert(items, UI.text(d.vragen and "Geen Kamervragen over dit onderwerp in de afgelopen twee weken." or "Nog niets opgehaald. Tik op Ophalen.", { size = 19, width = W }))
+        end
+    end
+    for _, it in ipairs(tab == 1 and d.items or {}) do
         local aangenomen = it.uitslag:lower():find("aangenomen") ~= nil
         local g = {
             UI.hgroup({
@@ -186,7 +292,7 @@ function K.page(app)
         table.insert(g, UI.vspace(12))
         table.insert(blocks, UI.vgroup(g))
     end
-    if #blocks == 0 then
+    if tab == 1 and #blocks == 0 then
         table.insert(items, UI.text(d.items and "Bij de laatste stemmingen zijn geen besluiten gevonden." or "Nog niets opgehaald. Tik op Ophalen.", { size = 19, width = W }))
     end
     if app.kamerMsg then table.insert(items, UI.text(app.kamerMsg, { size = 17, font = "bold", width = W })) end
@@ -209,7 +315,7 @@ function K.page(app)
             app:refresh()
             UIManager:scheduleIn(0.2, function()
                 K.refresh(function(ok, err)
-                    if ok then app.kamerMsg = nil else app.kamerMsg = "Ophalen mislukt: " .. tostring(err) end
+                    if ok then app.kamerMsg = err else app.kamerMsg = "Ophalen mislukt: " .. tostring(err) end
                     app.kamerPg = 1
                     app:refresh()
                 end)

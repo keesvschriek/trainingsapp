@@ -2,6 +2,13 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Rooster, op deze dag en Kamervragen
+- Je lesrooster uit Zermelo op het startscherm (wat is nu, wat komt hierna) en per dag; koppelen bij Instellingen, Rooster
+- De Kobo bewaart alleen tijd, titel en lokaal voor 7 dagen; de link staat alleen op de Kobo
+- Op deze dag: gebeurtenissen, geboren en overleden van vandaag (Wikipedia), in de krant en bij Ontwikkeling
+- Tik op een gebeurtenis om hem als leerkaart te bewaren (stapel Op deze dag)
+- Kamervragen van de afgelopen twee weken over Defensie, onderwijs, buitenland en sport, bij In de Kamer
+
 ## Leerkaarten en de Kamer
 - Leerkaarten in Kees Study: open vragen, je bedenkt of typt het antwoord en draait de kaart om
 - Wat je goed hebt komt pas later terug (na 1, 2, 4, 8 of 16 dagen), foute kaarten morgen weer

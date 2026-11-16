@@ -167,7 +167,12 @@ function N.refresh(done, quiet)
         if require("ks_sport").connected() then pcall(require("ks_sport").fetchNow) end
         -- en de laatste stemmingen in de Tweede Kamer
         local K = require("ks_kamer")
-        if K.due() then pcall(K.fetchNow) end
+        if K.due() then pcall(K.fetchAll) end
+        -- vandaag in de geschiedenis en je rooster
+        local O = require("ks_otd")
+        if O.due() then pcall(O.fetchNow) end
+        local R = require("ks_rooster")
+        if R.due() then pcall(R.fetchNow) end
         done(ok, err)
     end, { quiet = quiet, onFail = function(msg) done(false, msg) end })
 end
@@ -305,6 +310,7 @@ function N.page(app)
     if Store.get("kamer.on", true) then
         local K = require("ks_kamer")
         table.insert(items, UI.row("Gisteren in de Kamer", K.summary(), "›", function() app.kamerPg = 1; app:go(K.page) end, W, "scale"))
+        table.insert(items, UI.row("Op deze dag", require("ks_otd").summary(), "›", function() app.otdPg = 1; app:go(require("ks_otd").page) end, W, "history"))
         table.insert(items, UI.vspace(6))
     end
     local head = UI.vgroup(items)
