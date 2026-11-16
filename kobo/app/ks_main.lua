@@ -250,6 +250,12 @@ local function homePage(app)
             table.insert(items, UI.Tap:new{ label = "Rooster", callback = function() app.roosterDay = 0; app:go(require("ks_rooster").page) end,
                 UI.hgroup({ UI.icon("calendar", 19, UI.INK2), UI.hspace(8), UI.text(nextLes, { size = 16, color = UI.INK2, max_width = W - UI.px(40) }) }) })
         end
+        local Sync = require("ks_sync")
+        if Sync.connected() and tonumber(os.date("%H")) < 12 and not safe(Sync.checkin) then
+            table.insert(items, UI.vspace(6))
+            table.insert(items, UI.Tap:new{ label = "Check-in", callback = function() app:go(Sync.checkinPage) end,
+                UI.hgroup({ UI.icon("sun", 19, UI.INK2), UI.hspace(8), UI.text("Ochtend-check-in nog niet gedaan", { size = 16, color = UI.INK2 }), UI.icon("chevron_right", 18, UI.INK3) }) })
+        end
         table.insert(items, UI.vspace(level >= 2 and 14 or 22))
 
         -- Dagtekst: grijze kaart met citaat

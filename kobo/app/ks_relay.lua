@@ -110,7 +110,7 @@ end
 
 function R.stop() R.sess = nil end
 
-function R.url(sess) return R.PAGE .. "#c=" .. sess.code end
+function R.url(sess) return R.PAGE .. "#c=" .. sess.code .. (sess.opts.mode and ("&m=" .. sess.opts.mode) or "") end
 
 function R.screen(app)
     local W = UI.INNER()
@@ -136,7 +136,7 @@ function R.screen(app)
         table.insert(items, UI.button("Terug", done, { width = W }))
         return UI.page(UI.vgroup(items))
     end
-    table.insert(items, UI.text("Scan de code met de camera van je telefoon, plak de tekst en tik op Versturen.", { size = 18, width = W }))
+    table.insert(items, UI.text(sess.opts.mode == "koppel" and "Scan de code met de camera van je telefoon, vul de gegevens in en tik op Versturen." or "Scan de code met de camera van je telefoon, plak de tekst en tik op Versturen.", { size = 18, width = W }))
     table.insert(items, UI.vspace(16))
     local qrSize = math.min(W, UI.px(300))
     local ok, QR = pcall(require, "ui/widget/qrwidget")

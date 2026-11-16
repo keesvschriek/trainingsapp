@@ -30,7 +30,7 @@ local function cleanList(list, fields)
     end
     return out
 end
-local EV = { date = "s", name = "s", desc = "s", type = "s", dur = "n", load = "n", cat = "s" }
+local EV = { date = "s", name = "s", desc = "s", type = "s", dur = "n", load = "n", cat = "s", ext = "s" }
 local AC = { date = "s", name = "s", type = "s", dist = "n", dur = "n", load = "n", hr = "n" }
 
 function S.cache()
@@ -122,7 +122,7 @@ function S.fetchNow()
         local cat = str(e.category)
         if cat == "WORKOUT" or cat == "NOTE" or cat == "RACE_A" or cat == "RACE_B" or cat == "RACE_C" then
             table.insert(c.events, { date = (str(e.start_date_local) or ""):sub(1, 10), name = str(e.name) or "Training", desc = str(e.description),
-                type = str(e.type) or (cat == "NOTE" and S.noteType(str(e.name)) or nil), dur = num(e.moving_time), load = num(e.icu_training_load), cat = cat })
+                type = str(e.type) or (cat == "NOTE" and S.noteType(str(e.name)) or nil), dur = num(e.moving_time), load = num(e.icu_training_load), cat = cat, ext = str(e.external_id) })
         end
     end
     table.sort(c.events, function(a, b) return a.date < b.date end)
@@ -364,6 +364,15 @@ function S.page(app)
         UI.card(UI.vgroup(tg), { dark = true, pad = UI.px(22) }) })
     table.insert(items, UI.vspace(14))
 
+    -- Ochtend-check-in (gedeeld met de telefoon-app)
+    local Sync = require("ks_sync")
+    if Sync.connected() then
+        local ci = Sync.checkin()
+        table.insert(items, UI.row("Ochtend-check-in", ci and ("Gedaan: slaap " .. ci.sleep .. ", benen " .. ci.legs .. ", energie " .. ci.energy .. ", rust " .. ci.calm) or "Nog niet gedaan vandaag",
+            "›", function() app:go(Sync.checkinPage) end, W, "sun"))
+        table.insert(items, UI.vspace(10))
+    end
+
     -- Deze week + vorm, naast elkaar
     local half = math.floor((W - UI.px(14)) / 2)
     local _, tot = S.week()
@@ -501,6 +510,17 @@ function S.day(app)
         if e.desc and e.desc ~= "" then
             table.insert(g, UI.vspace(12))
             table.insert(g, UI.text(e.desc, { size = 19, width = W - UI.px(44), line_height = 0.4, height = #list > 1 and UI.px(150) or UI.px(420) }))
+        end
+        -- afvinken (als de Kobo aan de telefoon-app gekoppeld is en de training uit de app komt)
+        local Sync = require("ks_sync")
+        if Sync.connected() and Sync.slotOf(e) and off <= 0 then
+            table.insert(g, UI.vspace(12))
+            if Sync.isDone(date, Sync.slotOf(e)) then
+                table.insert(g, UI.hgroup({ UI.icon("circle_check", 22), UI.hspace(8), UI.text("Gedaan", { font = "medium", size = 18 }), UI.hspace(16),
+                    UI.Tap:new{ label = "Ongedaan maken", callback = function() Sync.undo(date, e); app:refresh() end, UI.text("ongedaan maken", { size = 15, color = UI.INK2 }) } }))
+            else
+                table.insert(g, UI.button("Gedaan", function() app.doneEv = { date = date, ev = e }; app:go(Sync.donePage) end, { small = true, primary = true, icon = "check" }))
+            end
         end
         table.insert(items, UI.card(UI.vgroup(g)))
     end

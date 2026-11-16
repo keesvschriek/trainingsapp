@@ -26,8 +26,21 @@ button:disabled{background:#999}
 <form id="f">
 <label for="c">Code op de Kobo</label>
 <input id="c" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="ABCD 2345">
+<div id="plain">
 <label for="t">Tekst of link</label>
 <textarea id="t" autocomplete="off" spellcheck="false" placeholder="https://..."></textarea>
+</div>
+<div id="koppel" hidden>
+<label for="u">Supabase-adres</label>
+<input id="u" autocomplete="off" spellcheck="false" placeholder="https://xxxx.supabase.co" style="letter-spacing:0;text-transform:none">
+<label for="k">Openbare sleutel (anon key)</label>
+<textarea id="k" autocomplete="off" spellcheck="false" style="min-height:80px"></textarea>
+<label for="e">E-mail</label>
+<input id="e" type="email" autocomplete="username" style="letter-spacing:0;text-transform:none">
+<label for="p">Wachtwoord</label>
+<input id="p" type="password" autocomplete="current-password" style="letter-spacing:0;text-transform:none">
+<p style="margin-top:10px;font-size:14px">Adres en sleutel staan in de app bij Instellingen, Synchroniseren. Je wachtwoord gaat versleuteld naar de Kobo, die logt ermee in en bewaart het niet.</p>
+</div>
 <button id="b" type="submit">Versturen</button>
 <div id="m" class="msg" role="status"></div>
 </form>
@@ -51,20 +64,35 @@ async function encrypt(code, text) {
 }
 const clean = (c) => c.toUpperCase().replace(/[^A-Z0-9]/g, "");
 const c = document.getElementById("c"), t = document.getElementById("t"), m = document.getElementById("m"), b = document.getElementById("b");
-const fromHash = new URLSearchParams(location.hash.slice(1)).get("c");
+const hp = new URLSearchParams(location.hash.slice(1));
+const fromHash = hp.get("c");
+const mode = hp.get("m");
+const K = (id) => document.getElementById(id);
+if (mode === "koppel") {
+  K("plain").hidden = true; K("koppel").hidden = false;
+  document.querySelector("h1").textContent = "Kobo koppelen";
+  document.querySelector("p").textContent = "Vul de gegevens van je Kees Study-account in en tik op Versturen.";
+  try { const m = JSON.parse(localStorage.getItem("ks-koppel") || "{}"); K("u").value = m.url || ""; K("k").value = m.key || ""; K("e").value = m.email || ""; } catch {}
+}
 if (fromHash) { const v = clean(fromHash); c.value = v.slice(0, 4) + " " + v.slice(4); history.replaceState(null, "", location.pathname); }
 document.getElementById("f").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const code = clean(c.value), text = t.value.trim();
+  const code = clean(c.value);
+  let text = t.value.trim();
   m.className = "msg err";
   if (code.length !== 8) { m.textContent = "Vul de code van 8 tekens in die op de Kobo staat."; return; }
-  if (!text) { m.textContent = "Plak eerst de tekst of link."; return; }
+  if (mode === "koppel") {
+    const url = K("u").value.trim(), key = K("k").value.replace(/\s/g, ""), email = K("e").value.trim(), pw = K("p").value;
+    if (!/^https:\/\//.test(url) || !key || !email || !pw) { m.textContent = "Vul alle vier de velden in."; return; }
+    try { localStorage.setItem("ks-koppel", JSON.stringify({ url, key, email })); } catch {}
+    text = JSON.stringify({ t: "koppel", url, key, email, pw });
+  } else if (!text) { m.textContent = "Plak eerst de tekst of link."; return; }
   b.disabled = true; m.className = "msg"; m.textContent = "Bezig met versturen...";
   try {
     const r = await fetch(NTFY + (await topic(code)), { method: "POST", body: await encrypt(code, text) });
     if (!r.ok) throw new Error("status " + r.status);
     m.className = "msg ok"; m.textContent = "Verstuurd. Binnen een paar seconden staat het op de Kobo.";
-    t.value = "";
+    t.value = ""; K("p").value = "";
   } catch (err) {
     m.className = "msg err"; m.textContent = "Versturen lukte niet (" + err.message + "). Controleer je internet en probeer het nog eens.";
   } finally { b.disabled = false; }

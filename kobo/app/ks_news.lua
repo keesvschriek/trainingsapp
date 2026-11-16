@@ -174,6 +174,8 @@ function N.refresh(done, quiet)
         local R = require("ks_rooster")
         if R.due() then pcall(R.fetchNow) end
         -- te lezen en het fragment van de dag (hooguit één boek per keer)
+        local Sync = require("ks_sync")
+        if Sync.due() then pcall(Sync.syncNow) end
         local RD = require("ks_reading")
         if RD.due() then pcall(RD.fetchNow) end
         pcall(require("ks_fragment").autoFetch)

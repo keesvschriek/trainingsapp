@@ -34,6 +34,29 @@ function Net.get(url, headers)
     return true, table.concat(sink)
 end
 
+--- Algemeen verzoek (POST, PATCH...). body is een string. Geeft (true, inhoud, code) bij 2xx.
+function Net.request(method, url, headers, body)
+    local http = require("socket.http")
+    local ltn12 = require("ltn12")
+    local socket = require("socket")
+    local socketutil = require("socketutil")
+    local sink = {}
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
+    local req = { url = url, method = method, sink = ltn12.sink.table(sink), headers = {} }
+    for k, v in pairs(headers or {}) do req.headers[k] = v end
+    if body then
+        req.source = ltn12.source.string(body)
+        req.headers["Content-Length"] = tostring(#body)
+    end
+    local ok, code = pcall(function() return socket.skip(1, http.request(req)) end)
+    socketutil:reset_timeout()
+    if not ok then return false, "Verbinding mislukt." end
+    local text = table.concat(sink)
+    if type(code) ~= "number" then return false, "Geen verbinding (" .. tostring(code) .. ")." end
+    if code < 200 or code >= 300 then return false, text ~= "" and text or ("Fout " .. code), code end
+    return true, text, code
+end
+
 local function NM() return require("ui/network/manager") end
 
 function Net.isOn()

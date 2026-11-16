@@ -26,7 +26,10 @@ en alleen echte testresultaten melden.
 - Toolbox: rekenmachine, stopwatch, tempo berekenen, omrekenen, wereldklok, intervaltimer
 - Automatisch volledig verversen om de zoveel schermen (instelbaar)
 
-## Volgende ronde: telefoon en Kobo gelijktrekken (bewaard op 15 nov, nog niet gestart)
+## Telefoon en Kobo gelijktrekken (gestart 16 nov)
+Klaar: koppelen via QR en ntfy, synchronisatie van workouts, checks, checkins, metrics en blocks; afvinken met zwaarte en notitie; ochtend-check-in.
+Nog te doen: punt 2 tot en met 4 hieronder.
+
 Eén centrale plek: de Supabase-tabel `records` die de telefoon-app al gebruikt (per gebruiker
 afgeschermd, offline eerst, nieuwste wijziging wint). De Kobo krijgt dezelfde synchronisatie in Lua:
 eenmalig inloggen met e-mail en wachtwoord, daarna alleen een sleutel om ingelogd te blijven.
