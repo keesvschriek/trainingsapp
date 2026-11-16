@@ -2,6 +2,11 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Licht en donker
+- Weergave licht, donker of automatisch (donker van 20:00 tot 06:00), in het lichtpaneel bovenin
+- In automatisch kun je het even omzetten met Nu donker of Nu licht; dat geldt tot de volgende wissel
+- In donker ververst het scherm twee keer zo vaak volledig, tegen restjes
+
 ## Rooster, op deze dag en Kamervragen
 - Je lesrooster uit Zermelo op het startscherm (wat is nu, wat komt hierna) en per dag; koppelen bij Instellingen, Rooster
 - De link kan uit een bestand rooster-link.txt in de hoofdmap van de Kobo komen (via USB), dan hoef je hem niet over te typen; het bestand wordt daarna gewist

@@ -42,7 +42,57 @@ function L.autoOn() return Store.get("light.auto", true) end
 local function phase(h) h = h or tonumber(os.date("%H")); return (h >= 20 or h < 6) and "avond" or "dag" end
 L.phase = phase
 
+-- Weergave: licht, donker of automatisch (donker van 20:00 tot 06:00).
+-- In automatisch kun je het even omzetten; dat geldt tot de volgende wissel.
+-- Donker is de nachtmodus van KOReader: de Elipsa keert het beeld in hardware om.
+
+function L.themeMode() return Store.get("theme.mode", "auto") end
+
+local function phaseId()
+    local h = tonumber(os.date("%H"))
+    local p = phase(h)
+    -- de avond van 20:00 tot 06:00 hoort bij de datum waarop hij begon
+    local ts = (p == "avond" and h < 6) and (os.time() - 7 * 3600) or os.time()
+    return p .. os.date("%Y%m%d", ts)
+end
+
+function L.overridden()
+    local o = Store.get("theme.ovr")
+    return L.themeMode() == "auto" and type(o) == "table" and o.id == phaseId()
+end
+
+function L.wantDark()
+    local m = L.themeMode()
+    if m == "donker" then return true elseif m == "licht" then return false end
+    if L.overridden() then return Store.get("theme.ovr").dark == true end
+    return phase() == "avond"
+end
+
+function L.isDark()
+    local ok, v = pcall(function() return G_reader_settings:isTrue("night_mode") end)
+    return ok and v or false
+end
+
+function L.setDark(on)
+    if L.isDark() == on then return end
+    pcall(function()
+        Device.screen:toggleNightMode()
+        UIManager:ToggleNightMode(on)
+        G_reader_settings:saveSetting("night_mode", on)
+    end)
+    UIManager:setDirty("all", "full")
+end
+
+function L.applyTheme() L.setDark(L.wantDark()) end
+
+--- Even omzetten tot de volgende wissel (alleen in automatisch).
+function L.flipNow()
+    Store.set("theme.ovr", { id = phaseId(), dark = not L.wantDark() })
+    L.applyTheme()
+end
+
 function L.applyPhase(force)
+    pcall(L.applyTheme)
     if not L.autoOn() or not L.hasLight() then return end
     local p = phase()
     if not force and Store.get("light.phase") == p then return end
@@ -119,6 +169,33 @@ function Panel:build()
     end, inner))
     table.insert(items, UI.vspace(6))
     table.insert(items, UI.text("Automatisch: van 20:00 tot 06:00 warmer en zachter licht.", { size = 15, color = UI.INK2, width = inner }))
+    -- weergave
+    table.insert(items, UI.vspace(20))
+    table.insert(items, UI.hgroup({ UI.icon("moon", 24), UI.hspace(10), UI.text("Weergave", { font = "bold", size = 18 }), UI.hspace(10),
+        UI.text(L.isDark() and "donker" or "licht", { size = 17, color = UI.INK2 }) }))
+    table.insert(items, UI.vspace(10))
+    local modes = { "licht", "donker", "auto" }
+    local cur = ({ licht = 1, donker = 2, auto = 3 })[L.themeMode()] or 3
+    table.insert(items, UI.segmented({ "Licht", "Donker", "Automatisch" }, cur, function(i)
+        Store.set("theme.mode", modes[i])
+        Store.set("theme.ovr", nil)
+        L.applyTheme()
+        self:update()
+    end, inner))
+    if L.themeMode() == "auto" then
+        table.insert(items, UI.vspace(10))
+        local dark = L.wantDark()
+        local untilT = phase() == "avond" and "06:00" or "20:00"
+        local label = L.overridden() and "Terug naar automatisch" or ((dark and "Nu licht" or "Nu donker") .. " tot " .. untilT)
+        table.insert(items, UI.buttonRow({
+            { label, function()
+                if L.overridden() then Store.set("theme.ovr", nil); L.applyTheme() else L.flipNow() end
+                self:update()
+            end, small = true },
+        }, inner))
+        table.insert(items, UI.vspace(6))
+        table.insert(items, UI.text("Automatisch: donker van 20:00 tot 06:00.", { size = 15, color = UI.INK2, width = inner }))
+    end
     -- snelknoppen: wifi en slaapscherm
     local Net = require("ks_net")
     local Sleep = require("ks_sleep")

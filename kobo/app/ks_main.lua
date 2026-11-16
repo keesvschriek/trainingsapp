@@ -89,6 +89,8 @@ function App:render(mode)
     if mode == "page" then
         self.navs = (self.navs or 0) + 1
         local every = Store.get("set.fullevery", 8)
+        -- in donker blijven er sneller restjes staan: dan twee keer zo vaak
+        if every > 0 and require("ks_light").isDark() then every = math.max(2, math.floor(every / 2)) end
         if every > 0 and self.navs >= every then
             self.navs = 0
             UIManager:setDirty(self, "full")
