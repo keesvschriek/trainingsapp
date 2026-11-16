@@ -2,6 +2,11 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Vanaf je telefoon, overal
+- Roosterlink (en later meer) sturen vanaf je telefoon werkt nu via internet: scan de QR-code op de Kobo, plak de link, versturen
+- Werkt thuis, op school en via een hotspot; de tekst gaat versleuteld via ntfy.sh en alleen de Kobo met de code kan hem lezen
+- Vegen in de hele app: naar links verder, naar rechts vorige of terug
+
 ## Nieuwe vormgeving en lezen in de app
 - Rustiger ontwerp: zachtgrijze vlakken met een dunne lijn, kleinere letters, iconen zonder kaders
 - Startscherm: datum boven de begroeting, gewoontes als stipjes, het dock onderaan

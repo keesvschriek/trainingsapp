@@ -27,6 +27,9 @@ add('kobo/install/nm/kees_study', 'nm/kees_study');
 mkdirSync(join(out, 'reading'), { recursive: true });
 for (const f of readdirSync('kobo/reading')) if (/\.(html|json)$/.test(f)) copyFileSync(join('kobo/reading', f), join(out, 'reading', f));
 
+// Kleine webpagina's voor de telefoon (zoals stuur.html)
+try { for (const f of readdirSync('kobo/web')) if (/\.html$/.test(f)) copyFileSync(join('kobo/web', f), join(out, f)); } catch {}
+
 // Fragmenten (alleen fragmenten, geen hele boeken)
 mkdirSync(join(out, 'fragments'), { recursive: true });
 try { for (const f of readdirSync('kobo/fragments')) if (/\.json$/.test(f)) copyFileSync(join('kobo/fragments', f), join(out, 'fragments', f)); } catch {}

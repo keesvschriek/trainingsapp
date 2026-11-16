@@ -248,7 +248,7 @@ function R.settings(app)
     local on = R.connected()
     table.insert(items, UI.text(on and "Gekoppeld. De link staat alleen op deze Kobo." or "Nog niet gekoppeld.", { size = 20, font = "medium", width = W }))
     table.insert(items, UI.vspace(12))
-    table.insert(items, UI.text("Zo koppel je: maak in de Zermelo WebApp onder Instellingen een iCal-link. Tik op Vanaf je telefoon en plak de link op je telefoon. Via USB (bestand rooster-link.txt in de hoofdmap) of overtypen kan ook.", { size = 17, color = UI.INK2, width = W }))
+    table.insert(items, UI.text("Zo koppel je: maak in de Zermelo WebApp onder Instellingen een iCal-link. Tik op Vanaf je telefoon, scan de QR-code en plak de link. Via USB (bestand rooster-link.txt in de hoofdmap) of overtypen kan ook.", { size = 17, color = UI.INK2, width = W }))
     table.insert(items, UI.vspace(12))
     table.insert(items, UI.card(UI.text("Van elke les bewaart de Kobo alleen de tijd, de titel en het lokaal, voor de komende 7 dagen. Opmerkingen en deelnemers worden weggegooid. Staat er een naam in de titel van een afspraak, dan zie je die wel. Lekt de link uit, maak dan in Zermelo een nieuwe en wis deze.",
         { size = 16, width = W - UI.px(44), bg = UI.FILL }), { fill = true, border = 0 }))
@@ -260,7 +260,7 @@ function R.settings(app)
     table.insert(items, UI.button("Vanaf je telefoon", function()
         app.roosterMsg = "Even wifi aanzetten..."
         app:refresh()
-        require("ks_share").open(app, {
+        require("ks_relay").open(app, {
             title = "Roosterlink voor de Kobo",
             hint = "Plak hier je iCal-link uit de Zermelo WebApp (Instellingen).",
             label = "iCal-link",
