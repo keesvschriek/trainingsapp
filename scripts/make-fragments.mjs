@@ -4,7 +4,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 
 const BOOKS = [7142, 1946, 2680, 132, 1232, 11024];
 // Waar de eigenlijke tekst begint (na de inleiding van de vertaler)
-const START = { 132: /^\s*I\.\s+LAYING PLANS/m, 1232: /^\s*CHAPTER I\b/m };
+const START = { 132: /^\s*(Chapter )?I\.\s+LAYING PLANS/gim, 1232: /^\s*CHAPTER I\b/gm };
 const KEEP = 250;
 
 function mirrorPath(id) {
@@ -34,7 +34,7 @@ async function fetchText(id) {
 }
 
 // Delen die je niet als fragment wilt: inhoudsopgave, register, noten, bronnen
-const SKIP_SECTION = /^(contents|table of contents|index|notes|footnotes|bibliography|appendix|glossary|chronolog|inhoud|register|aanteekening|aantekening|noten|bijlage|transcriber)/i;
+const SKIP_SECTION = /^(introduction|preface|translator|contents|table of contents|index|notes|footnotes|bibliography|appendix|glossary|chronolog|inhoud|register|aanteekening|aantekening|noten|bijlage|transcriber)/i;
 
 // Lijkt dit stuk op gewone lopende tekst?
 function isProse(lines, joined) {
@@ -61,7 +61,8 @@ function cut(text, id) {
   if (a >= 0) text = text.slice(text.indexOf('\n', a) + 1);
   const b = text.search(/\*\*\* ?END OF/);
   if (b >= 0) text = text.slice(0, b);
-  if (START[id]) { const m = text.search(START[id]); if (m > 0) text = text.slice(m); }
+  // laatste treffer: de eerste staat meestal in de inhoudsopgave
+  if (START[id]) { const all = [...text.matchAll(START[id])]; if (all.length) text = text.slice(all[all.length - 1].index); }
   const all = [];
   let where = null, pos = 0, skipping = false;
   // korte alinea's (zoals de genummerde spreuken van Sun Tzu) samenvoegen tot een fragment
