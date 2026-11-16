@@ -166,6 +166,7 @@ function M.growFolder(app)
         UI.header("Ontwikkeling", function() app:back() end, "Elke dag een beetje"),
         UI.row("Dagtekst", "Vandaag: " .. tostring(who), "›", function() remember("Dagtekst"); app:go(D.page) end, nil, "quote"),
         UI.row("Gewoontes", ("%d van %d gedaan vandaag"):format(done or 0, total or 0), "›", function() remember("Gewoontes"); app:go(H.page) end, nil, "list_checks"),
+        UI.row("Weekoverzicht", "Training, gewoontes en schermtijd van deze week", "›", function() app:go(require("ks_week").page) end, nil, "calendar"),
     }
     return UI.page(UI.vgroup(items))
 end
@@ -230,11 +231,23 @@ local function homePage(app)
                 UI.vgroup({ UI.text(done .. " van " .. total, { font = "display", size = 24 }), UI.text("vandaag", { size = 15, color = UI.INK2 }) }),
             }),
         })
+        local sunday = os.date("%w") == "0"
+        if sunday then
+            hb = UI.vgroup({
+                UI.hgroup({ UI.icon("calendar", 22), UI.hspace(8), UI.text("Je week", { size = 16, font = "bold" }) }),
+                UI.vspace(8),
+                UI.text("Weekoverzicht", { font = "display", size = 22 }),
+                UI.vspace(2),
+                UI.text(("Gewoontes vandaag %d van %d. Tik voor je hele week."):format(done, total), { size = 15, color = UI.INK2, width = half - UI.px(44) }),
+            })
+        end
         local rowH = math.max(tr:getSize().h, hb:getSize().h) + UI.px(40)
         table.insert(items, UI.hgroup({
             UI.Tap:new{ label = "Training", callback = function() app:go(Sport.page) end, UI.card(tr, { width = half, height = rowH }) },
             UI.hspan(gap),
-            UI.Tap:new{ label = "Gewoontes", callback = function() remember("Gewoontes"); app:go(H.page) end, UI.card(hb, { width = half, height = rowH }) },
+            UI.Tap:new{ label = sunday and "Je week" or "Gewoontes", callback = function()
+                if sunday then app:go(require("ks_week").page) else remember("Gewoontes"); app:go(H.page) end
+            end, UI.card(hb, { width = half, height = rowH }) },
         }, "top"))
         table.insert(items, UI.vspan(gap))
 
@@ -374,6 +387,7 @@ function M.run(dir)
     app[1] = homePage(app)
     UI.onRefresh = function() app:cleanScreen() end
     UI.onHome = function() app:home() end
+    UI.onLight = function() require("ks_light").showPanel(app) end
     UIManager:show(app, "full")
     M.app = app
     Sys.start(app)

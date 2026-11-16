@@ -88,6 +88,8 @@ function Sys.statusText()
     local ok, err = pcall(Sys.account)
     if not ok then require("logger").warn("Kees Personal schermtijd:", err) end
     st.screen = Sys.fmt(Sys.secondsOn())
+    local okL, L = pcall(require, "ks_light")
+    if okL and L.hasLight() then st.light = L.intensity() end
     st.busy = Sys.busy
     return st
 end
@@ -106,6 +108,7 @@ end
 
 local function tick()
     Sys.account()
+    pcall(function() require("ks_light").applyPhase() end)
     local app = Sys.app
     local mins = Sys.sleepMinutes()
     if mins > 0 and not state.suspended and os.time() - state.lastAction >= mins * 60 then
@@ -129,6 +132,7 @@ end
 function Sys.onSuspend()
     Sys.account()
     state.suspended = true
+    pcall(function() require("ks_sleep").show() end)
     Store.flush()
 end
 
@@ -148,6 +152,8 @@ function Sys.onResume()
     local now = os.time()
     state.suspended = false
     state.lastTick, state.lastAction = now, now
+    pcall(function() require("ks_sleep").hide() end)
+    pcall(function() require("ks_light").applyPhase() end)
     if Sys.app then Sys.app:render("ui") end
     UIManager:scheduleIn(3, Sys.autoRound)
 end
@@ -162,6 +168,7 @@ function Sys.start(app)
     UIManager:unschedule(tick)
     UIManager:scheduleIn(61 - os.date("*t").sec, tick)
     if not os.getenv("KS_NO_AUTO") then UIManager:scheduleIn(3, Sys.autoRound) end
+    pcall(function() require("ks_light").applyPhase() end)
 end
 
 function Sys.stop()
@@ -248,13 +255,6 @@ function Sys.settingsPage(app)
     local Sport = require("ks_sport")
     table.insert(items, UI.row("Sport", Sport.connected() and "Gekoppeld met intervals.icu" or "Nog niet gekoppeld", "›", function() app:go(Sys.sportPage) end, W, "run"))
     table.insert(items, UI.row("Nieuws", "Rubrieken en automatisch ophalen", "›", function() app:go(require("ks_news").settings) end, W, "news"))
-    local Net = require("ks_net")
-    local wifiOn = Net.isOn()
-    table.insert(items, UI.row("Wifi", app.wifiBusy and "Bezig..." or (wifiOn and "Aan · tik om uit te zetten" or "Uit · tik om aan te zetten"), wifiOn and "Aan" or "Uit", function()
-        app.wifiBusy = true
-        app:refresh()
-        UIManager:scheduleIn(0.2, function() Net.toggle(function() app.wifiBusy = nil; app:refresh() end) end)
-    end, W, "wifi"))
     table.insert(items, UI.row("Bijwerken en back-ups", "Versie " .. require("ks_update").localVersion(), "›", function() app:go(require("ks_main").updatePage) end, W, "download"))
     UI.rowPad = nil
     return UI.page(UI.vgroup(items))

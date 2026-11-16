@@ -2,6 +2,12 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Licht, slaapscherm en weekoverzicht
+- Tik op de bovenbalk voor licht: helderheid, warmte, wifi en slaapscherm
+- Avondlicht automatisch: van 20:00 tot 06:00 warmer en zachter licht
+- Slaapscherm met de dagtekst, je training en je gewoontes als de Kobo slaapt
+- Weekoverzicht: training, gewoontes en schermtijd per week, met een terugblik om te schrijven
+
 ## Toolbox en automatisch verversen
 - Tools: rekenmachine, stopwatch met rondetijden, tempo berekenen met tussentijden, omrekenen en een wereldklok
 - Intervaltimer ook onder Tools

@@ -56,6 +56,7 @@ UI.TOPPAD = 50
 UI.status = nil
 --- Wordt aangeroepen door de verversknop en de home-knop. Gezet door ks_main.
 UI.onRefresh = nil
+UI.onLight = nil
 UI.onHome = nil
 
 -- Lettertypes ------------------------------------------------------------------
@@ -389,6 +390,10 @@ function StatusBar:paintTo(bb, x, y)
         place(UI.icon(name, iconFace, UI.BLACK, { fixed = true }))
     end
     if st.wifi then place(UI.icon("wifi", iconFace, UI.BLACK, { fixed = true })) end
+    if st.light then
+        place(TextWidget:new{ text = st.light > 0 and (st.light .. "%") or "uit", face = small, fgcolor = UI.BLACK }, UI.px(4))
+        place(UI.icon("sun", iconFace, UI.BLACK, { fixed = true }))
+    end
     if st.screen then
         place(TextWidget:new{ text = st.screen, face = small, fgcolor = UI.INK2 }, UI.px(4))
         place(UI.icon("clock", 19, UI.INK2, { fixed = true }))
@@ -404,6 +409,14 @@ local function refreshTap()
         Widget:new{ dimen = Geom:new{ w = size, h = size } } }
 end
 
+--- Tikvlak over de rest van de bovenbalk: licht instellen.
+local function lightTap()
+    local size = UI.px(UI.TOPPAD + 6)
+    return Tap:new{ label = "Licht", callback = function() if UI.onLight then UI.onLight() end end,
+        overlap_offset = { 0, 0 },
+        Widget:new{ dimen = Geom:new{ w = UI.W() - size, h = size } } }
+end
+
 --- Volledig scherm: wit, met marges. Inhoud bovenaan, optioneel een voet onderaan.
 function UI.page(body, footer)
     local W, H, M = UI.W(), UI.H(), UI.MARGIN()
@@ -411,6 +424,7 @@ function UI.page(body, footer)
         dimen = Geom:new{ w = W, h = H },
         FrameContainer:new{ bordersize = 0, padding = M, padding_top = UI.px(UI.TOPPAD), margin = 0, background = UI.WHITE, width = W, height = H, body },
         StatusBar:new{},
+        lightTap(),
         refreshTap(),
     }
     -- past het niet, dan meldt de pagina dat; ks_main bouwt hem dan compacter opnieuw
