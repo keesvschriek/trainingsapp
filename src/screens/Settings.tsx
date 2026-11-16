@@ -210,6 +210,8 @@ function SyncSection() {
             <button className="btn" onClick={() => login(false)} disabled={busy || !email || !password}>Inloggen</button>
             <button className="btn secondary" onClick={() => login(true)} disabled={busy || !email || password.length < 6}>Account aanmaken</button>
           </div>
+          <h2>Kobo koppelen</h2>
+          <p className="muted small">De Kobo deelt je training via dezelfde Supabase-opslag. Vul daarom eerst hierboven de project-URL en de key in en log in. Daarna staat hier het vak voor de code van de Kobo.</p>
         </>
       )}
       {msg && <div className={`notice${msg.err ? ' err' : ''}`}>{msg.text}</div>}
@@ -560,7 +562,7 @@ function TriviaSection() {
             </div>
           </>
         )}
-        <p className="muted small" style={{ marginBottom: 0 }}>Start de rustpauze in het logscherm van je krachttraining. Je telefoon trilt als de pauze voorbij is.</p>
+        <p className="muted small" style={{ marginTop: 12, marginBottom: 0 }}>Start de rustpauze in het logscherm van je krachttraining. Je telefoon trilt als de pauze voorbij is.</p>
       </div>
     </>
   );
