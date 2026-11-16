@@ -165,6 +165,9 @@ function N.refresh(done, quiet)
         local ok, err = N.fetchNow()
         -- in dezelfde wifi-sessie ook de sporttraining bijwerken
         if require("ks_sport").connected() then pcall(require("ks_sport").fetchNow) end
+        -- en de laatste stemmingen in de Tweede Kamer
+        local K = require("ks_kamer")
+        if K.due() then pcall(K.fetchNow) end
         done(ok, err)
     end, { quiet = quiet, onFail = function(msg) done(false, msg) end })
 end
@@ -299,6 +302,11 @@ function N.page(app)
             end
         end
     end
+    if Store.get("kamer.on", true) then
+        local K = require("ks_kamer")
+        table.insert(items, UI.row("Gisteren in de Kamer", K.summary(), "›", function() app.kamerPg = 1; app:go(K.page) end, W, "scale"))
+        table.insert(items, UI.vspace(6))
+    end
     local head = UI.vgroup(items)
     local footerH = UI.px(60)
     local avail = UI.H() - UI.px(UI.TOPPAD) - head:getSize().h - footerH - UI.px(70) - (app.newsMsg and UI.px(40) or 0)
@@ -354,6 +362,9 @@ function N.settings(app)
             app:refresh()
         end, UI.vgroup({ UI.vspace(12), UI.hgroup({ UI.checkbox(en[f.id]), UI.hspace(16), UI.text(f.name, { size = 21, font = "medium" }) }), UI.vspace(12), UI.line(UI.INNER()) }) })
     end
+    local kon = Store.get("kamer.on", true)
+    table.insert(items, UI.Tap:new{ label = "Kamer", callback = function() Store.set("kamer.on", not kon); app:refresh() end,
+        UI.vgroup({ UI.vspace(12), UI.hgroup({ UI.checkbox(kon), UI.hspace(16), UI.text("Gisteren in de Kamer", { size = 21, font = "medium" }) }), UI.vspace(12), UI.line(UI.INNER()) }) })
     table.insert(items, UI.vspace(24))
     table.insert(items, UI.section("Automatisch ophalen"))
     local auto = Store.get("news.auto", true)

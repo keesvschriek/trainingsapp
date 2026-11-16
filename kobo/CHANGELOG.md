@@ -2,6 +2,14 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Leerkaarten en de Kamer
+- Leerkaarten in Kees Study: open vragen, je bedenkt of typt het antwoord en draait de kaart om
+- Wat je goed hebt komt pas later terug (na 1, 2, 4, 8 of 16 dagen), foute kaarten morgen weer
+- Stapels uit de quiz per onderwerp, plus jaartallen, hoofdsteden en het NAVO-alfabet; kies zelf wat meedoet
+- Elke dag hooguit 10 nieuwe kaarten, met de knop Nog 10 nieuwe kun je doorgaan
+- Gisteren in de Kamer bovenaan de krant: de laatste stemmingen in de Tweede Kamer, met uitslag en welke fracties voor en tegen waren
+- Wordt mee opgehaald met de krant; uit te zetten bij Rubrieken
+
 ## Puzzels en geschiedenis
 - Woordzoeker met acht thema's (o.a. Eerste Wereldoorlog, Interbellum, Gouden Eeuw); bij elk gevonden woord de gebeurtenis erachter
 - Tijdlijn met grote gebeurtenissen van de Oudheid tot nu, en een spel: zet ze op volgorde
