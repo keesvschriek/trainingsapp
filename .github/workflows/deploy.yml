@@ -28,6 +28,8 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       - name: Kobo-app voor bijwerken via wifi
         run: |
           npx tsx scripts/export-kobo.ts kobo/app/data

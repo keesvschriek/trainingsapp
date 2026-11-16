@@ -51,6 +51,8 @@ jobs:
         env:
           BASE_PATH: /
           APP_BUILD: ${{ github.run_number }}
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
       - name: Android-project maken
         run: |

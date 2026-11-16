@@ -2,7 +2,7 @@ import { linkKobo, cleanCode } from '../kobolink';
 import { useEffect, useState } from 'react';
 import { db, getSetting, setSetting, SYNC_TABLES, type Base } from '../db';
 import { getIntervalsSettings, importActivities, IntervalsError, type IntervalsSettings } from '../intervals';
-import { currentUser, getSupabase, sync, type SupabaseSettings } from '../sync';
+import { currentUser, getSupabase, getSupabaseSettings, hasBuiltIn, sync, type SupabaseSettings } from '../sync';
 import { today } from '../dates';
 import type { Table } from 'dexie';
 import { APK_URL, isNative } from '../native';
@@ -108,7 +108,7 @@ function SyncSection() {
     setLastOk(await getSetting('sync.lastOk', ''));
   }
   useEffect(() => {
-    void getSetting<SupabaseSettings>('supabase', { url: '', anonKey: '' }).then(setCfg);
+    void getSupabaseSettings().then(setCfg);
     void refresh();
   }, []);
   if (!cfg) return null;
@@ -173,14 +173,25 @@ function SyncSection() {
     setMsg({ text: 'Uitgelogd. Je gegevens blijven op dit apparaat staan.' });
   }
 
-  return (
+  const projectFields = (
     <>
-      <h2>Synchroniseren (Supabase)</h2>
-      <p className="muted small">Optioneel. Zo staan je gegevens ook op je laptop en heb je een back-up in de cloud. Stappenplan staat in de README op GitHub.</p>
       <label>Project-URL</label>
       <input value={cfg.url} placeholder="https://xxxx.supabase.co" onChange={e => store({ ...cfg, url: e.target.value.trim() })} />
       <label>Anon public key</label>
       <input value={cfg.anonKey} onChange={e => store({ ...cfg, anonKey: e.target.value.trim() })} />
+    </>
+  );
+
+  return (
+    <>
+      <h2>Synchroniseren</h2>
+      <p className="muted small">Log in, dan staan je gegevens ook in de cloud en lopen je laptop en de Kobo gelijk.</p>
+      {hasBuiltIn() ? (
+        <details className="muted small">
+          <summary>Ander Supabase-project</summary>
+          {projectFields}
+        </details>
+      ) : projectFields}
 
       {user ? (
         <>
@@ -208,10 +219,10 @@ function SyncSection() {
           </div>
           <div className="row mt">
             <button className="btn" onClick={() => login(false)} disabled={busy || !email || !password}>Inloggen</button>
-            <button className="btn secondary" onClick={() => login(true)} disabled={busy || !email || password.length < 6}>Account aanmaken</button>
+            {!hasBuiltIn() && <button className="btn secondary" onClick={() => login(true)} disabled={busy || !email || password.length < 6}>Account aanmaken</button>}
           </div>
           <h2>Kobo koppelen</h2>
-          <p className="muted small">De Kobo deelt je training via dezelfde Supabase-opslag. Vul daarom eerst hierboven de project-URL en de key in en log in. Daarna staat hier het vak voor de code van de Kobo.</p>
+          <p className="muted small">Log eerst hierboven in. Daarna staat hier het vak voor de code van de Kobo.</p>
         </>
       )}
       {msg && <div className={`notice${msg.err ? ' err' : ''}`}>{msg.text}</div>}

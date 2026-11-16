@@ -11,11 +11,24 @@ export interface SupabaseSettings {
   anonKey: string;
 }
 
+// Project-URL en key kunnen bij het bouwen worden meegegeven (GitHub-secrets),
+// dan hoef je in de app alleen in te loggen. Een eigen invoer in Instellingen gaat voor.
+export const BUILT_IN: SupabaseSettings = {
+  url: (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? '',
+  anonKey: (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? '',
+};
+export const hasBuiltIn = () => !!(BUILT_IN.url && BUILT_IN.anonKey);
+
+export async function getSupabaseSettings(): Promise<SupabaseSettings> {
+  const s = await getSetting<SupabaseSettings>('supabase', { url: '', anonKey: '' });
+  return s.url && s.anonKey ? s : BUILT_IN;
+}
+
 let client: SupabaseClient | null = null;
 let clientFor = '';
 
 export async function getSupabase(): Promise<SupabaseClient | null> {
-  const s = await getSetting<SupabaseSettings>('supabase', { url: '', anonKey: '' });
+  const s = await getSupabaseSettings();
   if (!s.url || !s.anonKey) return null;
   const sig = s.url + s.anonKey;
   if (!client || clientFor !== sig) {
