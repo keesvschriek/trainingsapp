@@ -17,8 +17,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.png', 'icons/*.svg'],
       manifest: {
-        name: 'Kees Study',
-        short_name: 'Kees Study',
+        name: 'K',
+        short_name: 'K',
         description: 'Training, quiz en studie',
         lang: 'nl',
         start_url: base,

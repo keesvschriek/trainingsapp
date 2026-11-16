@@ -64,6 +64,6 @@ Lukt het niet, dan kan het ook met de kabel: zet de link in rooster-link.txt in 
 
 KOBO KOPPELEN AAN DE TELEFOON-APP
 1. Kobo: Instellingen, Telefoon-app, Koppelen. De Kobo toont een code van 8 tekens.
-2. Telefoon: Kees Study, Instellingen, Kobo koppelen. Typ de code en je wachtwoord, tik op Koppel de Kobo.
+2. Telefoon: app K, tandwiel rechtsboven, Kobo koppelen. Typ de code en je wachtwoord, tik op Koppel de Kobo.
 3. Op de Kobo staat Gelukt. Training en check-in lopen vanaf nu vanzelf gelijk.
 De Kobo bewaart je wachtwoord niet. Geen app bij de hand: scan de QR-code op de Kobo en vul alles in de browser in.

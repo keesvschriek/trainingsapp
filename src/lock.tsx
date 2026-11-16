@@ -58,7 +58,7 @@ async function bioUnlock(): Promise<boolean> {
   try {
     await BiometricAuth.authenticate({
       reason: 'Ontgrendel je trainingsapp',
-      androidTitle: 'Kees Study ontgrendelen',
+      androidTitle: 'K ontgrendelen',
       androidSubtitle: 'Gebruik je vingerafdruk',
       cancelTitle: 'Pincode',
       allowDeviceCredential: false,
@@ -133,7 +133,7 @@ function LockScreen({ cfg, onUnlock }: { cfg: LockConfig; onUnlock: () => void }
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'bio', '0', 'del'];
   return (
     <div className="lock" role="dialog" aria-label="Vergrendeld">
-      <div className="lock-title">Kees Study</div>
+      <div className="lock-title">K</div>
       <div className="muted small">Voer je pincode in</div>
       <div className="lock-dots" aria-label={`${pin.length} cijfers ingevoerd`}>
         {Array.from({ length: cfg.len }, (_, i) => <span key={i} className={i < pin.length ? 'on' : ''} />)}

@@ -140,7 +140,7 @@ function R.screen(app)
     local ok, QR = pcall(require, "ui/widget/qrwidget")
     if sess.opts.mode == "koppel" then
         -- makkelijkst: in de app op je telefoon de code overtypen
-        table.insert(items, UI.text("Open Kees Study op je telefoon, ga naar Instellingen, Kobo koppelen, en typ deze code met je wachtwoord:", { size = 18, width = W }))
+        table.insert(items, UI.text("Open de app K op je telefoon, tik rechtsboven op het tandwiel, kies Kobo koppelen en typ deze code met je wachtwoord:", { size = 18, width = W }))
         table.insert(items, UI.vspace(14))
         table.insert(items, UI.card(UI.center(UI.text(codeText, { font = "display", size = 48 }), W - UI.px(40))))
         table.insert(items, UI.vspace(18))
