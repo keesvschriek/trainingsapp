@@ -1,3 +1,4 @@
+import { linkKobo, cleanCode } from '../kobolink';
 import { useEffect, useState } from 'react';
 import { db, getSetting, setSetting, SYNC_TABLES, type Base } from '../db';
 import { getIntervalsSettings, importActivities, IntervalsError, type IntervalsSettings } from '../intervals';
@@ -98,6 +99,8 @@ function SyncSection() {
   const [msg, setMsg] = useState<{ text: string; err?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [lastOk, setLastOk] = useState('');
+  const [koboCode, setKoboCode] = useState('');
+  const [koboPw, setKoboPw] = useState('');
 
   async function refresh() {
     const u = await currentUser();
@@ -147,6 +150,22 @@ function SyncSection() {
     setBusy(false);
   }
 
+  async function koppelKobo() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      if (!cfg || !user) throw new Error('Log eerst in.');
+      await linkKobo(koboCode, { url: cfg.url, key: cfg.anonKey, email: user, pw: koboPw });
+      setKoboCode('');
+      setKoboPw('');
+      setMsg({ text: 'Verstuurd. Over een paar seconden staat er Gelukt op de Kobo.' });
+    } catch (e) {
+      setMsg({ text: e instanceof Error ? e.message : String(e), err: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function logout() {
     const sb = await getSupabase();
     await sb?.auth.signOut();
@@ -164,6 +183,7 @@ function SyncSection() {
       <input value={cfg.anonKey} onChange={e => store({ ...cfg, anonKey: e.target.value.trim() })} />
 
       {user ? (
+        <>
         <div className="card soft mt">
           <div>Ingelogd als <strong>{user}</strong></div>
           {lastOk && <div className="muted small">Laatste synchronisatie: {new Date(lastOk).toLocaleString('nl-NL')}</div>}
@@ -172,6 +192,14 @@ function SyncSection() {
             <button className="btn secondary" onClick={logout}>Uitloggen</button>
           </div>
         </div>
+        <h2>Kobo koppelen</h2>
+        <p className="muted small">Kies op de Kobo Instellingen, Telefoon-app, Koppelen. Typ de code van de Kobo hier over, met je wachtwoord. De Kobo logt daarmee één keer in en bewaart je wachtwoord niet.</p>
+        <div className="grid2">
+          <div><label>Code op de Kobo</label><input value={koboCode} autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={9} placeholder="ABCD 2345" onChange={e => setKoboCode(e.target.value.toUpperCase())} /></div>
+          <div><label>Wachtwoord</label><input type="password" autoComplete="current-password" value={koboPw} onChange={e => setKoboPw(e.target.value)} /></div>
+        </div>
+        <button className="btn block mt" onClick={koppelKobo} disabled={busy || cleanCode(koboCode).length !== 8 || !koboPw}>{busy ? 'Bezig...' : 'Koppel de Kobo'}</button>
+        </>
       ) : (
         <>
           <div className="grid2">

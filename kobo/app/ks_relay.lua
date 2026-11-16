@@ -136,21 +136,37 @@ function R.screen(app)
         table.insert(items, UI.button("Terug", done, { width = W }))
         return UI.page(UI.vgroup(items))
     end
-    table.insert(items, UI.text(sess.opts.mode == "koppel" and "Scan de code met de camera van je telefoon, vul de gegevens in en tik op Versturen." or "Scan de code met de camera van je telefoon, plak de tekst en tik op Versturen.", { size = 18, width = W }))
-    table.insert(items, UI.vspace(16))
-    local qrSize = math.min(W, UI.px(300))
+    local codeText = sess.code:sub(1, 4) .. " " .. sess.code:sub(5, 8)
     local ok, QR = pcall(require, "ui/widget/qrwidget")
-    if ok then
-        table.insert(items, UI.center(QR:new{ text = R.url(sess), width = qrSize, height = qrSize }, W, qrSize))
+    if sess.opts.mode == "koppel" then
+        -- makkelijkst: in de app op je telefoon de code overtypen
+        table.insert(items, UI.text("Open Kees Study op je telefoon, ga naar Instellingen, Kobo koppelen, en typ deze code met je wachtwoord:", { size = 18, width = W }))
+        table.insert(items, UI.vspace(14))
+        table.insert(items, UI.card(UI.center(UI.text(codeText, { font = "display", size = 48 }), W - UI.px(40))))
+        table.insert(items, UI.vspace(18))
+        if ok then
+            local q = UI.px(170)
+            table.insert(items, UI.hgroup({
+                QR:new{ text = R.url(sess), width = q, height = q }, UI.hspace(16),
+                UI.text("Andere telefoon of geen app bij de hand? Scan deze code; dan vul je alles in de browser in.", { size = 15, color = UI.INK2, width = W - q - UI.px(16) }),
+            }, "center"))
+        end
+    else
+        table.insert(items, UI.text("Scan de code met de camera van je telefoon, plak de tekst en tik op Versturen.", { size = 18, width = W }))
         table.insert(items, UI.vspace(16))
+        local qrSize = math.min(W, UI.px(300))
+        if ok then
+            table.insert(items, UI.center(QR:new{ text = R.url(sess), width = qrSize, height = qrSize }, W, qrSize))
+            table.insert(items, UI.vspace(16))
+        end
+        table.insert(items, UI.card(UI.vgroup({
+            UI.text("Geen camera? Ga naar", { size = 15, color = UI.INK2 }),
+            UI.text(R.PAGE:gsub("^https://", ""), { size = 15, width = W - UI.px(40) }),
+            UI.vspace(8),
+            UI.text("en vul deze code in:", { size = 15, color = UI.INK2 }),
+            UI.text(codeText, { font = "display", size = 34 }),
+        })))
     end
-    table.insert(items, UI.card(UI.vgroup({
-        UI.text("Geen camera? Ga naar", { size = 15, color = UI.INK2 }),
-        UI.text(R.PAGE:gsub("^https://", ""), { size = 15, width = W - UI.px(40) }),
-        UI.vspace(8),
-        UI.text("en vul deze code in:", { size = 15, color = UI.INK2 }),
-        UI.text(sess.code:sub(1, 4) .. " " .. sess.code:sub(5, 8), { font = "display", size = 34 }),
-    })))
     table.insert(items, UI.vspace(12))
     if sess.warn then
         table.insert(items, UI.text(sess.warn, { size = 16, font = "bold", width = W }))

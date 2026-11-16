@@ -357,11 +357,11 @@ function S.settings(app)
     else
         table.insert(items, UI.text("Koppel de Kobo één keer met de app op je telefoon. Daarna zie je op de Kobo of je trainingen gedaan zijn, vink je ze af met zwaarte en notitie, en doe je de ochtend-check-in. Alles komt ook in de app.", { size = 18, width = W }))
         table.insert(items, UI.vspace(14))
-        table.insert(items, UI.card(UI.text("Je hebt nodig: het Supabase-adres en de openbare sleutel (staan in de app bij Instellingen, Synchroniseren), en je e-mail en wachtwoord. Die stuur je versleuteld vanaf je telefoon. De Kobo bewaart je wachtwoord niet.",
+        table.insert(items, UI.card(UI.text("Zo gaat het: tik hieronder op Koppelen. De Kobo toont een code. In de app op je telefoon kies je Instellingen, Kobo koppelen, en typ je die code met je wachtwoord. Klaar. De Kobo bewaart je wachtwoord niet.",
             { size = 16, color = UI.INK2, width = W - UI.px(40) })))
         table.insert(items, UI.vspace(16))
         if app.syncMsg then table.insert(items, UI.text(app.syncMsg, { size = 17, font = "bold", width = W })); table.insert(items, UI.vspace(10)) end
-        table.insert(items, UI.button("Koppelen vanaf je telefoon", function()
+        table.insert(items, UI.button("Koppelen", function()
             app.syncMsg = "Even wifi aanzetten..."
             app:refresh()
             require("ks_relay").open(app, sendOpts(app), function(err) app.syncMsg = err; app:refresh() end)
