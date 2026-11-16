@@ -13,7 +13,7 @@ export function NotifySection() {
   async function store(next: NotifySettings) {
     setS(next);
     await setSetting('notify', next);
-    if (next.on || next.evening) {
+    if (next.on || next.evening || next.week) {
       const ok = await requestNotifyPermission();
       if (!ok) {
         setMsg({ text: 'Geen toestemming voor meldingen. Zet die aan bij Android-instellingen > Apps > Training > Meldingen.', err: true });
@@ -21,7 +21,7 @@ export function NotifySection() {
       }
     }
     const n = await scheduleMorning();
-    setMsg(next.on || next.evening ? { text: `${n} meldingen ingepland.` } : { text: 'Meldingen uit.' });
+    setMsg(next.on || next.evening || next.week ? { text: `${n} meldingen ingepland.` } : { text: 'Meldingen uit.' });
   }
 
   return (
@@ -39,6 +39,15 @@ export function NotifySection() {
             <div>
               <label>Tijd</label>
               <input type="time" value={s.eveningTime ?? '18:00'} onChange={e => e.target.value && store({ ...s, eveningTime: e.target.value })} />
+            </div>
+          </div>
+          <label className="row" style={{ color: 'var(--ink)', fontSize: '1rem' }}>
+            <input type="checkbox" checked={!!s.week} onChange={e => store({ ...s, week: e.target.checked })} style={{ width: 'auto' }} /> Zondag: je week bekijken
+          </label>
+          <div className="grid2">
+            <div>
+              <label>Tijd</label>
+              <input type="time" value={s.weekTime ?? '16:00'} onChange={e => e.target.value && store({ ...s, weekTime: e.target.value })} />
             </div>
           </div>
           <p className="muted small">Elke ochtend een melding met je training van die dag. Tik erop voor je check-in. Op zondag om 19:00 krijg je ook een melding voor je weekterugblik.</p>

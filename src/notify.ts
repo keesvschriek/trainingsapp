@@ -14,6 +14,8 @@ export interface NotifySettings {
   time: string; // 'HH:MM'
   evening?: boolean; // seintje na school, alleen als er iets open staat
   eveningTime?: string;
+  week?: boolean; // zondag: je week bekijken op de Kobo
+  weekTime?: string;
 }
 
 const BASE_ID = 7000;
@@ -29,7 +31,7 @@ export async function scheduleMorning(): Promise<number> {
   const pending = await LocalNotifications.getPending();
   const ours = pending.notifications.filter(n => n.id >= BASE_ID && n.id < BASE_ID + 100);
   if (ours.length) await LocalNotifications.cancel({ notifications: ours.map(n => ({ id: n.id })) });
-  if (!s.on && !s.evening) return 0;
+  if (!s.on && !s.evening && !s.week) return 0;
   const perm = await LocalNotifications.checkPermissions();
   if (perm.display !== 'granted') return 0;
 
@@ -104,6 +106,28 @@ export async function scheduleMorning(): Promise<number> {
       smallIcon: 'ic_stat_training',
       iconColor: '#111111',
     });
+  }
+  // Zondag: je week bekijken (op de Kobo staat Je week dan op de volgende week)
+  if (s.week) {
+    const [wh, wm] = (s.weekTime ?? '16:00').split(':').map(Number);
+    const open = sortOpen((await db.opvolg.toArray()).filter(alive));
+    for (let i = 0, n = 0; i < DAYS && n < 2; i++) {
+      const date = addDays(today(), i);
+      const at = fromISO(date);
+      if (at.getDay() !== 0) continue;
+      at.setHours(wh, wm, 0, 0);
+      if (at.getTime() <= Date.now() + 60_000) continue;
+      const end = addDays(date, 7);
+      const pts = open.filter(o => o.due <= end).length;
+      list.push({
+        id: BASE_ID + 70 + n++,
+        title: 'Je week',
+        body: `Pak de Kobo: Je week staat klaar.${pts ? ` ${pts} ${pts === 1 ? 'punt' : 'punten'} voor de komende week.` : ''} Schuif door wat niet past.`,
+        schedule: { at, allowWhileIdle: true },
+        smallIcon: 'ic_stat_training',
+        iconColor: '#111111',
+      });
+    }
   }
   if (list.length) await LocalNotifications.schedule({ notifications: list });
   return list.length;
