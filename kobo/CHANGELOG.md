@@ -2,6 +2,13 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Nieuwe vormgeving en lezen in de app
+- Rustiger ontwerp: zachtgrijze vlakken met een dunne lijn, kleinere letters, iconen zonder kaders
+- Startscherm: datum boven de begroeting, gewoontes als stipjes, het dock onderaan
+- Achtergrondstukken en Wikipedia-artikelen openen nu in een eigen leesscherm in de app, niet meer in KOReader
+- In het leesscherm: tik rechts of veeg naar links voor verder, tik links of veeg naar rechts voor terug; je plek wordt onthouden
+- Fragment van de dag komt nu van onze eigen pagina; Project Gutenberg is alleen nog reserve (de 503-fout)
+
 ## Lezen
 - Lezen in het dock opent nu een map: Fragment van de dag, Te lezen, Op deze dag en Naar je boeken
 - Fragment van de dag: korte stukken uit Thucydides, Clausewitz, Marcus Aurelius, Sun Tzu, Machiavelli en Multatuli (Project Gutenberg); de Kobo bewaart alleen fragmenten

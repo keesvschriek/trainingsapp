@@ -1,8 +1,8 @@
 -- Bouwstenen voor de schermen van Kees Personal.
 --
--- Ontwerp: wit papier en zwarte inkt, zoals een goed gedrukt boekje.
--- Inter voor de bediening, Noto Serif voor leesteksten, één set lijniconen.
--- Afgeronde kaarten met een dunne grijze rand; zwart vlak alleen voor wat je nu moet doen.
+-- Ontwerp "rustig grijs": wit papier, zachtgrijze vlakken met een dunne lijn eromheen.
+-- Inter voor de bediening, Noto Serif voor leesteksten, één set lijniconen zonder kaders.
+-- Zwart vlak alleen voor wat je nu moet doen.
 -- Geen animaties, geen schaduwen: alles moet er na één verversing goed uitzien.
 
 local Blitbuffer = require("ffi/blitbuffer")
@@ -43,10 +43,14 @@ UI.BLACK = Blitbuffer.COLOR_BLACK
 UI.INK2 = Blitbuffer.COLOR_GRAY_5    -- tweede inkt: bijschriften
 UI.INK3 = Blitbuffer.COLOR_GRAY_9    -- derde inkt: hints, uit-stand
 UI.LINE = Blitbuffer.COLOR_GRAY_D    -- scheidingslijnen binnen een kaart
-UI.EDGE = Blitbuffer.COLOR_GRAY_B    -- rand van kaarten
+UI.EDGE = Blitbuffer.COLOR_GRAY_B    -- dunne rand van kaarten en knoppen
 UI.FILL = Blitbuffer.COLOR_GRAY_E    -- licht vlak
 UI.PAPER2 = UI.FILL
-UI.RADIUS = function() return Screen:scaleBySize(14) end
+UI.RADIUS = function() return Screen:scaleBySize(12) end
+--- Dunne lijn: één echte pixel (fineline)
+UI.FINE = function() return 1 end
+--- Alle letters iets kleiner dan de maten in de code (rustiger beeld)
+UI.TYPE = 0.9
 
 --- Lettergrootte uit de instellingen: 1 = normaal.
 UI.scale = 1
@@ -83,18 +87,34 @@ local FACES = {
 }
 UI.FACES = FACES
 
-function UI.face(kind, size) return Font:getFace(FACES[kind] or kind, math.floor(size * UI.scale + 0.5)) end
+function UI.face(kind, size) return Font:getFace(FACES[kind] or kind, math.floor(size * UI.scale * UI.TYPE + 0.5)) end
 --- Vaste grootte, schaalt niet mee (statusbalk, iconen in de balk).
 function UI.fixedFace(kind, size) return Font:getFace(FACES[kind] or kind, size) end
 
 -- Tekst --------------------------------------------------------------------------
+
+-- Tekstblok zonder eigen achtergrond: wordt als inkt op de ondergrond gezet, zodat tekst
+-- op een grijs vlak geen witte rechthoek krijgt. (Rendert wit op zwart en gebruikt dat als dekking.)
+local InkText = TextBoxWidget:extend{ ink = nil }
+function InkText:init()
+    self.ink = self.ink or Blitbuffer.COLOR_BLACK
+    self.fgcolor = Blitbuffer.COLOR_WHITE
+    self.bgcolor = Blitbuffer.COLOR_BLACK
+    TextBoxWidget.init(self)
+end
+function InkText:paintTo(bb, x, y)
+    self.dimen.x, self.dimen.y = x, y
+    bb:colorblitFrom(self._bb, x, y, 0, 0, self.width, self._bb:getHeight(), self.ink)
+end
 
 --- Tekst. Met opts.width wordt het een tekstblok dat afbreekt.
 function UI.text(str, opts)
     opts = opts or {}
     local face = opts.fixed and UI.fixedFace(opts.font or "sans", opts.size or 20) or UI.face(opts.font or "sans", opts.size or 20)
     if opts.width then
-        return TextBoxWidget:new{
+        local Class = opts.bg and TextBoxWidget or InkText
+        return Class:new{
+            ink = opts.color or UI.BLACK,
             text = str,
             face = face,
             width = opts.width,
@@ -184,8 +204,8 @@ UI.Tap = Tap
 --- Afgeronde kaart. opts: width, height, pad, fill (grijs vlak), dark (zwart vlak), border, radius
 function UI.card(content, opts)
     opts = opts or {}
-    local pad = opts.pad or UI.px(20)
-    local b = opts.dark and 0 or (opts.border or UI.px(1))
+    local pad = opts.pad or UI.px(18)
+    local b = opts.dark and 0 or UI.FINE()
     local w = opts.width or UI.INNER()
     local innerW = w - 2 * pad - 2 * b
     local ih = content:getSize().h
@@ -193,7 +213,7 @@ function UI.card(content, opts)
     return FrameContainer:new{
         bordersize = b,
         color = opts.dark and UI.BLACK or (opts.edge or UI.EDGE),
-        background = opts.dark and UI.BLACK or (opts.fill and UI.FILL or UI.WHITE),
+        background = opts.dark and UI.BLACK or (opts.white and UI.WHITE or UI.FILL),
         radius = opts.radius or UI.RADIUS(),
         padding = pad,
         margin = 0,
@@ -204,8 +224,8 @@ end
 --- Knop. opts: width, primary (zwart vlak), small, disabled, icon, minh
 function UI.button(label, callback, opts)
     opts = opts or {}
-    local size = opts.size or (opts.small and 17 or 20)
-    local padv = UI.px(opts.small and 11 or 17)
+    local size = opts.size or (opts.small and 17 or 19)
+    local padv = UI.px(opts.small and 10 or 14)
     local fg = opts.primary and UI.WHITE or (opts.disabled and UI.INK3 or UI.BLACK)
     local bg = opts.primary and UI.BLACK or UI.WHITE
     local font = opts.primary and "bold" or "medium"
@@ -220,14 +240,13 @@ function UI.button(label, callback, opts)
     if opts.icon then
         inner = UI.hgroup({ UI.icon(opts.icon, size + 4, fg, { bg = bg }), UI.hspace(10), txt })
     end
-    local b = opts.primary and 0 or UI.px(opts.small and 1 or 2)
-    if opts.disabled then b = UI.px(1) end
+    local b = opts.primary and 0 or UI.FINE()
     local h = math.max(inner:getSize().h + 2 * padv, opts.minh or 0)
     local frame = FrameContainer:new{
         bordersize = b,
-        color = opts.disabled and UI.EDGE or UI.BLACK,
+        color = opts.disabled and UI.LINE or UI.EDGE,
         background = bg,
-        radius = UI.px(opts.small and 10 or 12),
+        radius = UI.px(10),
         padding = 0,
         margin = 0,
         CenterContainer:new{ dimen = Geom:new{ w = w - 2 * b, h = h - 2 * b }, inner },
@@ -254,7 +273,7 @@ end
 function UI.segmented(list, current, onPick, width)
     width = width or UI.INNER()
     local n = #list
-    local b = UI.px(2)
+    local b = UI.FINE()
     local inner = width - 2 * b
     local sw = math.floor(inner / n)
     local row = HorizontalGroup:new{}
@@ -265,12 +284,12 @@ function UI.segmented(list, current, onPick, width)
             bordersize = 0, padding = 0, margin = 0,
             background = on and UI.BLACK or UI.WHITE,
             radius = on and UI.px(8) or nil,
-            CenterContainer:new{ dimen = Geom:new{ w = w, h = UI.px(46) },
+            CenterContainer:new{ dimen = Geom:new{ w = w, h = UI.px(42) },
                 UI.text(label, { font = on and "bold" or "medium", size = 17, color = on and UI.WHITE or UI.BLACK, bg = on and UI.BLACK or UI.WHITE }) },
         }
         table.insert(row, Tap:new{ callback = function() onPick(i) end, label = label, cell })
     end
-    return FrameContainer:new{ bordersize = b, color = UI.BLACK, background = UI.WHITE, radius = UI.px(10), padding = 0, margin = 0, row }
+    return FrameContainer:new{ bordersize = b, color = UI.EDGE, background = UI.WHITE, radius = UI.px(10), padding = 0, margin = 0, row }
 end
 
 --- Rond icoon in een vierkantje, zoals in Instellingen op een telefoon.
@@ -295,24 +314,24 @@ function UI.row(title, sub, right, callback, width, icon)
     local rightW
     local rightWidget
     if chevron then
-        rightWidget = UI.icon("chevron_right", 26, UI.INK3)
+        rightWidget = UI.icon("chevron_right", 22, UI.INK3)
     elseif right and right ~= "" then
         rightWidget = UI.text(right, { size = 17, color = UI.INK2, font = "medium" })
     end
     rightW = rightWidget and (rightWidget:getSize().w + UI.px(16)) or 0
-    local iconW = icon and UI.px(44 + 16) or 0
+    local iconW = icon and UI.px(26 + 18) or 0
     local textW = width - rightW - iconW - UI.px(6)
     local left = VerticalGroup:new{ align = "left" }
-    table.insert(left, UI.text(title, { size = 21, width = textW, font = "medium" }))
+    table.insert(left, UI.text(title, { size = 20, width = textW, font = "medium" }))
     if sub and sub ~= "" then
         table.insert(left, UI.vspace(3))
         table.insert(left, UI.text(sub, { size = 16, color = UI.INK2, width = textW }))
     end
-    local pad = UI.compact and math.min(14, UI.rowPad or 30) or (UI.rowPad or 30)
-    local h = math.max(left:getSize().h, icon and UI.px(44) or 0) + UI.px(pad)
+    local pad = UI.compact and math.min(14, UI.rowPad or 26) or (UI.rowPad or 26)
+    local h = math.max(left:getSize().h, icon and UI.px(26) or 0) + UI.px(pad)
     local content = OverlapGroup:new{ dimen = Geom:new{ w = width, h = h } }
     if icon then
-        table.insert(content, LeftContainer:new{ dimen = Geom:new{ w = width, h = h }, UI.badge(icon) })
+        table.insert(content, LeftContainer:new{ dimen = Geom:new{ w = width, h = h }, UI.icon(icon, 26, UI.BLACK) })
         table.insert(content, LeftContainer:new{ dimen = Geom:new{ w = width, h = h }, UI.hgroup({ UI.hspan(iconW), left }) })
     else
         table.insert(content, LeftContainer:new{ dimen = Geom:new{ w = width, h = h }, left })
@@ -320,14 +339,14 @@ function UI.row(title, sub, right, callback, width, icon)
     if rightWidget then
         table.insert(content, RightContainer:new{ dimen = Geom:new{ w = width, h = h }, rightWidget })
     end
-    local block = VerticalGroup:new{ align = "left", content, UI.hgroup({ UI.hspan(iconW), UI.line(width - iconW) }) }
+    local block = VerticalGroup:new{ align = "left", content, UI.line(width, UI.LINE, UI.FINE()) }
     if not callback then return block end
     return Tap:new{ callback = callback, label = title, block }
 end
 
 --- Kleine kop boven een groep.
 function UI.section(text, width)
-    return UI.vgroup({ UI.vspace(10), UI.text(text, { font = "bold", size = 17, color = UI.INK2, width = width or UI.INNER() }), UI.vspace(6) })
+    return UI.vgroup({ UI.vspace(10), UI.text(text, { font = "medium", size = 16, color = UI.INK2, width = width or UI.INNER() }), UI.vspace(6) })
 end
 
 --- Kopregel van een scherm: terug links (met naam van het vorige scherm), home rechts, grote titel eronder.
@@ -336,22 +355,22 @@ function UI.header(title, onBack, extra)
     local g = VerticalGroup:new{ align = "left" }
     if onBack then
         local back = UI.Tap:new{ label = "‹ Terug", callback = onBack, FrameContainer:new{ bordersize = 0, padding = 0, padding_right = UI.px(40), padding_bottom = UI.px(8),
-            UI.hgroup({ UI.icon("chevron_left", 26, UI.BLACK), UI.text("Terug", { size = 18, font = "medium" }) }) } }
+            UI.hgroup({ UI.icon("chevron_left", 22, UI.INK2), UI.text("Terug", { size = 17, color = UI.INK2 }) }) } }
         local bar = OverlapGroup:new{ dimen = Geom:new{ w = W, h = back:getSize().h } , back }
         if UI.onHome then
             local home = UI.Tap:new{ label = "Home", callback = function() UI.onHome() end, FrameContainer:new{ bordersize = 0, padding = 0, padding_left = UI.px(40), padding_bottom = UI.px(8),
-                UI.icon("home_outline", 26, UI.BLACK) } }
+                UI.icon("home_outline", 22, UI.INK2) } }
             table.insert(bar, RightContainer:new{ dimen = Geom:new{ w = W, h = back:getSize().h }, home })
         end
         table.insert(g, bar)
         table.insert(g, UI.vspace(6))
     end
-    table.insert(g, UI.text(title, { font = "display", size = 36, width = W }))
+    table.insert(g, UI.text(title, { font = "display", size = 30, width = W }))
     if extra then
         table.insert(g, UI.vspace(4))
-        table.insert(g, UI.text(extra, { size = 17, color = UI.INK2, width = W }))
+        table.insert(g, UI.text(extra, { size = 16, color = UI.INK2, width = W }))
     end
-    table.insert(g, UI.vspace(18))
+    table.insert(g, UI.vspace(16))
     return g
 end
 
@@ -365,9 +384,9 @@ function StatusBar:paintTo(bb, x, y)
     local ok, st = pcall(UI.status)
     if not ok or not st then return end
     local M = UI.MARGIN()
-    local face = UI.fixedFace("bold", 16)
-    local small = UI.fixedFace("medium", 15)
-    local iconFace = 22
+    local face = UI.fixedFace("medium", 15)
+    local small = UI.fixedFace("sans", 14)
+    local iconFace = 19
     local ty = y + UI.px(12)
     -- links: tijd
     local tw = blit(bb, TextWidget:new{ text = st.time, face = face, fgcolor = UI.BLACK }, x + M, ty)
@@ -444,17 +463,24 @@ end
 
 --- Tegel als app-icoon: afgerond vierkant met icoon, naam eronder.
 function UI.appIcon(icon, label, size, callback, dark, width)
-    local box = UI.badge(icon, size, dark)
     local w = width or math.max(size, UI.px(120))
-    local g = UI.vgroup({ UI.center(box, w, size), UI.vspace(8), UI.center(UI.text(label, { size = 13, font = "medium", max_width = w - UI.px(2) }), w) }, "center")
+    local ic = UI.icon(icon, math.floor(UI.unpx(size) * 0.5), UI.BLACK, { fixed = true })
+    local g = UI.vgroup({ UI.center(ic, w, math.floor(size * 0.62)), UI.vspace(4), UI.center(UI.text(label, { size = 13, color = UI.INK2, max_width = w - UI.px(2) }), w) }, "center")
     return Tap:new{ callback = callback, label = label, g }
+end
+
+--- Rond stipje (gedaan = zwart, open = alleen een dunne rand).
+function UI.dot(on, size)
+    local s = UI.px(size or 14)
+    return FrameContainer:new{ bordersize = on and 0 or UI.FINE(), color = UI.INK2, background = on and UI.BLACK or UI.WHITE,
+        radius = math.floor(s / 2), padding = 0, margin = 0, Widget:new{ dimen = Geom:new{ w = s - (on and 0 or 2), h = s - (on and 0 or 2) } } }
 end
 
 --- Vierkantje om af te vinken (afgerond).
 function UI.checkbox(on)
     local s = UI.px(32)
-    return FrameContainer:new{ bordersize = UI.px(2), color = UI.BLACK, background = on and UI.BLACK or UI.WHITE, radius = UI.px(8), padding = 0, margin = 0,
-        CenterContainer:new{ dimen = Geom:new{ w = s - 2 * UI.px(2), h = s - 2 * UI.px(2) },
+    return FrameContainer:new{ bordersize = UI.FINE(), color = on and UI.BLACK or UI.INK2, background = on and UI.BLACK or UI.WHITE, radius = UI.px(8), padding = 0, margin = 0,
+        CenterContainer:new{ dimen = Geom:new{ w = s - 2 * UI.FINE(), h = s - 2 * UI.FINE() },
             on and UI.icon("check", 22, UI.WHITE, { bg = UI.BLACK }) or UI.vspace(0) } }
 end
 

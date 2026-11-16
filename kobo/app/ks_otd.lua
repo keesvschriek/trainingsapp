@@ -263,7 +263,7 @@ function O.detail(app)
             end)
         end, { width = W, icon = "book" }))
         table.insert(items, UI.vspace(6))
-        table.insert(items, UI.text("Het artikel komt als boek in Te lezen, zodat je het ook later nog hebt.", { size = 15, color = UI.INK3, width = W }))
+        table.insert(items, UI.text("Het artikel komt in Te lezen, zodat je het later nog hebt.", { size = 15, color = UI.INK3, width = W }))
     end
     if app.otdMsg then
         table.insert(items, UI.vspace(14))

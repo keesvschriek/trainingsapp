@@ -58,8 +58,9 @@ function App:rebuild()
     for attempt = 1, 7 do
         UI.painted = {}
         UI.overflow = false
+        UI.noShrink = false
         ok, w = pcall(builder, self)
-        if not ok or not UI.overflow or UI.scale < 0.75 then break end
+        if not ok or not UI.overflow or UI.noShrink or UI.scale < 0.75 then break end
         if attempt == 1 then UI.compact = true else UI.scale = UI.scale * 0.94 end
     end
     UI.scale = base
@@ -216,61 +217,62 @@ local function homePage(app)
     local function build(level)
         local items = {}
         -- Begroeting
-        table.insert(items, UI.text(greeting() .. ", Kees", { font = "display", size = 40, width = W }))
+        table.insert(items, UI.text(M.dateText(), { size = 17, color = UI.INK2 }))
         table.insert(items, UI.vspace(2))
-        table.insert(items, UI.text(M.dateText(), { size = 19, color = UI.INK2, font = "medium" }))
+        table.insert(items, UI.text(greeting() .. ", Kees", { font = "display", size = 34, width = W }))
         local nextLes = safe(require("ks_rooster").next)
         if nextLes then
             table.insert(items, UI.vspace(6))
             table.insert(items, UI.Tap:new{ label = "Rooster", callback = function() app.roosterDay = 0; app:go(require("ks_rooster").page) end,
-                UI.hgroup({ UI.icon("calendar", 20, UI.INK2), UI.hspace(8), UI.text(nextLes, { size = 17, color = UI.INK2, max_width = W - UI.px(40) }) }) })
+                UI.hgroup({ UI.icon("calendar", 19, UI.INK2), UI.hspace(8), UI.text(nextLes, { size = 16, color = UI.INK2, max_width = W - UI.px(40) }) }) })
         end
         table.insert(items, UI.vspace(level >= 2 and 14 or 22))
 
         -- Dagtekst: grijze kaart met citaat
         local who, first = safe(D.summary, "Dagtekst")
         local quote = UI.vgroup({
-            UI.hgroup({ UI.icon("quote", 22, UI.BLACK, { bg = UI.FILL }), UI.hspace(8),
-                UI.text((D.isEvening() and "Terugblik · " or "Dagtekst · ") .. tostring(who), { size = 16, font = "bold", bg = UI.FILL }) }),
-            UI.vspace(8),
-            UI.text(first or "", { font = "serif", size = 21, width = W - UI.px(48), line_height = 0.35, bg = UI.FILL, height = level >= 1 and UI.px(84) or UI.px(118) }),
+            UI.text(first or "", { font = "serif", size = 21, width = W - UI.px(40), line_height = 0.35, height = level >= 1 and UI.px(84) or UI.px(118) }),
+            UI.vspace(6),
+            UI.text((D.isEvening() and "Terugblik · " or "") .. tostring(who), { size = 15, color = UI.INK2 }),
         })
         table.insert(items, UI.Tap:new{ label = "Dagtekst", callback = function() remember("Dagtekst"); app:go(D.page) end,
-            UI.card(quote, { fill = true, border = 0, pad = UI.px(22) }) })
+            UI.card(quote, { pad = UI.px(18) }) })
         table.insert(items, UI.vspan(gap))
 
         -- Training en gewoontes naast elkaar
         local name, sub, icon = safe(Sport.today, "Sport")
         local tr = UI.vgroup({
-            UI.hgroup({ UI.icon(icon or "run", 22), UI.hspace(8), UI.text("Training", { size = 16, font = "bold" }) }),
-            UI.vspace(8),
-            UI.text(name or "Sport", { font = "display", size = 22, width = half - UI.px(44), height = UI.px(60) }),
+            UI.hgroup({ UI.icon(icon or "run", 20, UI.INK2), UI.hspace(8), UI.text("Training", { size = 15, color = UI.INK2 }) }),
+            UI.vspace(6),
+            UI.text(name or "Sport", { font = "medium", size = 21, width = half - UI.px(40), height = UI.px(56) }),
             UI.vspace(2),
-            UI.text(sub or "", { size = 15, color = UI.INK2, width = half - UI.px(44), height = UI.px(42) }),
+            UI.text(sub or "", { size = 15, color = UI.INK2, width = half - UI.px(40), height = UI.px(42) }),
         })
         local done, total = safe(H.summary, 0)
         done, total = done or 0, total or 0
-        local ringSize = UI.px(level >= 2 and 64 or 78)
+        local dots = {}
+        for i = 1, math.max(total, 1) do
+            table.insert(dots, UI.dot(i <= done and total > 0, 15))
+            table.insert(dots, UI.hspace(6))
+        end
         local hb = UI.vgroup({
-            UI.hgroup({ UI.icon("list_checks", 22), UI.hspace(8), UI.text("Gewoontes", { size = 16, font = "bold" }) }),
-            UI.vspace(12),
-            UI.hgroup({
-                UI.Ring:new{ size = ringSize, frac = total > 0 and done / total or 0, thick = UI.px(10) },
-                UI.hspace(14),
-                UI.vgroup({ UI.text(done .. " van " .. total, { font = "display", size = 24 }), UI.text("vandaag", { size = 15, color = UI.INK2 }) }),
-            }),
+            UI.hgroup({ UI.icon("list_checks", 20, UI.INK2), UI.hspace(8), UI.text("Gewoontes", { size = 15, color = UI.INK2 }) }),
+            UI.vspace(6),
+            UI.text(done .. " van " .. total, { font = "medium", size = 21 }),
+            UI.vspace(8),
+            UI.hgroup(dots),
         })
         local sunday = os.date("%w") == "0"
         if sunday then
             hb = UI.vgroup({
-                UI.hgroup({ UI.icon("calendar", 22), UI.hspace(8), UI.text("Je week", { size = 16, font = "bold" }) }),
-                UI.vspace(8),
-                UI.text("Weekoverzicht", { font = "display", size = 22 }),
+                UI.hgroup({ UI.icon("calendar", 20, UI.INK2), UI.hspace(8), UI.text("Je week", { size = 15, color = UI.INK2 }) }),
+                UI.vspace(6),
+                UI.text("Weekoverzicht", { font = "medium", size = 21 }),
                 UI.vspace(2),
                 UI.text(("Gewoontes vandaag %d van %d. Tik voor je hele week."):format(done, total), { size = 15, color = UI.INK2, width = half - UI.px(44) }),
             })
         end
-        local rowH = math.max(tr:getSize().h, hb:getSize().h) + UI.px(40)
+        local rowH = math.max(tr:getSize().h, hb:getSize().h) + UI.px(36)
         table.insert(items, UI.hgroup({
             UI.Tap:new{ label = "Training", callback = function() app:go(Sport.page) end, UI.card(tr, { width = half, height = rowH }) },
             UI.hspan(gap),
@@ -283,16 +285,15 @@ local function homePage(app)
         -- Nieuws
         local nd = News.data()
         local edName = nd.edition or (News.edition())
-        local nv = { UI.hgroup({ UI.icon("news", 22), UI.hspace(8),
-            UI.text(edName .. (nd.at and (" · " .. os.date("%H:%M", nd.at)) or ""), { size = 16, font = "bold" }),
-            UI.hspace(8), UI.text("NOS", { size = 15, color = UI.INK3 }) }) }
+        local nv = { UI.hgroup({ UI.icon("news", 20, UI.INK2), UI.hspace(8),
+            UI.text(edName .. (nd.at and (" · " .. os.date("%H:%M", nd.at)) or "") .. " · NOS", { size = 15, color = UI.INK2 }) }) }
         table.insert(nv, UI.vspace(8))
         local nHead = level >= 1 and 2 or 3
         local shown = 0
         for _, it in ipairs(nd.items or {}) do
             if shown >= nHead then break end
             if it.feed == "algemeen" or shown < nHead then
-                table.insert(nv, UI.text(it.title, { size = 18, font = "medium", width = W - UI.px(44), height = UI.px(26) }))
+                table.insert(nv, UI.text(it.title, { size = 18, width = W - UI.px(40), height = UI.px(26) }))
                 table.insert(nv, UI.vspace(6))
                 shown = shown + 1
             end
@@ -305,11 +306,11 @@ local function homePage(app)
         local topH = top:getSize().h
 
         -- Apps: zes naast elkaar, als een dock
-        local icon = UI.px(level >= 3 and 58 or 66)
+        local icon = UI.px(level >= 3 and 54 or 60)
         local apps = {
             { "chess", "Kees Study", function() app:go(M.studyFolder) end, true },
             { "run", "Sport", function() app:go(Sport.page) end },
-            { "leaf", "Ontwikkeling", function() app:go(M.growFolder) end },
+            { "leaf", "Groei", function() app:go(M.growFolder) end },
             { "wrench", "Tools", function() app:go(require("ks_tools").menu) end },
             { "book", "Lezen", function() app:go(M.readFolder) end },
             { "cog", "Instellingen", function() app:go(Sys.settingsPage) end },
@@ -319,7 +320,9 @@ local function homePage(app)
         for _, a in ipairs(apps) do table.insert(row, UI.appIcon(a[1], a[2], icon, a[3], a[4], col)) end
         local grid = { UI.hgroup(row, "top") }
         local g = UI.vgroup(grid)
-        return UI.vgroup({ top, g }), topH + g:getSize().h
+        -- het dock onderaan het scherm
+        local fill = math.max(0, space - topH - g:getSize().h - UI.px(6))
+        return UI.vgroup({ top, UI.vspan(fill), g }), topH + g:getSize().h
     end
 
     local body

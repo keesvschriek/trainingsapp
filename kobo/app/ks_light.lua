@@ -122,7 +122,7 @@ local function stepBar(value, onPick, width, label)
     for i = 1, n do
         local on = i <= filled
         table.insert(row, UI.Tap:new{ label = label .. " " .. (i * 10), callback = function() onPick(i * 10) end,
-            FrameContainer:new{ bordersize = UI.px(2), color = UI.BLACK, background = on and UI.BLACK or UI.WHITE, radius = UI.px(6), padding = 0, margin = 0,
+            FrameContainer:new{ bordersize = UI.FINE(), color = on and UI.BLACK or UI.INK2, background = on and UI.BLACK or UI.WHITE, radius = UI.px(6), padding = 0, margin = 0,
                 UI.box(UI.vspace(0), cw - 2 * UI.px(2), UI.px(40)) } })
         if i < n then table.insert(row, UI.hspan(gap)) end
     end
