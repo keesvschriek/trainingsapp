@@ -215,6 +215,7 @@ function M.growFolder(app)
     local items = {
         UI.header("Ontwikkeling", function() app:back() end, "Elke dag een beetje"),
         UI.row("Opvolgen", safe(require("ks_opvolg").homeLine, ""), "›", function() app.ovPg = 1; app.ovLast = nil; app:go(require("ks_opvolg").page) end, nil, "list_checks"),
+        UI.row("Je week", "Rooster, training en punten per dag", "›", function() app.weekMon = nil; app:go(require("ks_week").page) end, nil, "calendar"),
         UI.row("Defensie-module", safe(require("ks_module").homeLine, nil) or "Aftellen en paklijst", "›", function() app:go(require("ks_module").page) end, nil, "flag"),
         UI.row("Dag afsluiten", safe(require("ks_avond").summary, ""), "›", function() app:go(require("ks_avond").page) end, nil, "moon"),
         UI.row("Dagtekst", "Vandaag: " .. tostring(who), "›", function() remember("Dagtekst"); app:go(D.page) end, nil, "quote"),
@@ -261,6 +262,11 @@ local function homePage(app)
             table.insert(items, UI.vspace(6))
             table.insert(items, UI.Tap:new{ label = "Opvolgen", callback = function() app.ovPg = 1; app.ovLast = nil; app:go(require("ks_opvolg").page) end,
                 UI.hgroup({ UI.icon("list_checks", 19, UI.INK2), UI.hspace(8), UI.text(ovLine, { size = 16, color = UI.INK2, max_width = W - UI.px(60) }), UI.icon("chevron_right", 18, UI.INK3) }) })
+        end
+        if os.date("%w") == "0" and tonumber(os.date("%H")) >= 12 and not require("ks_avond").isEvening() then
+            table.insert(items, UI.vspace(6))
+            table.insert(items, UI.Tap:new{ label = "Je week", callback = function() app.weekMon = nil; app:go(require("ks_week").page) end,
+                UI.hgroup({ UI.icon("calendar", 19, UI.INK2), UI.hspace(8), UI.text("Je week bekijken en doorschuiven", { size = 16, color = UI.INK2 }), UI.icon("chevron_right", 18, UI.INK3) }) })
         end
         local modLine = safe(require("ks_module").homeLine)
         if modLine then
@@ -309,7 +315,9 @@ local function homePage(app)
             }
             local row2 = {
                 half_card("brain", "Kort leren", "10 leerkaarten", safe(C.summary, ""), function() C.ten(app) end),
-                half_card("list_checks", "Opvolgen", (#safe(require("ks_opvolg").open, {}) .. " open"), "Tik voor je lijst", function() app.ovPg = 1; app.ovLast = nil; app:go(require("ks_opvolg").page) end),
+                os.date("%w") == "0"
+                    and half_card("calendar", "Zondag", "Je week", "Rooster, training, module en punten", function() app.weekMon = nil; app:go(require("ks_week").page) end)
+                    or half_card("list_checks", "Opvolgen", (#safe(require("ks_opvolg").open, {}) .. " open"), "Tik voor je lijst", function() app.ovPg = 1; app.ovLast = nil; app:go(require("ks_opvolg").page) end),
             }
             for _, r in ipairs({ row1, row2 }) do
                 local h = math.max(r[1].v:getSize().h, r[2].v:getSize().h) + UI.px(36)

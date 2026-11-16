@@ -2,6 +2,12 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Je week
+- Je week in één blik: per dag je lessen, training, module en punten. Op zondag vanaf 12:00 de komende week
+- Training ruilen met een andere dag. De app op je telefoon zet het daarna in intervals.icu en op je Garmin
+- Punten verzetten naar een andere dag of naar volgende week
+- Zondagavond staat Je week op het beginscherm
+
 ## Snel synchroniseren en van telefoon naar Kobo
 - Tik op het pijltje rechtsboven: meteen synchroniseren met de telefoon (en het scherm schoon)
 - Links en tekst die je vanaf je telefoon stuurt (Delen, K) staan daarna bij Lezen, Te lezen

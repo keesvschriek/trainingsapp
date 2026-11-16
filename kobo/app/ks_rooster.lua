@@ -11,7 +11,7 @@ local UI = require("ks_ui")
 
 local R = {}
 
-R.DAYS = 7
+R.DAYS = 9 -- ook zondag nog de hele volgende week
 
 local function file() return DataStorage:getSettingsDir() .. "/keesstudy-rooster.json" end
 local cache
