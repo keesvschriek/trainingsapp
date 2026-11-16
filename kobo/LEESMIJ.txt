@@ -67,3 +67,7 @@ KOBO KOPPELEN AAN DE TELEFOON-APP
 2. Telefoon: app K, tandwiel rechtsboven, Kobo koppelen. Typ de code en je wachtwoord, tik op Koppel de Kobo.
 3. Op de Kobo staat Gelukt. Training en check-in lopen vanaf nu vanzelf gelijk.
 De Kobo bewaart je wachtwoord niet. Geen app bij de hand: scan de QR-code op de Kobo en vul alles in de browser in.
+
+VAN TELEFOON NAAR KOBO
+In Chrome of een andere app: Delen, kies K, dan Lezen op de Kobo. Of in de app K: Meer, Naar de Kobo.
+Op de Kobo: tik rechtsboven op het pijltje om meteen te synchroniseren. Het stuk staat dan bij Lezen, Te lezen.

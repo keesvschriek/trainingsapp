@@ -13,7 +13,7 @@ local UI = require("ks_ui")
 local S = {}
 
 -- Welke tabellen van de app de Kobo bijhoudt
-S.TABLES = { workouts = true, checks = true, checkins = true, metrics = true, blocks = true, opvolg = true, pack = true }
+S.TABLES = { workouts = true, checks = true, checkins = true, metrics = true, blocks = true, opvolg = true, pack = true, inbox = true }
 
 local function cfg() local c = Store.get("sync.cfg"); return type(c) == "table" and c or nil end
 function S.connected() local c = cfg(); return c ~= nil and type(c.refresh) == "string" end
@@ -147,6 +147,7 @@ function S.syncNow()
     -- eerst eventueel wachtende zwaarte/notities aan trainingen hangen
     S.attachPending()
     -- 1. omhoog
+    local function push()
     local batch, keys = {}, {}
     for k in pairs(d.dirty) do
         local tbl, id = k:match("^([^|]+)|(.+)$")
@@ -158,7 +159,6 @@ function S.syncNow()
             d.dirty[k] = nil
         end
     end
-    local pushed = 0
     if #batch > 0 then
         local hp = {}
         for k, v in pairs(H) do hp[k] = v end
@@ -166,8 +166,12 @@ function S.syncNow()
         local ok, err = Net.request("POST", c.url .. "/rest/v1/records?on_conflict=user_id,tbl,id", hp, json(batch))
         if not ok then return false, "Versturen mislukt: " .. tostring(err) end
         for _, k in ipairs(keys) do d.dirty[k] = nil end
-        pushed = #batch
     end
+    return true, #batch
+    end
+    local pok, perr = push()
+    if not pok then return false, perr end
+    local pushed = perr
     -- 2. omlaag
     local pulled = 0
     for _ = 1, 40 do
@@ -195,12 +199,17 @@ function S.syncNow()
     end
     -- wat net binnenkwam kan wachtende notities alsnog laten passen
     S.attachPending()
+    -- links en tekst van de telefoon bij Te lezen zetten, en meteen terugmelden
+    local iok, got = pcall(function() return require("ks_inbox").process() end)
+    S.lastInbox = iok and got or 0
+    if next(d.dirty) then push() end
     if next(d.dirty) and pushed == 0 then
         -- door attachPending nieuw klaargezet: meteen meesturen bij de volgende keer
     end
     d.at = os.time()
     save()
-    return true, ("%d verstuurd, %d opgehaald"):format(pushed, pulled)
+    local extra = (S.lastInbox or 0) > 0 and (", " .. S.lastInbox .. " nieuw om te lezen") or ""
+    return true, ("%d verstuurd, %d opgehaald"):format(pushed, pulled) .. extra
 end
 
 function S.due()

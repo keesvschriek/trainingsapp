@@ -25,4 +25,14 @@ public class WidgetBridgePlugin extends Plugin {
         ret.put("sets", WidgetStore.takePending(getContext()).toString());
         call.resolve(ret);
     }
+
+    /** Wat er via Delen naar K is gestuurd (leeg als er niets is). */
+    @PluginMethod
+    public void takeShared(PluginCall call) {
+        String[] v = WidgetStore.takeShared(getContext());
+        JSObject ret = new JSObject();
+        ret.put("text", v[0]);
+        ret.put("subject", v[1]);
+        call.resolve(ret);
+    }
 }

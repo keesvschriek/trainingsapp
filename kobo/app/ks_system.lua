@@ -91,6 +91,8 @@ function Sys.statusText()
     local okL, L = pcall(require, "ks_light")
     if okL and L.hasLight() then st.light = L.intensity() end
     st.busy = Sys.busy
+    st.synced = require("ks_sync").connected()
+    if not st.busy and Sys.note and os.time() < (Sys.noteUntil or 0) then st.note = Sys.note end
     return st
 end
 
@@ -151,6 +153,28 @@ function Sys.onSuspend()
     state.suspended = true
     pcall(function() require("ks_sleep").show() end)
     Store.flush()
+end
+
+--- Tik op het pijltje rechtsboven: meteen synchroniseren met de telefoon (en het scherm schoon).
+function Sys.quickSync(app)
+    local Sync = require("ks_sync")
+    if Sys.busy then return end
+    if not Sync.connected() then
+        Sys.note, Sys.noteUntil = "Nog niet gekoppeld: Instellingen, Telefoon-app", os.time() + 6
+        app:cleanScreen()
+        return
+    end
+    Sys.busy = "synchroniseren"
+    app:render("ui")
+    Sync.refresh(function(ok, msg)
+        Sys.busy = nil
+        local n = require("ks_sync").lastInbox or 0
+        Sys.note, Sys.noteUntil = ok and (n > 0 and ("Bij, " .. n .. " nieuw om te lezen") or "Alles is bij") or tostring(msg), os.time() + 8
+        app:render("page")
+        app:cleanScreen()
+        -- melding na een tijdje weer weg
+        UIManager:scheduleIn(9, function() if Sys.app and not Sys.reading() then Sys.app:render("ui") end end)
+    end)
 end
 
 --- Ochtend- en avondronde: krant (en training) ophalen als die editie er nog niet is.

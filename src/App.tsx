@@ -4,6 +4,9 @@ import { Schedule } from './screens/Schedule';
 import { Log } from './screens/Log';
 import { Settings } from './screens/Settings';
 import { OpvolgScreen } from './screens/Opvolg';
+import { InboxScreen, ShareSheet } from './screens/Inbox';
+import { takeShared } from './widget';
+import { App as CapApp } from '@capacitor/app';
 import { Icon } from './ui';
 import { currentUser, scheduleSync, sync } from './sync';
 import { getIntervalsSettings, importActivities } from './intervals';
@@ -16,7 +19,7 @@ import { scheduleMorning } from './notify';
 const QuizHome = lazy(() => import('./quiz/QuizHome').then(m => ({ default: m.QuizHome })));
 const Progress = lazy(() => import('./screens/Progress').then(m => ({ default: m.Progress })));
 
-type Route = 'vandaag' | 'schema' | 'logboek' | 'voortgang' | 'quiz' | 'instellingen' | 'opvolgen' | 'meer';
+type Route = 'vandaag' | 'schema' | 'logboek' | 'voortgang' | 'quiz' | 'instellingen' | 'opvolgen' | 'meer' | 'kobo';
 // Vandaag is het hoofdscherm. De rest staat onder Meer.
 const TABS: { id: Route; label: string; icon: ReactNode }[] = [
   { id: 'vandaag', label: 'Vandaag', icon: Icon.today },
@@ -24,6 +27,7 @@ const TABS: { id: Route; label: string; icon: ReactNode }[] = [
   { id: 'meer', label: 'Meer', icon: Icon.plan },
 ];
 const MORE: { id: Route; label: string; sub: string; icon: ReactNode }[] = [
+  { id: 'kobo', label: 'Naar de Kobo', sub: 'Link of tekst om te lezen', icon: Icon.send },
   { id: 'schema', label: 'Schema', sub: 'Je trainingsweken en blokken', icon: Icon.plan },
   { id: 'logboek', label: 'Logboek', sub: 'Wat je hebt gedaan', icon: Icon.log },
   { id: 'voortgang', label: 'Voortgang', sub: 'Testen, records en grafieken', icon: Icon.chart },
@@ -46,7 +50,7 @@ function More({ go }: { go: (r: Route) => void }) {
   );
 }
 
-const TITLES: Record<Route, string> = { vandaag: 'Vandaag', schema: 'Schema', logboek: 'Logboek', voortgang: 'Voortgang', quiz: 'Quiz', instellingen: 'Instellingen', opvolgen: 'Opvolgen', meer: 'Meer' };
+const TITLES: Record<Route, string> = { vandaag: 'Vandaag', schema: 'Schema', logboek: 'Logboek', voortgang: 'Voortgang', quiz: 'Quiz', instellingen: 'Instellingen', opvolgen: 'Opvolgen', meer: 'Meer', kobo: 'Naar de Kobo' };
 
 function readRoute(): Route {
   const r = location.hash.replace('#/', '') as Route;
@@ -57,6 +61,32 @@ export function App() {
   const [route, setRoute] = useState<Route>(readRoute());
   const [syncState, setSyncState] = useState<'off' | 'ok' | 'err'>('off');
   const [update, setUpdate] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState('');
+  const [shared, setShared] = useState<{ text: string; subject: string } | null>(null);
+
+  // Iets gedeeld naar K (Delen in een andere app)? Bij start en bij terugkomen in de app.
+  useEffect(() => {
+    const check = () => void takeShared().then(v => v && setShared(v));
+    check();
+    const h = CapApp.addListener('resume', check);
+    return () => void h.then(x => x.remove());
+  }, []);
+
+  async function syncNow() {
+    if (busy) return;
+    if (!(await currentUser())) {
+      setToast('Log eerst in bij Instellingen, Synchroniseren.');
+      window.setTimeout(() => setToast(''), 2500);
+      return;
+    }
+    setBusy(true);
+    const r = await sync();
+    setBusy(false);
+    setSyncState(r.error ? (r.error === 'Offline.' ? 'off' : 'err') : 'ok');
+    setToast(r.error ? r.error : r.pushed || r.pulled ? `Gesynchroniseerd: ${r.pushed} verstuurd, ${r.pulled} binnengehaald.` : 'Alles is bij.');
+    window.setTimeout(() => setToast(''), 2500);
+  }
 
   useEffect(() => {
     void checkForUpdate().then(setUpdate);
@@ -130,7 +160,10 @@ export function App() {
           <h1>{TITLES[route]}</h1>
         </div>
         <div className="right">
-          <span className={`sync-dot ${syncState}`} title={syncState === 'ok' ? 'Gesynchroniseerd' : syncState === 'err' ? 'Synchronisatie mislukt' : 'Niet gesynchroniseerd'} />
+          <button className={`icon-btn sync-btn ${syncState}${busy ? ' busy' : ''}`} onClick={() => void syncNow()} aria-label="Nu synchroniseren" title={syncState === 'ok' ? 'Gesynchroniseerd' : syncState === 'err' ? 'Synchronisatie mislukt' : 'Niet gesynchroniseerd'}>
+            {Icon.sync}
+            <span className={`sync-dot ${syncState}`} />
+          </button>
           <button className="icon-btn" onClick={() => go(route === 'instellingen' ? 'vandaag' : 'instellingen')} aria-label="Instellingen">
             {route === 'instellingen' ? Icon.close : Icon.gear}
           </button>
@@ -150,7 +183,10 @@ export function App() {
         {route === 'instellingen' && <Settings />}
         {route === 'opvolgen' && <OpvolgScreen />}
         {route === 'meer' && <More go={go} />}
+        {route === 'kobo' && <InboxScreen />}
       </main>
+      {toast && <div className="toast">{toast}</div>}
+      {shared && <ShareSheet shared={shared} onClose={() => setShared(null)} />}
       <div className="tabbar">
         <nav>
           {TABS.map(t => (

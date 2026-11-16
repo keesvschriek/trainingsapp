@@ -107,6 +107,16 @@ export interface Opvolg extends Base {
   from?: 'telefoon' | 'kobo';
 }
 
+/** Van telefoon naar Kobo: een link of tekst om te lezen. De Kobo zet het bij Te lezen en zet done op true. */
+export interface Inbox extends Base {
+  url?: string;
+  text?: string;
+  title?: string;
+  createdAt: number;
+  done: boolean;
+  note?: string; // melding van de Kobo, bijv. als een pagina niet te lezen was
+}
+
 export interface KV {
   key: string;
   value: unknown;
@@ -123,6 +133,7 @@ class TrainingDB extends Dexie {
   templates!: Table<Template, string>;
   opvolg!: Table<Opvolg, string>;
   pack!: Table<PackItem, string>;
+  inbox!: Table<Inbox, string>;
   kv!: Table<KV, string>;
 
   constructor() {
@@ -148,12 +159,15 @@ class TrainingDB extends Dexie {
     this.version(5).stores({
       pack: 'id, order, updatedAt',
     });
+    this.version(6).stores({
+      inbox: 'id, createdAt, updatedAt',
+    });
   }
 }
 
 export const db = new TrainingDB();
 
-export const SYNC_TABLES = ['workouts', 'sets', 'metrics', 'checks', 'blocks', 'moves', 'checkins', 'templates', 'opvolg', 'pack'] as const;
+export const SYNC_TABLES = ['workouts', 'sets', 'metrics', 'checks', 'blocks', 'moves', 'checkins', 'templates', 'opvolg', 'pack', 'inbox'] as const;
 export type SyncTable = (typeof SYNC_TABLES)[number];
 
 export function newId(): string {

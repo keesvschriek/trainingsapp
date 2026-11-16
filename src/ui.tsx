@@ -18,6 +18,8 @@ export const Icon = {
   close: svg(<path d="M6 6l12 12M18 6L6 18" />),
   check: svg(<path d="M5 12.5l4.5 4.5L19 7.5" />),
   plus: svg(<path d="M12 5v14M5 12h14" />),
+  sync: svg(<><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8" /><path d="M4 4v4h4" /><path d="M4 13a8 8 0 0 0 14.5 4.5L20 16" /><path d="M20 20v-4h-4" /></>),
+  send: svg(<><path d="M4 12l16-8-6 16-2.5-6.5z" /></>),
   trash: svg(<><path d="M4 7h16M10 11v6M14 11v6" /><path d="M6 7l1 13h10l1-13M9 7V4h6v3" /></>),
   run: svg(<><circle cx="14.5" cy="4.5" r="1.8" /><path d="M10 21l2.5-5.5L15 17v4M7.5 12.5l2-3.5 4 1 2.5 3.5 3 .5" /><path d="M9.5 9L7 8.5 5 11" /></>),
   kettlebell: svg(<><path d="M8.5 8.5a3.5 3.5 0 1 1 7 0" /><path d="M7 9.5h10l1.5 3.5a6.5 6.5 0 0 1-13 0z" /><path d="M7.5 20.5h9" /></>),

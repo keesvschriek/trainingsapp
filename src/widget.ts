@@ -12,8 +12,20 @@ import { isNative } from './native';
 interface WidgetBridge {
   update(o: { snapshot: string }): Promise<void>;
   takePending(): Promise<{ sets: string }>;
+  takeShared(): Promise<{ text: string; subject: string }>;
 }
 const Bridge = registerPlugin<WidgetBridge>('WidgetBridge');
+
+/** Tekst of link die via Delen naar K is gestuurd, of null. */
+export async function takeShared(): Promise<{ text: string; subject: string } | null> {
+  if (!isNative) return null;
+  try {
+    const r = await Bridge.takeShared();
+    return r.text ? r : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface WidgetDay { title: string; sub: string; rest: boolean; pull: boolean }
 export interface WidgetSnapshot {

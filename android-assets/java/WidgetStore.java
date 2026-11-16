@@ -33,6 +33,19 @@ final class WidgetStore {
         return total;
     }
 
+    /** Gedeeld via het Android-deelmenu: tekst en onderwerp, tot de app ze ophaalt. */
+    static synchronized void setShared(Context c, String text, String subject) {
+        prefs(c).edit().putString("shared_text", text).putString("shared_subject", subject).apply();
+    }
+
+    static synchronized String[] takeShared(Context c) {
+        SharedPreferences p = prefs(c);
+        String t = p.getString("shared_text", "");
+        String s = p.getString("shared_subject", "");
+        p.edit().remove("shared_text").remove("shared_subject").apply();
+        return new String[] { t, s };
+    }
+
     static synchronized void setSnapshot(Context c, String json) {
         prefs(c).edit().putString(SNAPSHOT, json).apply();
     }

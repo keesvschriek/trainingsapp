@@ -2,6 +2,11 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Snel synchroniseren en van telefoon naar Kobo
+- Tik op het pijltje rechtsboven: meteen synchroniseren met de telefoon (en het scherm schoon)
+- Links en tekst die je vanaf je telefoon stuurt (Delen, K) staan daarna bij Lezen, Te lezen
+- Wikipedia-links worden een net artikel, andere links alleen de tekst van het artikel
+
 ## Opvolgen, avond en Defensie
 - Opvolgen: punten die je niet wilt vergeten, ook in de app op je telefoon. Eindig een regel met morgen, vr of volgende week voor de datum
 - Overleg: kies de werkgroep en tik actiepunten achter elkaar in

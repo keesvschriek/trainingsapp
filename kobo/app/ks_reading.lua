@@ -201,27 +201,39 @@ R.WIKI = os.getenv("KEES_STUDY_WIKIAPI_URL") or "https://nl.wikipedia.org/w/api.
 
 local function urlenc(s) return (s:gsub("[^%w%-_%.~]", function(c) return ("%%%02X"):format(c:byte()) end)) end
 
+--- Wikipedia-artikel ophalen en bewaren (zonder wifi te regelen). Geeft ok, item, err.
+function R.wikiNow(title)
+    local url = R.WIKI .. "?action=query&format=json&formatversion=2&prop=extracts&explaintext=1&exsectionformat=wiki&redirects=1&titles=" .. urlenc(title)
+    local ok, body = require("ks_net").get(url, { ["User-Agent"] = "KeesStudy/1.0 (Kobo e-reader, persoonlijk gebruik)" })
+    if not ok then return false, nil, body end
+    local good, j = pcall(require("json").decode, body)
+    local page = good and type(j) == "table" and type(j.query) == "table" and type(j.query.pages) == "table" and j.query.pages[1]
+    local extract = page and type(page.extract) == "string" and page.extract or nil
+    if not extract or extract == "" then return false, nil, "Artikel niet gevonden." end
+    local realTitle = type(page.title) == "string" and page.title or title
+    local name = "wiki-" .. safeName(realTitle) .. ".json"
+    local blocks = R.fromWikiText(extract)
+    if not saveDoc(name, { id = name, title = realTitle, sub = "Wikipedia", kind = "Wikipedia", blocks = blocks }) then
+        return false, nil, "Kon niet opslaan."
+    end
+    setMeta(name, { title = realTitle, sub = "Wikipedia", src = "wiki", new = true, date = os.date("%Y-%m-%d"),
+        words = select(2, extract:gsub("%S+", "")) })
+    return true, { name = name, title = realTitle }
+end
+
 --- Wikipedia-artikel ophalen en bewaren als stuk om te lezen. onDone(ok, item, err)
 function R.saveWikipedia(app, title, onDone)
-    require("ks_net").online(function()
-        local url = R.WIKI .. "?action=query&format=json&formatversion=2&prop=extracts&explaintext=1&exsectionformat=wiki&redirects=1&titles=" .. urlenc(title)
-        local ok, body = require("ks_net").get(url, { ["User-Agent"] = "KeesStudy/1.0 (Kobo e-reader, persoonlijk gebruik)" })
-        if not ok then return onDone(false, nil, body) end
-        local good, j = pcall(require("json").decode, body)
-        local page = good and type(j) == "table" and type(j.query) == "table" and type(j.query.pages) == "table" and j.query.pages[1]
-        local extract = page and type(page.extract) == "string" and page.extract or nil
-        if not extract or extract == "" then return onDone(false, nil, "Artikel niet gevonden.") end
-        local realTitle = type(page.title) == "string" and page.title or title
-        local name = "wiki-" .. safeName(realTitle) .. ".json"
-        local intro, rest = extract:match("^(.-)\n(==.*)$")
-        local blocks = R.fromWikiText(extract)
-        if not saveDoc(name, { id = name, title = realTitle, sub = "Wikipedia", kind = "Wikipedia", blocks = blocks }) then
-            return onDone(false, nil, "Kon niet opslaan.")
-        end
-        setMeta(name, { title = realTitle, sub = "Wikipedia", src = "wiki", new = true, date = os.date("%Y-%m-%d"),
-            words = select(2, extract:gsub("%S+", "")) })
-        onDone(true, { name = name, title = realTitle })
-    end, { onFail = function(m) onDone(false, nil, m) end })
+    require("ks_net").online(function() onDone(R.wikiNow(title)) end, { onFail = function(m) onDone(false, nil, m) end })
+end
+
+--- Stuk bewaren met eigen gegevens (voor Van je telefoon).
+function R.saveDoc(name, doc, m)
+    if not saveDoc(name, doc) then return false end
+    local words = 0
+    for _, b in ipairs(doc.blocks or {}) do words = words + select(2, (b.t or ""):gsub("%S+", "")) end
+    m.words = m.words or words
+    setMeta(name, m)
+    return true
 end
 
 -- Scherm -------------------------------------------------------------------------------
@@ -229,7 +241,7 @@ end
 function R.page(app)
     local W = UI.INNER()
     local items = { UI.header("Te lezen", function() app.readPg = nil; app.readMsg = nil; app.readEdit = nil; app:back() end,
-        "Achtergrondstukken en Wikipedia-artikelen") }
+        "Achtergrondstukken, Wikipedia en van je telefoon") }
     local list = R.list()
     local rows = {}
     for _, it in ipairs(list) do

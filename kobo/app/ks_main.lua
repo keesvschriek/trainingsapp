@@ -502,7 +502,7 @@ function M.run(dir)
     local app = App:new{}
     app.stack = { homePage }
     app[1] = homePage(app)
-    UI.onRefresh = function() app:cleanScreen() end
+    UI.onRefresh = function() require("ks_system").quickSync(app) end
     UI.onHome = function() app:home() end
     UI.onLight = function() require("ks_light").showPanel(app) end
     UIManager:show(app, "full")

@@ -76,6 +76,17 @@ jobs:
           '''
           assert '</application>' in s
           s = s.replace('</application>', receiver + '    </application>', 1)
+          # Delen naar K: links en tekst uit andere apps
+          share = '''
+                      <intent-filter>
+                          <action android:name="android.intent.action.SEND" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <data android:mimeType="text/plain" />
+                      </intent-filter>
+          '''
+          i = s.index('android:name=".MainActivity"')
+          j = s.index('</activity>', i)
+          s = s[:j] + share + s[j:]
           open(p, 'w').write(s)
           PY
           grep -n "TrainingWidget" android/app/src/main/AndroidManifest.xml

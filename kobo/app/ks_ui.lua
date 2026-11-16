@@ -390,7 +390,8 @@ function StatusBar:paintTo(bb, x, y)
     local ty = y + UI.px(12)
     -- links: tijd
     local tw = blit(bb, TextWidget:new{ text = st.time, face = face, fgcolor = UI.BLACK }, x + M, ty)
-    if st.busy then blit(bb, TextWidget:new{ text = st.busy .. "...", face = small, fgcolor = UI.INK2 }, x + M + tw + UI.px(14), ty + UI.px(1)) end
+    if st.busy then blit(bb, TextWidget:new{ text = st.busy .. "...", face = small, fgcolor = UI.INK2 }, x + M + tw + UI.px(14), ty + UI.px(1))
+    elseif st.note then blit(bb, TextWidget:new{ text = st.note, face = small, fgcolor = UI.INK2, max_width = UI.W() - 2 * M - tw - UI.px(300) }, x + M + tw + UI.px(14), ty + UI.px(1)) end
     -- rechts: verversen, batterij, wifi, schermtijd (van rechts naar links)
     local rx = x + UI.W() - M
     local function place(w, gap)
@@ -400,7 +401,7 @@ function StatusBar:paintTo(bb, x, y)
         w:free()
         rx = rx - (gap or UI.px(14))
     end
-    place(UI.icon("refresh", iconFace, UI.BLACK, { fixed = true }), UI.px(22))
+    place(UI.icon(st.synced and "sync" or "refresh", iconFace, UI.BLACK, { fixed = true }), UI.px(22))
     StatusBar.refreshX = rx
     if st.battery then
         place(TextWidget:new{ text = st.battery .. "%", face = small, fgcolor = UI.BLACK }, UI.px(4))
