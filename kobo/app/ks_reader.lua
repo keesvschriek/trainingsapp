@@ -147,6 +147,14 @@ function RD.page(app)
         Store.set("rd.pos", all)
         app:refresh()
     end
+    -- uitgelezen: jaartallen worden invulkaarten in de leerlijn "Uit je leeswerk"
+    if p == #pages and #pages > 0 then
+        local ok, n = pcall(function() return require("ks_leer").fromDoc(doc) end)
+        if ok and n and n > 0 then
+            local Sys = require("ks_system")
+            Sys.note, Sys.noteUntil = n .. " jaartallen uit dit stuk staan nu bij Leerlijnen", os.time() + 10
+        end
+    end
     local body = {}
     for _, b in ipairs(pages[p] or {}) do
         table.insert(body, widget(b, W))

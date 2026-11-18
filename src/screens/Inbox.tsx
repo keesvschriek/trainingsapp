@@ -37,8 +37,9 @@ export function InboxScreen() {
   return (
     <>
       <p className="muted small">Plak een link of tekst. Op de Kobo staat het daarna bij Lezen, Te lezen. Sneller: tik in Chrome of een andere app op Delen en kies K.</p>
+      <p className="muted small">Leerstof? Zet per regel <code>vraag :: antwoord</code> (of plak twee kolommen uit Excel). Dan wordt het een stap in de leerlijn Eigen stof, met de titel als naam.</p>
       <label>Link of tekst</label>
-      <textarea rows={4} value={text} placeholder="https://..." onChange={e => setText(e.target.value)} />
+      <textarea rows={6} value={text} placeholder={'https://...\n\nof leerstof:\nWaar staat CBRN voor? :: Chemisch, biologisch, radiologisch, nucleair'} onChange={e => setText(e.target.value)} />
       <label>Titel (mag leeg)</label>
       <input value={title} onChange={e => setTitle(e.target.value)} />
       <button className="btn block mt" onClick={() => void send()} disabled={!text.trim()}>Naar de Kobo</button>

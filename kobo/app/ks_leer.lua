@@ -72,6 +72,48 @@ function L.lines()
     cache.lines = require("ks_leer_data").lines()
     return cache.lines
 end
+function L.reset() cache.lines = nil end
+
+--- Een uitgelezen stuk: jaartallen worden invulkaarten in "Uit je leeswerk". Geeft het aantal nieuwe kaarten.
+function L.fromDoc(doc)
+    if not doc or not (doc.id or doc.title) then return 0 end
+    local id = tostring(doc.id or doc.title):gsub("[^%w%-]", ""):sub(1, 60)
+    local read = Store.get("leer.read", {})
+    if read[id] then return 0 end
+    local facts = require("ks_leer_data").clozeFromDoc(doc)
+    read[id] = { title = doc.title, at = os.time(), facts = facts }
+    Store.set("leer.read", read)
+    L.reset()
+    return #facts
+end
+
+--- Eigen stof van de telefoon: regels "vraag :: antwoord" (of met een tab ertussen).
+function L.parseOwn(text)
+    local facts = {}
+    for line in (text .. "\n"):gmatch("([^\n]*)\n") do
+        local q, a = line:match("^%s*(.-)%s*::%s*(.-)%s*$")
+        if not q then q, a = line:match("^%s*([^\t]-)%s*\t%s*(.-)%s*$") end
+        if q and a and q ~= "" and a ~= "" then facts[#facts + 1] = { q, a } end
+    end
+    return facts
+end
+
+function L.addOwn(id, name, facts)
+    local decks = Store.get("leer.own", {})
+    for _, d in ipairs(decks) do if d.id == id then return false end end
+    decks[#decks + 1] = { id = id, name = name, facts = facts, at = os.time() }
+    Store.set("leer.own", decks)
+    L.reset()
+    return true
+end
+
+function L.removeOwn(id)
+    local decks = Store.get("leer.own", {})
+    for i, d in ipairs(decks) do if d.id == id then table.remove(decks, i); break end end
+    Store.set("leer.own", decks)
+    L.reset()
+end
+
 function L.line(key) for _, l in ipairs(L.lines()) do if l.key == key then return l end end end
 
 --- Voortgang van een stap: beheerst, gezien, totaal, te herhalen.
@@ -93,7 +135,7 @@ end
 function L.openSteps(line)
     local open = {}
     for i, st in ipairs(line.steps) do
-        if i == 1 then open[i] = true
+        if i == 1 or line.allOpen then open[i] = true
         else
             local m, _, n = L.stepStats(line.steps[i - 1])
             open[i] = open[i - 1] and (n == 0 or m / n >= L.UNLOCK)

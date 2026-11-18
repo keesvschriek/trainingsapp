@@ -97,6 +97,17 @@ function I.handle(r)
         done(r, "Staat op de Kobo")
         return true
     end
+    -- leerstof: regels "vraag :: antwoord" worden een stap in Eigen stof
+    if type(r.text) == "string" and r.text ~= "" then
+        local L = require("ks_leer")
+        local facts = L.parseOwn(r.text)
+        if #facts >= 2 then
+            local name = (r.title and r.title ~= "") and r.title or ("Eigen stof " .. os.date("%d-%m"))
+            L.addOwn(tostring(r.id), name, facts)
+            done(r, "Staat als leerstap op de Kobo (" .. #facts .. " vragen)")
+            return true
+        end
+    end
     if type(r.text) == "string" and r.text ~= "" then
         local blocks = textBlocks(r.text)
         local title = (r.title and r.title ~= "") and r.title or (blocks[1] and blocks[1].t:sub(1, 60) or "Tekst")

@@ -148,6 +148,13 @@ function App:quit()
     UIManager:close(self, "full")
 end
 
+--- Naar de gewone Kobo (bibliotheek en winkel). KOReader sluit af; de Kobo gaat verder waar hij was.
+function App:toKobo()
+    pcall(function() require("ks_system").stop() end)
+    Store.flush()
+    UIManager:quit(0)
+end
+
 -- Beginscherm ------------------------------------------------------------------
 
 local MONTHS = { "januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december" }
@@ -202,7 +209,7 @@ function M.readFolder(app)
         UI.row("Te lezen", safe(require("ks_reading").summary, ""), "›", function() app.readPg = 1; app:go(require("ks_reading").page) end, nil, "news"),
         UI.row("Op deze dag", safe(require("ks_otd").summary, ""), "›", function() app.otdPg = 1; app:go(require("ks_otd").page) end, nil, "history"),
         UI.vspace(20),
-        UI.row("Naar je boeken", "Sluit de app en ga naar de Kobo-bibliotheek", "›", function() app:quit() end, nil, "book"),
+        UI.row("Naar je boeken", "Sluit de app en ga naar de Kobo-bibliotheek", "›", function() app:toKobo() end, nil, "book"),
     }
     return UI.page(UI.vgroup(items))
 end
@@ -399,7 +406,7 @@ local function homePage(app)
         local top = UI.vgroup(items)
         local topH = top:getSize().h
 
-        -- Apps: zes naast elkaar, als een dock
+        -- Apps naast elkaar, als een dock. Kobo = terug naar de gewone Kobo (Nickel).
         local icon = UI.px(level >= 3 and 54 or 60)
         local apps = {
             { "chess", "Kees Study", function() app:go(M.studyFolder) end, true },
@@ -408,8 +415,9 @@ local function homePage(app)
             { "wrench", "Tools", function() app:go(require("ks_tools").menu) end },
             { "book", "Lezen", function() app:go(M.readFolder) end },
             { "cog", "Instellingen", function() app:go(Sys.settingsPage) end },
+            { "home_outline", "Kobo", function() app:toKobo() end },
         }
-        local col = math.floor(W / 6)
+        local col = math.floor(W / #apps)
         local row = {}
         for _, a in ipairs(apps) do table.insert(row, UI.appIcon(a[1], a[2], icon, a[3], a[4], col)) end
         local grid = { UI.hgroup(row, "top") }

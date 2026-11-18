@@ -137,6 +137,17 @@ end
 
 local function enc(s) return (s:gsub("[^%w%-%._~]", function(ch) return ("%%%02X"):format(ch:byte()) end)) end
 
+--- Losse aanroep naar Supabase (voor de back-up). Geeft ok, tekst.
+function S.request(method, path, body, prefer)
+    local tok, c = ensureToken()
+    if not tok then return false, c end
+    local H = { apikey = c.key, Authorization = "Bearer " .. tok, ["Content-Type"] = "application/json" }
+    if prefer then H.Prefer = prefer end
+    return require("ks_net").request(method, c.url .. path, H, body)
+end
+function S.uid() local c = cfg(); return c and c.uid end
+S.json, S.decode = function(x) return json(x) end, function(x) return decode(x) end
+
 --- Heen en weer. Geeft ok, bericht.
 function S.syncNow()
     local tok, c = ensureToken()
@@ -203,6 +214,8 @@ function S.syncNow()
     local iok, got = pcall(function() return require("ks_inbox").process() end)
     S.lastInbox = iok and got or 0
     if next(d.dirty) then push() end
+    -- één keer per dag een back-up van de hele Kobo in je eigen Supabase
+    pcall(function() require("ks_backup").daily() end)
     if next(d.dirty) and pushed == 0 then
         -- door attachPending nieuw klaargezet: meteen meesturen bij de volgende keer
     end

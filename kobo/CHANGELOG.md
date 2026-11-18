@@ -2,6 +2,12 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Eigen stof, leren van je leeswerk, back-up en de knop Kobo
+- Eigen stof: stuur vanaf je telefoon regels "vraag :: antwoord" (Naar de Kobo of Delen, K). Dat wordt een stap in de leerlijn Eigen stof
+- Uit je leeswerk: lees je een stuk uit, dan worden zinnen met een jaartal invulkaarten in je leerlijnen
+- Back-up van de hele Kobo in je eigen Supabase, elke dag mee met de synchronisatie. Terugzetten via Instellingen, Back-up in de cloud
+- Knop Kobo in het dock: meteen naar de gewone Kobo
+
 ## Leerlijnen
 - Leerlijnen voor NAVO-alfabet, Defensie, Geschiedenis en Topografie: stap voor stap, de volgende stap gaat open als je 80% van de vorige beheerst
 - Opbouwend per feit: eerst meerkeuze, dan andersom, dan zelf typen (of zelf ophalen bij lange antwoorden)

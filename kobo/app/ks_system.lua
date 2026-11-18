@@ -169,7 +169,7 @@ function Sys.quickSync(app)
     Sync.refresh(function(ok, msg)
         Sys.busy = nil
         local n = require("ks_sync").lastInbox or 0
-        Sys.note, Sys.noteUntil = ok and (n > 0 and ("Bij, " .. n .. " nieuw om te lezen") or "Alles is bij") or tostring(msg), os.time() + 8
+        Sys.note, Sys.noteUntil = ok and (n > 0 and ("Bij, " .. n .. " nieuw van je telefoon") or "Alles is bij") or tostring(msg), os.time() + 8
         app:render("page")
         app:cleanScreen()
         -- melding na een tijdje weer weg
@@ -300,6 +300,10 @@ function Sys.settingsPage(app)
     local Sport = require("ks_sport")
     table.insert(items, UI.row("Sport", Sport.connected() and "Gekoppeld met intervals.icu" or "Nog niet gekoppeld", "›", function() app:go(Sys.sportPage) end, W, "run"))
     table.insert(items, UI.row("Telefoon-app", require("ks_sync").connected() and "Gekoppeld" or "Nog niet gekoppeld", "›", function() app:go(require("ks_sync").settings) end, W, "sync"))
+    do
+        local l = require("ks_backup").last()
+        table.insert(items, UI.row("Back-up in de cloud", l and ("Laatste: " .. os.date("%d-%m %H:%M", l.at)) or "Nog geen back-up", "›", function() app.bkMsg = nil; app:go(require("ks_backup").page) end, W, "download"))
+    end
     table.insert(items, UI.row("Rooster", require("ks_rooster").connected() and "Gekoppeld met Zermelo" or "Nog niet gekoppeld", "›", function() app:go(require("ks_rooster").settings) end, W, "calendar"))
     table.insert(items, UI.row("Nieuws", "Rubrieken en automatisch ophalen", "›", function() app:go(require("ks_news").settings) end, W, "news"))
     table.insert(items, UI.row("Bijwerken en back-ups", "Versie " .. require("ks_update").localVersion(), "›", function() app:go(require("ks_main").updatePage) end, W, "download"))

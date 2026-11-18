@@ -228,8 +228,92 @@ local function topoLine()
     return { key = "topografie", name = "Topografie", icon = "earth", sub = "Hoofdsteden per werelddeel, beide kanten op", steps = steps }
 end
 
+-- Eigen stof (van je telefoon) en uit je leeswerk ---------------------------------------------------
+
+local function yearOpts(a)
+    local y = tonumber(a:match("%d+"))
+    local bc = a:find("v%.Chr%.") ~= nil
+    local out = {}
+    if not y then return out end
+    for _, d in ipairs({ -1, 1, -3, 4, -10, 12, -25, 30 }) do
+        local o = y + d
+        if o > 0 then out[#out + 1] = bc and (o .. " v.Chr.") or tostring(o) end
+    end
+    return out
+end
+
+local function ownLine()
+    local decks = require("ks_store").get("leer.own", {})
+    if #decks == 0 then return nil end
+    local steps = {}
+    for _, dk in ipairs(decks) do
+        local answers = {}
+        for _, f in ipairs(dk.facts or {}) do answers[#answers + 1] = f[2] end
+        local facts = {}
+        for i, f in ipairs(dk.facts or {}) do
+            facts[#facts + 1] = { id = "own:" .. dk.id .. ":" .. i, q = f[1], a = f[2], typeable = short(f[2]), opts = others(answers, f[2]) }
+        end
+        steps[#steps + 1] = { name = dk.name, facts = facts }
+    end
+    return { key = "eigen", name = "Eigen stof", icon = "pencil", sub = "Wat je vanaf je telefoon stuurt als vraag :: antwoord", steps = steps, allOpen = true }
+end
+
+local function readLine()
+    local read = require("ks_store").get("leer.read", {})
+    local list = {}
+    for id, r in pairs(read) do if type(r) == "table" and type(r.facts) == "table" and #r.facts > 0 then list[#list + 1] = { id = id, r = r } end end
+    if #list == 0 then return nil end
+    table.sort(list, function(a, b) return (a.r.at or 0) < (b.r.at or 0) end)
+    local steps = {}
+    for _, e in ipairs(list) do
+        local facts = {}
+        for i, f in ipairs(e.r.facts) do
+            facts[#facts + 1] = { id = "read:" .. e.id .. ":" .. i, q = f[1], a = f[2], typeable = true, opts = yearOpts(f[2]), why = "Uit: " .. (e.r.title or "je leeswerk") }
+        end
+        steps[#steps + 1] = { name = e.r.title or "Stuk", facts = facts }
+    end
+    return { key = "gelezen", name = "Uit je leeswerk", icon = "book", sub = "Jaartallen uit stukken die je hebt uitgelezen", steps = steps, allOpen = true }
+end
+
 function D.lines()
-    return { navoLine(), defensieLine(), historyLine(), topoLine() }
+    local out = { navoLine(), defensieLine(), historyLine(), topoLine() }
+    local own, rd = ownLine(), readLine()
+    if own then out[#out + 1] = own end
+    if rd then out[#out + 1] = rd end
+    return out
+end
+
+--- Invulkaarten uit een uitgelezen stuk: zinnen met één jaartal, het jaartal wordt het antwoord.
+function D.clozeFromDoc(doc, max)
+    max = max or 8
+    local found, years = {}, {}
+    for _, b in ipairs(doc.blocks or {}) do
+        if b.k == "p" and type(b.t) == "string" then
+            for sent in (b.t .. " "):gmatch("[^%.!?]+[%.!?]%s") do
+                sent = sent:gsub("^%s+", ""):gsub("%s+$", "")
+                if #sent >= 40 and #sent <= 230 then
+                    local ys = {}
+                    for y in sent:gmatch("%f[%d](%d%d%d%d?)%f[%D]") do ys[#ys + 1] = y end
+                    local y = ys[1]
+                    local n = tonumber(y or "")
+                    local bc = y and sent:find(y .. " v%.Chr%.") ~= nil
+                    -- vier cijfers (1000 tot 2030), of drie cijfers alleen met v.Chr. erachter
+                    local isYear = n and ((#y == 4 and n >= 1000 and n <= 2030) or (#y == 3 and bc))
+                    if #ys == 1 and isYear and not years[y] then
+                        local q = sent:gsub("%f[%d]" .. y .. "%f[%D]", "____", 1)
+                        if bc then q = q:gsub("____ v%.Chr%.", "____", 1) end
+                        years[y] = true
+                        found[#found + 1] = { q, bc and (y .. " v.Chr.") or y }
+                    end
+                end
+            end
+        end
+    end
+    -- verspreid over het stuk kiezen
+    if #found <= max then return found end
+    local out = {}
+    for i = 1, max do out[i] = found[math.floor((i - 1) * #found / max) + 1] end
+    return out
 end
 
 return D
