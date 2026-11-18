@@ -606,6 +606,142 @@ function calfRaise(): Motion {
   };
 }
 
+
+// ---------------------------------------------------------------------------
+// Kettlebell swing (twee handen): heupen naar achteren, dan explosief strekken
+// ---------------------------------------------------------------------------
+
+function swing(): Motion {
+  const reach = LIMB.upperArm + LIMB.forearm - 0.01;
+  return {
+    key: 'swing',
+    title: 'Kettlebell swing',
+    cycle: 0.8 + 0.15 + 0.6 + 0.45,
+    props: ['kb'],
+    mat: null,
+    focus: [0, 0.85, 0.2],
+    camera: [2.6, 1.25, 1.6],
+    cues: [
+      { from: 0, to: 0.8, text: 'Heupen naar achteren, kettlebell tussen je benen door. Rug plat, knieën licht gebogen.' },
+      { from: 0.8, to: 0.95, text: 'Onderin: onderarmen tegen je liezen, gewicht op je hielen.' },
+      { from: 0.95, to: 1.55, text: 'Explosief heupen naar voren en billen aanspannen. De heupen doen het werk, niet je armen.' },
+      { from: 1.55, to: 2.0, text: 'Bovenin: rechtop als een plank, kettlebell zweeft op borsthoogte.' },
+    ],
+    pose(rig, t, p) {
+      const d = phase(t, 0.8, 0.15, 0.6, 0.45); // 0 = bovenin, 1 = onderin
+      const st = 0.2;
+      stand(rig, { y: lerp(standY(st), standY(st) - 0.07, d), z: lerp(0, -0.1, d), hinge: 1.0 * d, lean: 0.05 * d, stance: st, knees: lerp(0.35, 0.55, d) });
+      rig.b.neck.rotation.x = -0.25 * d;
+      rig.root.updateMatrixWorld(true);
+      // Armen gestrekt, van horizontaal naar voren tot schuin naar achteren tussen de benen
+      const dir = lerpV(V(0, -0.15, 1), V(0, -1, -0.45), d).normalize();
+      for (const [side, sx] of SIDES) {
+        const S = worldPos(rig.b[`shoulder${side}`]);
+        const target = S.clone().add(dir.clone().multiplyScalar(reach));
+        target.x = sx * 0.04;
+        arm(rig, side, target, V(sx * 0.4, -0.3, -1));
+        aim(rig.b[`wrist${side}`], dir, V(0, 0, 1));
+      }
+      placeKb(p, mid(rig.palmL, rig.palmR), dir);
+      return { billen: 0.4 + 0.55 * (1 - d), hamstrings: 0.35 + 0.55 * d, rug: 0.45, buik: 0.4, bovenbenen: 0.3, onderarmen: 0.5, schouders: 0.25 + 0.2 * (1 - d) };
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Clean and press (rechterarm): van tussen je benen naar de rack, dan omhoog
+// ---------------------------------------------------------------------------
+
+function cleanPress(): Motion {
+  // tijdlijn: clean 0.8, rack 0.3, press 1.0, boven 0.4, terug naar rack 1.0, terug omlaag 0.9, rust 0.4
+  const T = [0.8, 0.3, 1.0, 0.4, 1.0, 0.9, 0.4];
+  const total = T.reduce((a, b) => a + b, 0);
+  return {
+    key: 'cleanpress',
+    title: 'Clean and press',
+    cycle: total,
+    props: ['kb'],
+    mat: null,
+    focus: [0, 1.1, 0.1],
+    camera: [-2.3, 1.45, 2.4],
+    cues: [
+      { from: 0, to: 0.8, text: 'Clean: vanuit de heupen omhoog, kettlebell dicht langs je lichaam. Hand draait om de bol heen.' },
+      { from: 0.8, to: 1.1, text: 'Rack: kettlebell op je onderarm, pols recht, elleboog tegen je ribben.' },
+      { from: 1.1, to: 2.5, text: 'Press: recht omhoog, billen en buik aan. Niet achterover leunen.' },
+      { from: 2.5, to: total, text: 'Gecontroleerd terug naar de rack en tussen je benen. Elke herhaling opnieuw cleanen.' },
+    ],
+    pose(rig, t, p) {
+      const x = ((t % total) + total) % total;
+      const at = (i: number) => T.slice(0, i).reduce((a, b) => a + b, 0);
+      // c: 0 = hangt tussen de benen, 1 = rack. u: 0 = rack, 1 = boven
+      let c = 1, u = 0;
+      if (x < at(1)) c = ease(x / T[0]);
+      else if (x < at(2)) c = 1;
+      else if (x < at(3)) u = ease((x - at(2)) / T[2]);
+      else if (x < at(4)) u = 1;
+      else if (x < at(5)) u = 1 - ease((x - at(4)) / T[4]);
+      else if (x < at(6)) c = 1 - ease((x - at(5)) / T[5]);
+      else c = 0;
+      stand(rig, { y: lerp(standY(0.16) - 0.06, standY(0.16), c), z: lerp(-0.08, 0, c), hinge: 0.65 * (1 - c), lean: 0.05 * (1 - c), stance: 0.16, knees: lerp(0.5, 0.3, c) });
+      rig.root.updateMatrixWorld(true);
+      const S = worldPos(rig.b.shoulderR);
+      const reach = LIMB.upperArm + LIMB.forearm;
+      const hang = S.clone().add(V(0.06, -reach + 0.02, 0.06));
+      const rack = S.clone().add(V(0.06, -0.03, 0.14));
+      const top = S.clone().add(V(0.05, reach - 0.008, -0.01));
+      const target = u > 0 ? lerpV(rack, top, u) : lerpV(hang, rack, c);
+      const pole = u > 0 ? lerpV(V(0.25, -1, 0.5), V(-0.6, 0.2, 0.6), u) : lerpV(V(-0.2, 0.3, -1), V(0.25, -1, 0.5), c);
+      arm(rig, 'R', target, pole);
+      aim(rig.b.wristR, worldPos(rig.b.wristR).sub(worldPos(rig.b.elbowR)), V(0, 0, 1));
+      rig.b.shoulderL.rotation.set(0, 0, 0.15);
+      rig.b.elbowL.rotation.set(-0.15, 0, 0);
+      const fore = worldPos(rig.b.wristR).sub(worldPos(rig.b.elbowR)).normalize();
+      const racked = Math.max(c, u > 0 ? 1 : 0);
+      const down = lerpV(V(0, -1, 0), fore.clone().negate().multiplyScalar(0.3).add(V(0, 0, -1)), racked).normalize();
+      placeKb(p, worldPos(rig.palmR), down, V(1, 0, 0));
+      return {
+        'schouders:R': 0.3 + 0.6 * u, 'triceps:R': 0.2 + 0.7 * u, billen: 0.3 + 0.5 * (1 - c) * (u > 0 ? 0 : 1), hamstrings: 0.2 + 0.4 * (1 - c),
+        rug: 0.35, trapezius: 0.3 + 0.3 * c, buik: 0.5, 'onderarmen:R': 0.45,
+      };
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Kettlebell squat in de rack (rechterkant)
+// ---------------------------------------------------------------------------
+
+function rackSquat(): Motion {
+  const down = 1.8;
+  return {
+    key: 'squat-rack',
+    title: 'Kettlebell squat in de rack',
+    cycle: down + 0.5 + 1.2 + 1.3,
+    props: ['kb'],
+    mat: null,
+    focus: [0, 0.8, 0],
+    camera: [2.3, 1.3, 2.2],
+    cues: [
+      { from: 0, to: down, text: 'Zakken met de kettlebell in de rack aan één kant. Romp recht houden, niet naar de bel toe leunen.' },
+      { from: down, to: down + 0.5, text: 'Onderin: heupen tot kniehoogte of lager, hielen op de grond.' },
+      { from: down + 0.5, to: down + 1.7, text: 'Omhoog duwen vanuit je hielen. Buik aan, dan blijf je recht.' },
+      { from: down + 1.7, to: down + 3, text: 'Halverwege de sets van kant wisselen.' },
+    ],
+    pose(rig, t, p) {
+      const d = phase(t, down, 0.5, 1.2, 1.3);
+      stand(rig, { y: lerp(standY(0.17), 0.4, d), z: lerp(0, -0.16, d), hinge: 0.65 * d, lean: -0.3 * d, stance: 0.17, knees: lerp(0.4, 0.75, d) });
+      rig.root.updateMatrixWorld(true);
+      arm(rig, 'R', local(rig.b.chest, V(-0.12, 0.05, 0.2)), V(0.25, -1, 0.5));
+      aim(rig.b.wristR, worldPos(rig.b.wristR).sub(worldPos(rig.b.elbowR)), V(0, 0, 1));
+      rig.b.shoulderL.rotation.set(-0.5 * d, 0, 0.35);
+      rig.b.elbowL.rotation.set(-0.2, 0, 0);
+      const fore = worldPos(rig.b.wristR).sub(worldPos(rig.b.elbowR)).normalize();
+      placeKb(p, worldPos(rig.palmR), fore.clone().negate().multiplyScalar(0.3).add(V(0, 0, -1)).normalize(), V(1, 0, 0));
+      return { bovenbenen: 0.35 + 0.65 * d, billen: 0.3 + 0.65 * d, hamstrings: 0.15 + 0.3 * d, buik: 0.55, 'rug:L': 0.35, 'rug:R': 0.25, 'onderarmen:R': 0.3, 'schouders:R': 0.25, kuiten: 0.2 };
+    },
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Register
 // ---------------------------------------------------------------------------
@@ -633,6 +769,9 @@ const MOTIONS: Record<string, () => Motion> = {
   lateral: () => lateralRaise(),
   triceps: () => tricepsExt(),
   calf: () => calfRaise(),
+  swing: () => swing(),
+  cleanpress: () => cleanPress(),
+  'squat-rack': () => rackSquat(),
 };
 
 export const MOTION_KEYS = Object.keys(MOTIONS);

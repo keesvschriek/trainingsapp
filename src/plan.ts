@@ -95,44 +95,52 @@ export function isTestWeek(week: number): boolean {
 const ex = (name: string, weight: string, sets: number, reps: string, defaultKg: number, defaultReps: number): Exercise => ({ name, weight, sets, reps, defaultKg, defaultReps });
 const pick = <T,>(level: number, options: T[]): T => options[Math.min(level, options.length - 1)];
 
-/** Maandag: rug, biceps en squats */
+// Opzet (nov 2026, op basis van de oefeningen die je zelf graag doet): groei en praktische kracht.
+// Groei: per spiergroep 10 tot 20 sets per week, 6 tot 15 herhalingen dicht bij falen.
+// Praktisch: clean and press, swings en squats met de kettlebell, pull-ups aan de stang.
+// Kettlebells: 20 en 28 kg. Zwaarder worden gaat via herhalingen, sets en langzamer zakken.
+
+/** Maandag: trekken en benen */
 function backDay(level: number): Exercise[] {
   return [
-    pick(level, [ex('Goblet squat', '28 kg', 3, '10', 28, 10), ex('Goblet squat', '28 kg', 3, '12', 28, 12), ex('Goblet squat, 3 sec zakken', '28 kg', 3, '10', 28, 10)]),
-    pick(level, [ex('Pull-ups', 'lichaamsgewicht', 4, 'bijna max', 0, 5), ex('Pull-ups', 'lichaamsgewicht', 5, 'bijna max', 0, 6), ex('Pull-ups, 3 sec zakken', 'lichaamsgewicht', 5, 'bijna max', 0, 6)]),
-    pick(level, [ex('Eenarmige row', '28 kg', 3, '10 per arm', 28, 10), ex('Eenarmige row', '28 kg', 4, '10 per arm', 28, 10), ex('Eenarmige row', '28 kg', 4, '12 per arm', 28, 12)]),
+    pick(level, [ex('Pull-ups', 'lichaamsgewicht', 5, '3 tot 5', 0, 3), ex('Pull-ups', 'lichaamsgewicht', 5, '4 tot 6', 0, 4), ex('Pull-ups, 3 sec zakken', 'lichaamsgewicht', 5, '3 tot 5', 0, 3)]),
+    pick(level, [ex('Chin-ups (onderhands)', 'lichaamsgewicht', 5, '2 tot 4', 0, 2), ex('Chin-ups (onderhands)', 'lichaamsgewicht', 5, '3 tot 5', 0, 3), ex('Chin-ups, 3 sec zakken', 'lichaamsgewicht', 5, '3 tot 5', 0, 3)]),
+    pick(level, [ex('Goblet squat', '28 kg', 3, '8 tot 10', 28, 8), ex('Goblet squat', '28 kg', 4, '8 tot 10', 28, 8), ex('Goblet squat, 3 sec zakken', '28 kg', 4, '8', 28, 8)]),
+    pick(level, [ex('Eenarmige row', '28 kg', 3, '10 tot 12 per arm', 28, 10), ex('Eenarmige row', '28 kg', 4, '10 tot 12 per arm', 28, 10), ex('Eenarmige row, 3 sec zakken', '28 kg', 4, '10 per arm', 28, 10)]),
     pick(level, [ex('Kettlebell curl', '20 kg', 3, '8 tot 10', 20, 8), ex('Kettlebell curl', '20 kg', 3, '10 tot 12', 20, 10), ex('Kettlebell curl, 3 sec zakken', '20 kg', 3, '8 tot 10', 20, 8)]),
-    ex('Face pulls met band', 'band', 2, '15 tot 20', 0, 15),
+    pick(level, [ex('Ab wheel op de knieën', 'lichaamsgewicht', 3, '4 tot 6', 0, 4), ex('Ab wheel op de knieën', 'lichaamsgewicht', 3, '6 tot 8', 0, 6), ex('Ab wheel op de knieën', 'lichaamsgewicht', 3, '8 tot 10', 0, 8)]),
   ];
 }
 
-/** Woensdag: borst, schouders en triceps */
+/** Woensdag: duwen en heupen, praktische kracht */
 function chestDay(level: number): Exercise[] {
   return [
-    pick(level, [ex('Push-ups', 'lichaamsgewicht', 4, 'bijna max', 0, 25), ex('Push-ups, voeten verhoogd', 'lichaamsgewicht', 4, 'bijna max', 0, 20), ex('Push-ups, voeten verhoogd, 3 sec zakken', 'lichaamsgewicht', 4, 'bijna max', 0, 15)]),
-    pick(level, [ex('Floor press', '28 kg', 3, '8 tot 10 per arm', 28, 8), ex('Floor press', '28 kg', 3, '10 tot 12 per arm', 28, 10), ex('Floor press, 2 sec pauze onderin', '28 kg', 4, '8 per arm', 28, 8)]),
-    pick(level, [ex('Strikte press', '20 kg', 3, '6 tot 8 per arm', 20, 6), ex('Strikte press', '20 kg', 3, '8 tot 10 per arm', 20, 8), ex('Strikte press', '28 kg', 4, '2 tot 4 per arm', 28, 3)]),
-    ex('Zijwaarts heffen met band', 'band', 3, '15 tot 20', 0, 15),
-    pick(level, [ex('Triceps extensie boven het hoofd', '20 kg', 3, '10 tot 12', 20, 10), ex('Triceps extensie boven het hoofd', '20 kg', 3, '12 tot 15', 20, 12), ex('Diamant push-ups', 'lichaamsgewicht', 3, 'bijna max', 0, 15)]),
+    pick(level, [ex('Clean and press', '20 kg', 4, '5 tot 6 per arm', 20, 5), ex('Clean and press', '20 kg', 5, '5 tot 6 per arm', 20, 5), ex('Clean and press', '20 kg', 5, '6 tot 8 per arm', 20, 6)]),
+    pick(level, [ex('Push-ups', 'lichaamsgewicht', 5, '10 tot 12', 0, 10), ex('Push-ups', 'lichaamsgewicht', 5, '12 tot 15', 0, 12), ex('Push-ups, 3 sec zakken', 'lichaamsgewicht', 5, '10 tot 12', 0, 10)]),
+    pick(level, [ex('Kettlebell swing', '28 kg', 5, '15', 28, 15), ex('Kettlebell swing', '28 kg', 6, '15', 28, 15), ex('Kettlebell swing, eenarmig', '28 kg', 6, '10 per arm', 28, 10)]),
+    pick(level, [ex('Kettlebell squat in de rack', '28 kg', 4, '6 tot 8 per kant', 28, 6), ex('Kettlebell squat in de rack', '28 kg', 4, '8 tot 10 per kant', 28, 8), ex('Kettlebell squat in de rack, 2 sec pauze', '28 kg', 4, '8 per kant', 28, 8)]),
+    pick(level, [ex('Ab wheel op de knieën', 'lichaamsgewicht', 3, '4 tot 6', 0, 4), ex('Ab wheel op de knieën', 'lichaamsgewicht', 3, '6 tot 8', 0, 6), ex('Ab wheel op de knieën', 'lichaamsgewicht', 3, '8 tot 10', 0, 8)]),
   ];
 }
 
-/** Vrijdag: kort en gemengd */
+/** Vrijdag: KB Pure, veel werk in korte tijd */
 function mixDay(level: number): Exercise[] {
   return [
-    pick(level, [ex('Goblet squat', '28 kg', 2, '12', 28, 12), ex('Goblet squat', '28 kg', 3, '12', 28, 12), ex('Goblet squat, 3 sec zakken', '28 kg', 3, '12', 28, 12)]),
-    pick(level, [ex('Chin-ups (onderhands)', 'lichaamsgewicht', 3, 'bijna max', 0, 6), ex('Chin-ups (onderhands)', 'lichaamsgewicht', 4, 'bijna max', 0, 7), ex('Chin-ups, 3 sec zakken', 'lichaamsgewicht', 4, 'bijna max', 0, 6)]),
-    pick(level, [ex('Push-ups, brede greep', 'lichaamsgewicht', 3, 'bijna max', 0, 20), ex('Push-ups, brede greep', 'lichaamsgewicht', 4, 'bijna max', 0, 20), ex('Push-ups, 3 sec zakken', 'lichaamsgewicht', 4, 'bijna max', 0, 15)]),
-    pick(level, [ex('Eenarmige row', '20 kg', 3, '15 per arm', 20, 15), ex('Eenarmige row', '28 kg', 3, '12 per arm', 28, 12), ex('Eenarmige row', '28 kg', 3, '15 per arm', 28, 15)]),
-    ex('Kuitheffen op 1 been', 'lichaamsgewicht', 2, '20 per been', 0, 20),
+    pick(level, [ex('Kettlebell swing', '28 kg', 10, '10', 28, 10), ex('Kettlebell swing', '28 kg', 10, '12', 28, 12), ex('Kettlebell swing', '28 kg', 10, '15', 28, 15)]),
+    pick(level, [ex('Pull-ups', 'lichaamsgewicht', 5, '3', 0, 3), ex('Pull-ups', 'lichaamsgewicht', 5, '4', 0, 4), ex('Pull-ups', 'lichaamsgewicht', 5, '5', 0, 5)]),
+    pick(level, [ex('Push-ups', 'lichaamsgewicht', 5, '10', 0, 10), ex('Push-ups', 'lichaamsgewicht', 5, '12', 0, 12), ex('Push-ups', 'lichaamsgewicht', 5, '15', 0, 15)]),
+    pick(level, [ex('Goblet squat', '28 kg', 3, '8 tot 10', 28, 8), ex('Goblet squat', '28 kg', 3, '10 tot 12', 28, 10), ex('Goblet squat, 3 sec zakken', '28 kg', 3, '8 tot 10', 28, 8)]),
+    pick(level, [ex('Eenarmige row', '28 kg', 3, '12 per arm', 28, 12), ex('Eenarmige row', '28 kg', 3, '12 tot 15 per arm', 28, 12), ex('Eenarmige row', '28 kg', 4, '12 tot 15 per arm', 28, 12)]),
+    pick(level, [ex('Kettlebell curl', '20 kg', 3, '8 tot 10', 20, 8), ex('Kettlebell curl', '20 kg', 3, '10 tot 12', 20, 10), ex('Kettlebell curl', '20 kg', 4, '10 tot 12', 20, 10)]),
+    pick(level, [ex('Ab wheel op de knieën', 'lichaamsgewicht', 3, '4 tot 6', 0, 4), ex('Ab wheel op de knieën', 'lichaamsgewicht', 3, '6 tot 8', 0, 6), ex('Ab wheel op de knieën', 'lichaamsgewicht', 3, '8 tot 10', 0, 8)]),
   ];
 }
 
 type StrengthDay = 'rug' | 'borst' | 'mix';
-const STRENGTH_DAY: Record<StrengthDay, { title: string; list: (l: number) => Exercise[]; minutes: number }> = {
-  rug: { title: 'Kracht: rug, biceps en squats', list: backDay, minutes: 30 },
-  borst: { title: 'Kracht: borst, schouders en triceps', list: chestDay, minutes: 30 },
-  mix: { title: 'Kracht: kort en gemengd', list: mixDay, minutes: 25 },
+const STRENGTH_DAY: Record<StrengthDay, { title: string; list: (l: number) => Exercise[]; minutes: number; detail: string }> = {
+  rug: { title: 'Kracht: trekken en benen', list: backDay, minutes: 35, detail: 'Pull-ups en chin-ups om en om: 20 sec rust ertussen, 1:30 na elk paar. De rest dicht bij falen (1 tot 2 herhalingen over), 1 min rust.' },
+  borst: { title: 'Kracht: duwen en heupen', list: chestDay, minutes: 35, detail: 'Clean and press: elke herhaling opnieuw cleanen, per set van arm wisselen. Swings explosief uit de heupen. 1 min rust tussen sets.' },
+  mix: { title: 'Kracht: KB Pure', list: mixDay, minutes: 40, detail: 'Swings op elke minuut (10 rondes). Daarna pull-ups en push-ups met 40 sec rust, de rest met 1 min rust. Liever goede herhalingen dan veel.' },
 };
 
 const lighten = (list: Exercise[]): Exercise[] => list.map(e => ({ ...e, light: true, sets: Math.max(1, Math.ceil(e.sets / 2)), reps: e.reps.replace('bijna max', 'rustig, ver van falen') }));
@@ -145,9 +153,7 @@ const strengthItem = (day: StrengthDay, level: number, light = false): PlannedIt
     title: d.title,
     minutes: light ? 15 : d.minutes,
     exercises: light ? lighten(d.list(level)) : d.list(level),
-    detail: light
-      ? 'Licht: halve sets, ruim binnen je kunnen.'
-      : 'Sets dicht bij falen (1 tot 2 herhalingen over). Combineer twee oefeningen om en om om tijd te besparen.',
+    detail: light ? 'Licht: halve sets, ruim binnen je kunnen.' : d.detail,
   };
 };
 

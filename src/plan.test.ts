@@ -30,7 +30,7 @@ describe('schema', () => {
     expect(weekOf(PLAN_START)).toBe(1);
     const w = planForWeek(1);
     expect(w[0].items[0].kind).toBe('strength');
-    expect(w[0].items[0].exercises!.length).toBe(5);
+    expect(w[0].items[0].exercises!.length).toBe(6);
     expect(w[4].items[0].kind).toBe('strength');
     expect(w[6].items[0].kind).toBe('free');
     expect(w[1].items[0].minutes).toBe(35);
@@ -78,14 +78,16 @@ describe('schema', () => {
 });
 
 describe('kracht', () => {
-  it('drie korte trainingen per week, max 30 min, benen alleen squats en kuiten', () => {
+  it('drie trainingen per week, max 40 min, met zijn eigen oefeningen (nov 2026)', () => {
     for (const w of [1, 12, 30]) {
       const st = planForWeek(w).flatMap(d => d.items).filter(i => i.kind === 'strength');
       expect(st.length).toBe(3);
-      st.forEach(i => expect(i.minutes!).toBeLessThanOrEqual(30));
+      st.forEach(i => expect(i.minutes!).toBeLessThanOrEqual(40));
       const names = st.flatMap(i => i.exercises!.map(e => e.name.toLowerCase()));
       expect(names.some(n => n.includes('push-up'))).toBe(true);
-      expect(names.some(n => /swing|split|step-up|rdl/.test(n))).toBe(false);
+      expect(names.some(n => n.includes('clean and press'))).toBe(true);
+      expect(names.some(n => n.includes('swing'))).toBe(true);
+      expect(names.some(n => /split|step-up|rdl|floor press|zijwaarts/.test(n))).toBe(false);
     }
   });
 });

@@ -13,6 +13,7 @@ export const CATALOG: { group: string; items: Exercise[] }[] = [
       ex('Goblet squat, 3 sec zakken', '28 kg', 3, '10', 28, 10),
       ex('Split squat', '20 kg', 3, '10 per been', 20, 10),
       ex('Kettlebell swing', '28 kg', 5, '15', 28, 15),
+      ex('Kettlebell squat in de rack', '28 kg', 4, '6 tot 8 per kant', 28, 6),
       ex('Kuitheffen op 1 been', 'lichaamsgewicht', 2, '20 per been', 0, 20),
     ],
   },
@@ -24,6 +25,7 @@ export const CATALOG: { group: string; items: Exercise[] }[] = [
       ex('Push-ups, voeten verhoogd', 'lichaamsgewicht', 4, 'bijna max', 0, 20),
       ex('Diamant push-ups', 'lichaamsgewicht', 3, 'bijna max', 0, 15),
       ex('Floor press', '28 kg', 3, '8 tot 10 per arm', 28, 8),
+      ex('Clean and press', '20 kg', 4, '5 tot 6 per arm', 20, 5),
       ex('Strikte press', '20 kg', 3, '6 tot 8 per arm', 20, 6),
       ex('Zijwaarts heffen met band', 'band', 3, '15 tot 20', 0, 15),
       ex('Triceps extensie boven het hoofd', '20 kg', 3, '10 tot 12', 20, 10),
@@ -44,6 +46,7 @@ export const CATALOG: { group: string; items: Exercise[] }[] = [
     items: [
       ex('Kettlebell clean', '20 kg', 4, '5 per arm', 20, 5),
       ex('Knieheffen aan de stang', 'lichaamsgewicht', 3, '8 tot 12', 0, 10),
+      ex('Ab wheel op de knieën', 'lichaamsgewicht', 3, '4 tot 6', 0, 4),
       ex('Plank (seconden)', 'lichaamsgewicht', 3, '45 sec', 0, 45),
     ],
   },
