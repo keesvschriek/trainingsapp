@@ -75,3 +75,7 @@ Op de Kobo: tik rechtsboven op het pijltje om meteen te synchroniseren. Het stuk
 BRONNEN WOORDENLIJST
 De woordzoeker gebruikt 6000 Nederlandse woorden uit de frequentielijst van Hermit Dave (FrequencyWords, CC BY-SA 4.0,
 op basis van OpenSubtitles), gefilterd op de woordenlijst van OpenTaal (dictionary-nl, BSD / CC BY 3.0).
+
+RADIONIEUWS VAN DEZE DAG
+De berichten komen uit de ANP Radiobulletins van de Koninklijke Bibliotheek (Delpher). De Kobo haalt ze zelf op,
+alleen om te lezen. De tekst is automatisch gelezen van typoscripten, dus er zitten leesfouten in.

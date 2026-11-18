@@ -61,13 +61,14 @@ function K.digest(act)
                     local soort = zaak and str(zaak.Soort) or nil
                     local titel = zaak and (str(zaak.Onderwerp) or str(zaak.Titel)) or str(ap.Onderwerp) or "Besluit"
                     local voor, tegen = {}, {}
+                    local votes = {}
                     local nv, nt = 0, 0
                     for _, s in ipairs(type(b.Stemming) == "table" and b.Stemming or {}) do
                         if s.Verwijderd ~= true and s.Vergissing ~= true then
                             local fr = str(s.ActorFractie) or str(s.ActorNaam) or "?"
                             local n = num(s.FractieGrootte) or 1
-                            if s.Soort == "Voor" then voor[fr] = (voor[fr] or 0) + n; nv = nv + n
-                            elseif s.Soort == "Tegen" then tegen[fr] = (tegen[fr] or 0) + n; nt = nt + n end
+                            if s.Soort == "Voor" then voor[fr] = (voor[fr] or 0) + n; nv = nv + n; votes[fr] = "V"
+                            elseif s.Soort == "Tegen" then tegen[fr] = (tegen[fr] or 0) + n; nt = nt + n; votes[fr] = "T" end
                         end
                     end
                     local function list(t)
@@ -84,6 +85,7 @@ function K.digest(act)
                             soort = soort, titel = titel, uitslag = tekst:gsub("%.$", ""),
                             voor = list(voor), tegen = list(tegen), nv = nv, nt = nt,
                             nummer = zaak and str(zaak.Nummer) or nil,
+                            ctx = zaak and str(zaak.Titel) or nil, votes = votes,
                         })
                     end
                 end
@@ -121,6 +123,7 @@ function K.fetchNow()
                 local d = K.data()
                 d.at, d.datum, d.items = os.time(), str(act.Datum) and act.Datum:sub(1, 10) or nil, items
                 save(d)
+                pcall(function() require("ks_jouwkamer").addPool(items, d.datum) end)
                 return true
             end
         end
@@ -129,6 +132,24 @@ function K.fetchNow()
     d.at, d.datum, d.items = os.time(), str(acts[1].Datum) and acts[1].Datum:sub(1, 10) or nil, {}
     save(d)
     return true
+end
+
+--- De laatste n stemmingsdagen ophalen (voor Jouw Kamer). Geeft lijst van {datum, items}.
+function K.fetchRecent(n)
+    local now = os.date("!%Y-%m-%dT%H:%M:%SZ")
+    local q1, err = get("Activiteit?$filter=Verwijderd eq false and Soort eq 'Stemmingen' and Datum le " .. now .. "&$orderby=Datum desc&$top=" .. (n or 4) .. "&$select=Id,Datum")
+    if not q1 then return nil, err end
+    local out = {}
+    for _, act in ipairs(type(q1.value) == "table" and q1.value or {}) do
+        if str(act.Id) then
+            local full = get("Activiteit(" .. act.Id .. ")?" .. SEL)
+            if full then
+                local items = K.digest(full)
+                if #items > 0 then table.insert(out, { datum = str(act.Datum) and act.Datum:sub(1, 10) or nil, items = items }) end
+            end
+        end
+    end
+    return out
 end
 
 -- Kamervragen ----------------------------------------------------------------------------

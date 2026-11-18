@@ -208,6 +208,7 @@ function M.readFolder(app)
         UI.row("Fragment van de dag", safe(require("ks_fragment").summary, ""), "›", function() app:go(require("ks_fragment").page) end, nil, "feather"),
         UI.row("Te lezen", safe(require("ks_reading").summary, ""), "›", function() app.readPg = 1; app:go(require("ks_reading").page) end, nil, "news"),
         UI.row("Op deze dag", safe(require("ks_otd").summary, ""), "›", function() app.otdPg = 1; app:go(require("ks_otd").page) end, nil, "history"),
+        UI.row("Radionieuws van deze dag", safe(require("ks_radio").summary, ""), "›", function() require("ks_radio").start(app) end, nil, "news"),
         UI.vspace(20),
         UI.row("Naar je boeken", "Sluit de app en ga naar de Kobo-bibliotheek", "›", function() app:toKobo() end, nil, "book"),
     }

@@ -2,6 +2,11 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Jouw Kamer en radionieuws van vroeger
+- Jouw Kamer: stem zelf op echte moties, zie daarna hoe de fracties stemden en met wie je het vaakst eens bent (ook per onderwerp)
+- Radionieuws van deze dag: de ANP-radioberichten van 80 jaar geleden (of 75 of 70 als die dag ontbreekt), uit de KB
+- Beide staan bij Nieuws onder Gisteren in de Kamer; het radionieuws ook bij Lezen
+
 ## Notities
 - Notities op de Kobo en in de app K, gedeeld: ideeën, citaten, lezen en kijken, werk, thuis, overig
 - Typen, lezen, vastzetten, verplaatsen of weghalen. Te vinden onder Groei
