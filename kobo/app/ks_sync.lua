@@ -13,7 +13,7 @@ local UI = require("ks_ui")
 local S = {}
 
 -- Welke tabellen van de app de Kobo bijhoudt
-S.TABLES = { workouts = true, checks = true, checkins = true, metrics = true, blocks = true, opvolg = true, pack = true, inbox = true, moves = true }
+S.TABLES = { workouts = true, checks = true, checkins = true, metrics = true, blocks = true, opvolg = true, pack = true, inbox = true, moves = true, notes = true }
 
 local function cfg() local c = Store.get("sync.cfg"); return type(c) == "table" and c or nil end
 function S.connected() local c = cfg(); return c ~= nil and type(c.refresh) == "string" end

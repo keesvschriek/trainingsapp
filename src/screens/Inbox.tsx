@@ -6,6 +6,7 @@ import { parseLine } from '../opvolg';
 import { Icon, Sheet } from '../ui';
 import { sync } from '../sync';
 import { splitShared } from '../share';
+import { addNote } from './Notes';
 
 // Van telefoon naar Kobo: link of tekst. De Kobo haalt het op bij de volgende synchronisatie
 // en zet het bij Lezen, Te lezen. Ook te gebruiken vanuit Delen in elke app (Delen > K).
@@ -94,6 +95,7 @@ export function ShareSheet({ shared, onClose }: { shared: { text: string; subjec
         <>
           <button className="btn block mt" onClick={() => void sendToKobo(v).then(() => setDone('Onderweg naar de Kobo, bij Te lezen.'))}>Lezen op de Kobo</button>
           <button className="btn secondary block mt" onClick={() => void asPoint()}>Opvolgpunt voor morgen</button>
+          <button className="btn secondary block mt" onClick={() => void addNote([v.title, v.url ?? v.text].filter(Boolean).join('\n'), v.url ? 'Lezen en kijken' : 'Ideeën').then(() => setDone('Staat bij Notities.'))}>Als notitie</button>
         </>
       )}
     </Sheet>

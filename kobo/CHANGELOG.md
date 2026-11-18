@@ -2,6 +2,10 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Notities
+- Notities op de Kobo en in de app K, gedeeld: ideeën, citaten, lezen en kijken, werk, thuis, overig
+- Typen, lezen, vastzetten, verplaatsen of weghalen. Te vinden onder Groei
+
 ## Eigen stof, leren van je leeswerk, back-up en de knop Kobo
 - Eigen stof: stuur vanaf je telefoon regels "vraag :: antwoord" (Naar de Kobo of Delen, K). Dat wordt een stap in de leerlijn Eigen stof
 - Uit je leeswerk: lees je een stuk uit, dan worden zinnen met een jaartal invulkaarten in je leerlijnen

@@ -473,3 +473,8 @@ input:focus, select:focus, textarea:focus { outline: 1px solid var(--ink); }
 .sync-btn.busy svg { animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .toast { position: fixed; left: 16px; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom)); background: var(--ink); color: var(--bg); padding: 11px 14px; border-radius: 10px; font-size: 0.9rem; z-index: 60; }
+
+/* Notities */
+.note-row { display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid var(--line); padding: 11px 0; font: inherit; color: var(--ink); cursor: pointer; }
+.card > .note-row:first-child { border-top: 0; }
+.note-text { white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }

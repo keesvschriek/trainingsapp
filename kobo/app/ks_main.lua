@@ -223,6 +223,7 @@ function M.growFolder(app)
     local items = {
         UI.header("Ontwikkeling", function() app:back() end, "Elke dag een beetje"),
         UI.row("Opvolgen", safe(require("ks_opvolg").homeLine, ""), "›", function() app.ovPg = 1; app.ovLast = nil; app:go(require("ks_opvolg").page) end, nil, "list_checks"),
+        UI.row("Notities", safe(require("ks_notes").summary, ""), "›", function() app.noteFolder = nil; app.notePg = 1; app:go(require("ks_notes").page) end, nil, "pencil"),
         UI.row("Je week", "Rooster, training en punten per dag", "›", function() app.weekMon = nil; app:go(require("ks_week").page) end, nil, "calendar"),
         UI.row("Defensie-module", safe(require("ks_module").homeLine, nil) or "Aftellen en paklijst", "›", function() app:go(require("ks_module").page) end, nil, "flag"),
         UI.row("Dag afsluiten", safe(require("ks_avond").summary, ""), "›", function() app:go(require("ks_avond").page) end, nil, "moon"),

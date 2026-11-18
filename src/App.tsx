@@ -5,6 +5,7 @@ import { Log } from './screens/Log';
 import { Settings } from './screens/Settings';
 import { OpvolgScreen } from './screens/Opvolg';
 import { InboxScreen, ShareSheet } from './screens/Inbox';
+import { NotesScreen } from './screens/Notes';
 import { takeShared } from './widget';
 import { App as CapApp } from '@capacitor/app';
 import { Icon } from './ui';
@@ -19,7 +20,7 @@ import { scheduleMorning } from './notify';
 const QuizHome = lazy(() => import('./quiz/QuizHome').then(m => ({ default: m.QuizHome })));
 const Progress = lazy(() => import('./screens/Progress').then(m => ({ default: m.Progress })));
 
-type Route = 'vandaag' | 'schema' | 'logboek' | 'voortgang' | 'quiz' | 'instellingen' | 'opvolgen' | 'meer' | 'kobo';
+type Route = 'vandaag' | 'schema' | 'logboek' | 'voortgang' | 'quiz' | 'instellingen' | 'opvolgen' | 'meer' | 'kobo' | 'notities';
 // Vandaag is het hoofdscherm. De rest staat onder Meer.
 const TABS: { id: Route; label: string; icon: ReactNode }[] = [
   { id: 'vandaag', label: 'Vandaag', icon: Icon.today },
@@ -27,6 +28,7 @@ const TABS: { id: Route; label: string; icon: ReactNode }[] = [
   { id: 'meer', label: 'Meer', icon: Icon.plan },
 ];
 const MORE: { id: Route; label: string; sub: string; icon: ReactNode }[] = [
+  { id: 'notities', label: 'Notities', sub: 'Ideeën, citaten, iets om te lezen of kijken', icon: Icon.log },
   { id: 'kobo', label: 'Naar de Kobo', sub: 'Link of tekst om te lezen', icon: Icon.send },
   { id: 'schema', label: 'Schema', sub: 'Je trainingsweken en blokken', icon: Icon.plan },
   { id: 'logboek', label: 'Logboek', sub: 'Wat je hebt gedaan', icon: Icon.log },
@@ -50,7 +52,7 @@ function More({ go }: { go: (r: Route) => void }) {
   );
 }
 
-const TITLES: Record<Route, string> = { vandaag: 'Vandaag', schema: 'Schema', logboek: 'Logboek', voortgang: 'Voortgang', quiz: 'Quiz', instellingen: 'Instellingen', opvolgen: 'Opvolgen', meer: 'Meer', kobo: 'Naar de Kobo' };
+const TITLES: Record<Route, string> = { vandaag: 'Vandaag', schema: 'Schema', logboek: 'Logboek', voortgang: 'Voortgang', quiz: 'Quiz', instellingen: 'Instellingen', opvolgen: 'Opvolgen', meer: 'Meer', kobo: 'Naar de Kobo', notities: 'Notities' };
 
 function readRoute(): Route {
   const r = location.hash.replace('#/', '') as Route;
@@ -184,6 +186,7 @@ export function App() {
         {route === 'opvolgen' && <OpvolgScreen />}
         {route === 'meer' && <More go={go} />}
         {route === 'kobo' && <InboxScreen />}
+        {route === 'notities' && <NotesScreen />}
       </main>
       {toast && <div className="toast">{toast}</div>}
       {shared && <ShareSheet shared={shared} onClose={() => setShared(null)} />}
