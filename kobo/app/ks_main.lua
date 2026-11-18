@@ -192,6 +192,8 @@ function M.studyFolder(app)
         UI.row("Quiz", safe(QuizUI.summary, ""), "›", function() remember("Quiz"); app:go(QuizUI.home) end, nil, "help"),
         UI.row("Leerkaarten", safe(require("ks_cards").summary, ""), "›", function() remember("Leerkaarten"); app:go(require("ks_cards").home) end, nil, "brain"),
         UI.row("Topografie op de kaart", "Landen aanwijzen en herkennen, per werelddeel", "›", function() remember("Topografie"); app:go(require("ks_mapui").menu) end, nil, "earth"),
+        UI.row("Tijdreis", safe(require("ks_tijdreis").summary, ""), "›", function() remember("Tijdreis"); app.trMap = nil; app:go(require("ks_tijdreis").page) end, nil, "map"),
+        UI.row("Wikirace", safe(require("ks_wikirace").summary, ""), "›", function() remember("Wikirace"); require("ks_wikirace").start(app) end, nil, "web"),
         UI.row("Woordzoeker", "Willekeurige woorden of een geschiedenisthema", "›", function()
             local g = Store.get("ws.game")
             app:go(g and g.grid and require("ks_puzzles").wordsearch or require("ks_puzzles").themes)

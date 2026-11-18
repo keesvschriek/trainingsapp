@@ -172,6 +172,9 @@ function N.refresh(done, quiet)
         pcall(function() local J = require("ks_jouwkamer"); if #require("ks_store").get("jk.pool", {}) < 5 then J.fill() end end)
         -- radionieuws van 80 jaar geleden (ANP, KB)
         pcall(function() local Radio = require("ks_radio"); if Radio.due() then Radio.fetchNow() end end)
+        -- Staatsblad van de afgelopen week en de Wikirace van vandaag
+        pcall(function() local Wt = require("ks_wetten"); if Wt.due() then Wt.fetchNow() end end)
+        pcall(function() require("ks_wikirace").prepare() end)
         -- vandaag in de geschiedenis en je rooster
         local O = require("ks_otd")
         if O.due() then pcall(O.fetchNow) end
@@ -323,6 +326,7 @@ function N.page(app)
         table.insert(items, UI.row("Jouw Kamer", require("ks_jouwkamer").summary(), "›", function() app.jk = nil; app:go(require("ks_jouwkamer").page) end, W, "check"))
         table.insert(items, UI.row("Op deze dag", require("ks_otd").summary(), "›", function() app.otdPg = 1; app:go(require("ks_otd").page) end, W, "history"))
         table.insert(items, UI.row("Radionieuws van deze dag", require("ks_radio").summary(), "›", function() require("ks_radio").start(app) end, W, "news"))
+        table.insert(items, UI.row("Wat verandert er", require("ks_wetten").summary(), "›", function() app.wtPg = 1; app:go(require("ks_wetten").page) end, W, "list_checks"))
         table.insert(items, UI.vspace(6))
     end
     local head = UI.vgroup(items)

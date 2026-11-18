@@ -79,3 +79,7 @@ op basis van OpenSubtitles), gefilterd op de woordenlijst van OpenTaal (dictiona
 RADIONIEUWS VAN DEZE DAG
 De berichten komen uit de ANP Radiobulletins van de Koninklijke Bibliotheek (Delpher). De Kobo haalt ze zelf op,
 alleen om te lezen. De tekst is automatisch gelezen van typoscripten, dus er zitten leesfouten in.
+
+BRONNEN TIJDREIS EN WAT VERANDERT ER
+Tijdreis gebruikt de historische topografische kaarten van het Kadaster, via de kaartdiensten van topotijdreis.nl (Esri Nederland).
+Plekken zoeken gaat via de PDOK Locatieserver. Wat verandert er komt uit de open data van officielebekendmakingen.nl (repository.overheid.nl).

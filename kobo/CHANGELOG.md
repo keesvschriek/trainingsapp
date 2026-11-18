@@ -2,6 +2,11 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Wat verandert er, Wikirace en Tijdreis
+- Wat verandert er: wetten en besluiten uit het Staatsblad van de afgelopen week, met wat er ingaat. Hele tekst bij Te lezen zetten kan ook (bij Nieuws)
+- Wikirace: elke dag een nieuwe opdracht, van het ene Wikipedia-artikel naar het andere via links (bij Kees Study)
+- Tijdreis: Elst, Nijmegen, vliegbasis Woensdrecht of een eigen plek op de historische kaarten van het Kadaster, van 1815 tot nu (bij Kees Study)
+
 ## Jouw Kamer en radionieuws van vroeger
 - Jouw Kamer: stem zelf op echte moties, zie daarna hoe de fracties stemden en met wie je het vaakst eens bent (ook per onderwerp)
 - Radionieuws van deze dag: de ANP-radioberichten van 80 jaar geleden (of 75 of 70 als die dag ontbreekt), uit de KB
