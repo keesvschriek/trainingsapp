@@ -169,7 +169,7 @@ function N.refresh(done, quiet)
         local K = require("ks_kamer")
         if K.due() then pcall(K.fetchAll) end
         -- Jouw Kamer: de eerste keer een paar stemmingsdagen terug ophalen
-        pcall(function() local J = require("ks_jouwkamer"); if #require("ks_store").get("jk.pool", {}) < 5 then J.fill() end end)
+        pcall(function() local J = require("ks_jouwkamer"); if #require("ks_store").get("jk.pool", {}) < 5 then J.fill() end; J.prefetch(5) end)
         -- radionieuws van 80 jaar geleden (ANP, KB)
         pcall(function() local Radio = require("ks_radio"); if Radio.due() then Radio.fetchNow() end end)
         -- Staatsblad van de afgelopen week en de Wikirace van vandaag

@@ -45,6 +45,8 @@ local function get(path)
     return j
 end
 
+K.get = function(path) return get(path) end
+
 --- Zet de ruwe besluiten om in een korte lijst.
 function K.digest(act)
     local out = {}

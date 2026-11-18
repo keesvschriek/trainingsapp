@@ -2,6 +2,11 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Jouw Kamer: meer context
+- De hele motietekst: waarom (constaterende, overwegende) en wat de Kamer vraagt
+- Na je stem: wie de motie indienden en wat het kabinet ervan vond (ontraden, oordeel Kamer, overbodig of ondersteuning beleid)
+- De eerstvolgende moties worden 's ochtends alvast opgehaald, zodat het ook zonder wifi werkt
+
 ## Wat verandert er, Wikirace en Tijdreis
 - Wat verandert er: wetten en besluiten uit het Staatsblad van de afgelopen week, met wat er ingaat. Hele tekst bij Te lezen zetten kan ook (bij Nieuws)
 - Wikirace: elke dag een nieuwe opdracht, van het ene Wikipedia-artikel naar het andere via links (bij Kees Study)
