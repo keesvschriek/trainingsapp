@@ -17,6 +17,7 @@ import { ModuleCard } from './ModuleCard';
 import { topicFor, Why } from '../explain';
 import { usePullupSet } from '../pushups';
 import { isNative } from '../native';
+import { ErrorBoundary } from '../ErrorBoundary';
 
 type Editor =
   | { type: 'workout'; initial: Partial<Workout> & { date: ISODate; kind: Workout['kind'] }; existing?: Workout; allowKind?: boolean }
@@ -183,20 +184,20 @@ export function Today() {
         />
       )}
 
-      {isToday && <OpvolgCard />}
+      {isToday && <ErrorBoundary><OpvolgCard /></ErrorBoundary>}
 
-      {isToday && <ModuleCard />}
+      {isToday && <ErrorBoundary><ModuleCard /></ErrorBoundary>}
 
       {isToday && plan.status === 'actief' && (() => {
         const runSt = statuses.find(st => st.item.kind === 'run' && !st.item.optional);
-        return <MomentCard date={date} run={runSt?.item} done={!!runSt?.done} />;
+        return <ErrorBoundary><MomentCard date={date} run={runSt?.item} done={!!runSt?.done} /></ErrorBoundary>;
       })()}
 
-      {isToday && plan.status === 'actief' && <RecoveryCard />}
+      {isToday && plan.status === 'actief' && <ErrorBoundary><RecoveryCard /></ErrorBoundary>}
 
-      {date <= today() && <WeekReviewCard date={date} />}
+      {date <= today() && <ErrorBoundary><WeekReviewCard date={date} /></ErrorBoundary>}
 
-      {date <= today() && <PushupCard date={date} />}
+      {date <= today() && <ErrorBoundary><PushupCard date={date} /></ErrorBoundary>}
 
       {gtgDay(date) && !blocking && (
         <div className="rowcard" style={{ cursor: 'default' }}>

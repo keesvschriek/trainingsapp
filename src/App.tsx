@@ -9,6 +9,7 @@ import { NotesScreen } from './screens/Notes';
 import { takeShared } from './widget';
 import { App as CapApp } from '@capacitor/app';
 import { Icon } from './ui';
+import { ErrorBoundary } from './ErrorBoundary';
 import { currentUser, scheduleSync, sync } from './sync';
 import { getIntervalsSettings, importActivities } from './intervals';
 import { db, getSetting } from './db';
@@ -177,6 +178,7 @@ export function App() {
         </a>
       )}
       <main key={route === 'vandaag' ? `vandaag-${today()}` : route}>
+        <ErrorBoundary key={route} onHome={() => go('vandaag')}>
         {route === 'vandaag' && <Today />}
         {route === 'schema' && <Schedule />}
         {route === 'logboek' && <Log />}
@@ -187,9 +189,10 @@ export function App() {
         {route === 'meer' && <More go={go} />}
         {route === 'kobo' && <InboxScreen />}
         {route === 'notities' && <NotesScreen />}
+        </ErrorBoundary>
       </main>
       {toast && <div className="toast">{toast}</div>}
-      {shared && <ShareSheet shared={shared} onClose={() => setShared(null)} />}
+      {shared && <ErrorBoundary><ShareSheet shared={shared} onClose={() => setShared(null)} /></ErrorBoundary>}
       <div className="tabbar">
         <nav>
           {TABS.map(t => (

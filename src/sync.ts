@@ -63,7 +63,11 @@ export interface SyncResult {
 }
 
 export function sync(): Promise<SyncResult> {
-  if (!running) running = doSync().finally(() => (running = null));
+  // Nooit een afgewezen belofte: anders blijft de syncknop draaien en ziet niemand de fout
+  if (!running)
+    running = doSync()
+      .catch((e: unknown) => ({ pushed: 0, pulled: 0, error: navigator.onLine ? `Sync mislukt: ${e instanceof Error ? e.message : String(e)}` : 'Offline.' }))
+      .finally(() => (running = null));
   return running;
 }
 
