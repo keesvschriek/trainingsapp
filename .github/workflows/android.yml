@@ -40,6 +40,11 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      # Gradle-downloads bewaren tussen builds: sneller en minder last van Maven Central (429)
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
       - name: Android SDK controleren
         run: echo "ANDROID_HOME=$ANDROID_HOME" && ls "$ANDROID_HOME/platforms"
 
@@ -115,7 +120,12 @@ jobs:
           GRADLE
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          # Maven Central weigert soms tijdelijk (429). Dan na een minuut opnieuw, maximaal drie keer.
+          for i in 1 2 3; do
+            ./gradlew assembleDebug --no-daemon && break
+            [ "$i" = 3 ] && exit 1
+            echo "Poging $i mislukt, over 60 sec opnieuw"; sleep 60
+          done
           cp app/build/outputs/apk/debug/app-debug.apk ../trainingsapp.apk
 
       - name: Handtekening controleren
