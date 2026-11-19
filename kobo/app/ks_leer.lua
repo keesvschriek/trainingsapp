@@ -258,13 +258,19 @@ function L.linePage(app)
     local W = UI.INNER()
     local line = L.line(app.leerLine)
     local open = L.openSteps(line)
-    local items = { UI.header(line.name, function() app:back() end, line.sub) }
+    local edit = app.leerEdit and line.key == "eigen"
+    local items = { UI.header(line.name, function() app.leerEdit = nil; app:back() end, edit and "Tik op een stap om hem weg te halen" or line.sub) }
     for i, st in ipairs(line.steps) do
         local m, seen, n, due = L.stepStats(st)
         local sub
         if not open[i] then sub = "Gaat open als de vorige stap voor 80% beheerst is"
         else sub = ("%d van %d beheerst"):format(m, n) .. (seen < n and (" · " .. (n - seen) .. " nieuw") or "") .. (due > 0 and (" · " .. due .. " te herhalen") or "") end
         table.insert(items, UI.Tap:new{ label = st.name, callback = function()
+            if edit and st.deck then
+                L.removeOwn(st.deck)
+                if not L.line("eigen") then app.leerEdit = nil; return app:back() end
+                return app:refresh()
+            end
             if not open[i] then return end
             L.start(app, line, i)
         end, UI.vgroup({
@@ -272,13 +278,19 @@ function L.linePage(app)
             UI.hgroup({
                 UI.icon(m == n and n > 0 and "circle_check" or "checkbox_off", 20, open[i] and UI.BLACK or UI.INK3), UI.hspace(12),
                 UI.vgroup({
-                    UI.text(i .. ". " .. st.name, { size = 19, font = "medium", color = open[i] and UI.BLACK or UI.INK3 }),
+                    UI.text(i .. ". " .. st.name .. (edit and "  · weghalen" or ""), { size = 19, font = "medium", color = open[i] and UI.BLACK or UI.INK3 }),
                     UI.text(sub, { size = 15, color = UI.INK2, width = W - UI.px(36) }),
                 }),
             }, "top"),
             UI.vspace(10),
             UI.line(W),
         }) })
+    end
+    if line.key == "eigen" then
+        return UI.page(UI.vgroup(items), UI.buttonRow({
+            { edit and "Klaar" or "Opruimen", function() app.leerEdit = not edit or nil; app:refresh() end },
+            { "Oefenen", function() app.leerEdit = nil; L.start(app, line) end, primary = not edit, disabled = edit },
+        }))
     end
     return UI.page(UI.vgroup(items), UI.button("Oefenen", function() L.start(app, line) end, { width = W, primary = true }))
 end

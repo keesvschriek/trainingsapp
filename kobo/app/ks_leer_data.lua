@@ -253,7 +253,7 @@ local function ownLine()
         for i, f in ipairs(dk.facts or {}) do
             facts[#facts + 1] = { id = "own:" .. dk.id .. ":" .. i, q = f[1], a = f[2], typeable = short(f[2]), opts = others(answers, f[2]) }
         end
-        steps[#steps + 1] = { name = dk.name, facts = facts }
+        steps[#steps + 1] = { name = dk.name, facts = facts, deck = dk.id }
     end
     return { key = "eigen", name = "Eigen stof", icon = "pencil", sub = "Wat je vanaf je telefoon stuurt als vraag :: antwoord", steps = steps, allOpen = true }
 end
