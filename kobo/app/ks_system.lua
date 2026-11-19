@@ -16,7 +16,10 @@ Sys.FONTS = { { 0.9, "Klein" }, { 1.0, "Normaal" }, { 1.12, "Groot" }, { 1.25, "
 Sys.SLEEP = { 5, 10, 15, 30 } -- minuten
 Sys.IDLE = 300 -- seconden die na de laatste tik nog als schermtijd tellen
 
-local state = { lastTick = os.time(), lastAction = os.time(), suspended = false }
+local state = { lastTick = os.time(), lastAction = os.time(), lastInput = os.time(), suspended = false }
+
+--- Seconden sinds de laatste aanraking, ook op het toetsenbord of in een boek.
+function Sys.idleFor() return os.time() - state.lastInput end
 
 function Sys.fontIndex() return Store.get("set.font", 2) end
 function Sys.applyFont()
@@ -140,8 +143,7 @@ local function tick()
         if ok and top == Tools.clock then
             app:render("ui") -- wereldklok: hele scherm met de nieuwe tijden
         else
-            local rect = Geom:new{ x = 0, y = 0, w = UI.W(), h = UI.px(UI.TOPPAD - 8) }
-            UIManager:setDirty(app, function() return "partial", rect end)
+            Sys.refreshBar()
         end
     end
     -- volgende keer net na de volgende minuutwissel
@@ -178,21 +180,42 @@ function Sys.quickSync(app)
 end
 
 --- Ochtend- en avondronde: krant (en training) ophalen als die editie er nog niet is.
+--- Alleen de statusbalk opnieuw tekenen (geen knipperen, de rest blijft staan).
+function Sys.refreshBar()
+    local app = Sys.app
+    if not app or state.suspended or Sys.reading() then return end
+    local rect = Geom:new{ x = 0, y = 0, w = UI.W(), h = UI.px(UI.TOPPAD - 8) }
+    UIManager:setDirty(app, function() return "partial", rect end)
+end
+
+--- Na nieuwe gegevens: op het beginscherm alles opnieuw, elders alleen de statusbalk.
+function Sys.afterFetch()
+    local app = Sys.app
+    if not app or state.suspended or Sys.reading() then return end
+    if #app.stack <= 1 then app:render("ui") else Sys.refreshBar() end
+end
+
 function Sys.autoRound()
+    UIManager:unschedule(Sys.autoRound)
     local ok, due = pcall(function() return require("ks_news").due() end)
-    if not ok or not due or Sys.busy then return end
-    Sys.busy = "krant ophalen"
-    if Sys.app then Sys.app:render("ui") end
+    if not ok or not due or Sys.busy or require("ks_net").busy() then return end
+    -- niet midden in iets: wacht tot je even niets aanraakt (en niet in een boek leest)
+    if not os.getenv("KS_TEST") and (Sys.idleFor() < 8 or Sys.reading()) then
+        UIManager:scheduleIn(5, Sys.autoRound)
+        return
+    end
+    Sys.busy = "nieuws ophalen"
+    Sys.refreshBar()
     require("ks_news").refresh(function()
         Sys.busy = nil
-        if Sys.app then Sys.app:render("ui") end
+        Sys.afterFetch()
     end, true)
 end
 
 function Sys.onResume()
     local now = os.time()
     state.suspended = false
-    state.lastTick, state.lastAction = now, now
+    state.lastTick, state.lastAction, state.lastInput = now, now, now
     pcall(function() require("ks_sleep").hide() end)
     pcall(function() require("ks_light").applyPhase() end)
     if Sys.app and not Sys.reading() then Sys.app:render("ui") end
@@ -200,7 +223,10 @@ function Sys.onResume()
 end
 
 -- Ook tikken in de lezer van KOReader tellen als bezig zijn.
-local inputHook = { onInputEvent = function() if Sys.reading() then state.lastAction = os.time() end end }
+local inputHook = { onInputEvent = function()
+    state.lastInput = os.time()
+    if Sys.reading() then state.lastAction = state.lastInput end
+end }
 
 function Sys.start(app)
     Sys.app = app
@@ -284,29 +310,20 @@ function Sys.settingsPage(app)
     end))
     table.insert(items, UI.vspace(big and 8 or 12))
 
-    table.insert(items, UI.section("Scherm volledig verversen, na zoveel schermen"))
-    local fe = Store.get("set.fullevery2", 0)
-    local feList, feCur = { 0, 4, 8, 15 }, 1
-    for i, v in ipairs(feList) do if v == fe then feCur = i end end
-    table.insert(items, UI.segmented({ "Nooit", "Elke 4", "Elke 8", "Elke 15" }, feCur, function(i)
-        Store.set("set.fullevery2", feList[i])
-        app:refresh()
-    end))
-    table.insert(items, UI.vspace(big and 12 or 16))
+    table.insert(items, UI.vspace(big and 4 or 8))
 
     UI.rowPad = big and 12 or 16
     local _, total = weekBlock()
-    table.insert(items, UI.row("Schermtijd", "Vandaag " .. Sys.fmt(Sys.secondsOn()) .. " · deze week " .. Sys.fmt(total), "›", function() app:go(Sys.screenPage) end, W, "clock"))
+    table.insert(items, UI.row("Scherm", "Schermtijd vandaag " .. Sys.fmt(Sys.secondsOn()) .. " · deze week " .. Sys.fmt(total) .. " · verversen", "›", function() app:go(Sys.screenPage) end, W, "clock"))
     local Sport = require("ks_sport")
-    table.insert(items, UI.row("Sport", Sport.connected() and "Gekoppeld met intervals.icu" or "Nog niet gekoppeld", "›", function() app:go(Sys.sportPage) end, W, "run"))
     table.insert(items, UI.row("Telefoon-app", require("ks_sync").connected() and "Gekoppeld" or "Nog niet gekoppeld", "›", function() app:go(require("ks_sync").settings) end, W, "sync"))
-    do
-        local l = require("ks_backup").last()
-        table.insert(items, UI.row("Back-up in de cloud", l and ("Laatste: " .. os.date("%d-%m %H:%M", l.at)) or "Nog geen back-up", "›", function() app.bkMsg = nil; app:go(require("ks_backup").page) end, W, "download"))
-    end
+    table.insert(items, UI.row("Sport", Sport.connected() and "Gekoppeld met intervals.icu" or "Nog niet gekoppeld", "›", function() app:go(Sys.sportPage) end, W, "run"))
     table.insert(items, UI.row("Rooster", require("ks_rooster").connected() and "Gekoppeld met Zermelo" or "Nog niet gekoppeld", "›", function() app:go(require("ks_rooster").settings) end, W, "calendar"))
     table.insert(items, UI.row("Nieuws", "Rubrieken en automatisch ophalen", "›", function() app:go(require("ks_news").settings) end, W, "news"))
-    table.insert(items, UI.row("Bijwerken en back-ups", "Versie " .. require("ks_update").localVersion(), "›", function() app:go(require("ks_main").updatePage) end, W, "download"))
+    do
+        local l = require("ks_backup").last()
+        table.insert(items, UI.row("Bijwerken en back-ups", "Versie " .. require("ks_update").localVersion() .. (l and (" · cloud " .. os.date("%d-%m", l.at)) or ""), "›", function() app:go(require("ks_main").updatePage) end, W, "download"))
+    end
     UI.rowPad = nil
     return UI.page(UI.vgroup(items))
 end
@@ -344,7 +361,19 @@ function Sys.screenPage(app)
         UI.text("Wat telt mee", { font = "serif", size = 22 }),
         UI.vspace(6),
         UI.text("De tijd dat deze app open is en het scherm aan staat. Na je laatste tik tellen nog hooguit vijf minuten mee, zodat lezen gewoon telt maar een vergeten scherm niet. Lezen in je Kobo-bibliotheek kan deze app niet zien.", { size = 18, width = UI.INNER() }),
+        UI.vspace(26),
+        UI.text("Volledig verversen", { font = "serif", size = 22 }),
+        UI.vspace(6),
+        UI.text("Een zwarte flits haalt vage restjes van eerdere schermen weg. Tik ook op het pijltje rechtsboven voor één keer.", { size = 18, width = UI.INNER() }),
+        UI.vspace(10),
     }
+    local fe = Store.get("set.fullevery2", 0)
+    local feList, feCur = { 0, 4, 8, 15 }, 1
+    for i, v in ipairs(feList) do if v == fe then feCur = i end end
+    table.insert(items, UI.segmented({ "Nooit", "Na 4 schermen", "Na 8", "Na 15" }, feCur, function(i)
+        Store.set("set.fullevery2", feList[i])
+        app:refresh()
+    end))
     return UI.page(UI.vgroup(items))
 end
 

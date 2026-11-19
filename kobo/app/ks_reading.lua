@@ -98,7 +98,7 @@ end
 local function saveDoc(name, doc)
     local f = io.open(R.dir() .. "/" .. name .. ".tmp", "wb")
     if not f then return false end
-    f:write(require("json").encode(doc))
+    f:write(require("ks_json").encode(doc))
     f:close()
     os.rename(R.dir() .. "/" .. name .. ".tmp", R.dir() .. "/" .. name)
     return true
@@ -106,7 +106,7 @@ end
 function R.load(name)
     local f = io.open(R.dir() .. "/" .. name, "rb")
     if not f then return nil end
-    local ok, d = pcall(require("json").decode, f:read("*a"))
+    local ok, d = pcall(require("ks_json").decode, f:read("*a"))
     f:close()
     return ok and type(d) == "table" and d or nil
 end
@@ -116,7 +116,7 @@ function R.fetchNow()
     local Net = require("ks_net")
     local ok, body = Net.get(R.BASE .. "index.json?t=" .. os.time())
     if not ok then return false, body end
-    local good, idx = pcall(require("json").decode, body)
+    local good, idx = pcall(require("ks_json").decode, body)
     if not good or type(idx) ~= "table" or type(idx.items) ~= "table" then return false, "Onverwachte lijst." end
     local got = 0
     for _, it in ipairs(idx.items) do
@@ -206,7 +206,7 @@ function R.wikiNow(title)
     local url = R.WIKI .. "?action=query&format=json&formatversion=2&prop=extracts&explaintext=1&exsectionformat=wiki&redirects=1&titles=" .. urlenc(title)
     local ok, body = require("ks_net").get(url, { ["User-Agent"] = "KeesStudy/1.0 (Kobo e-reader, persoonlijk gebruik)" })
     if not ok then return false, nil, body end
-    local good, j = pcall(require("json").decode, body)
+    local good, j = pcall(require("ks_json").decode, body)
     local page = good and type(j) == "table" and type(j.query) == "table" and type(j.query.pages) == "table" and j.query.pages[1]
     local extract = page and type(page.extract) == "string" and page.extract or nil
     if not extract or extract == "" then return false, nil, "Artikel niet gevonden." end

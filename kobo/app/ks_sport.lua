@@ -103,7 +103,7 @@ local function api(path)
         if code == 401 or code == 403 then return nil, "Sleutel geweigerd door intervals.icu." end
         return nil, body
     end
-    local good, data = pcall(require("json").decode, body)
+    local good, data = pcall(require("ks_json").decode, body)
     if not good then return nil, "Onverwacht antwoord van intervals.icu." end
     return data
 end

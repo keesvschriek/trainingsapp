@@ -16,7 +16,7 @@ function W.data()
     if cache then return cache end
     local f = io.open(file(), "rb")
     if f then
-        local ok, d = pcall(require("json").decode, f:read("*a"))
+        local ok, d = pcall(require("ks_json").decode, f:read("*a"))
         f:close()
         if ok and type(d) == "table" then cache = d end
     end
@@ -27,7 +27,7 @@ local function save(d)
     cache = d
     local f = io.open(file() .. ".tmp", "wb")
     if not f then return end
-    f:write(require("json").encode(d))
+    f:write(require("ks_json").encode(d))
     f:close()
     os.rename(file() .. ".tmp", file())
 end
@@ -65,7 +65,7 @@ function W.fetchNow()
     local url = W.BASE .. "?query=" .. enc(q) .. "&maximumRecords=100&httpAccept=application/json"
     local ok, body = require("ks_net").get(url)
     if not ok then return false, "Ophalen mislukt: " .. tostring(body) end
-    local good, j = pcall(require("json").decode, body)
+    local good, j = pcall(require("ks_json").decode, body)
     if not good or type(j) ~= "table" or type(j.searchRetrieveResponse) ~= "table" then return false, "Onverwacht antwoord." end
     local recs = list(type(j.searchRetrieveResponse.records) == "table" and j.searchRetrieveResponse.records.record)
     local items = {}
@@ -136,7 +136,7 @@ function W.page(app)
             if e.head then table.insert(items, UI.vspace(6)); table.insert(items, UI.section(e.head, Wd)) end
             local r = e.r
             local t = W.clean(r.title)
-            if #t > 170 then t = t:sub(1, 160):gsub("[\128-\191]*$", ""):gsub("%s%S*$", "") .. " ..." end
+            if #t > 125 then t = t:sub(1, 115):gsub("[\128-\191]*$", ""):gsub("%s%S*$", "") .. " ..." end
             table.insert(items, UI.Tap:new{ label = r.id, callback = function() app.wt = r; app:go(W.detail) end, UI.vgroup({
                 UI.vspace(8),
                 UI.text(t, { size = 17, width = Wd, font = W.mine(r) and "medium" or nil }),

@@ -31,7 +31,7 @@ function S.data()
     if data then return data end
     local f = io.open(file(), "rb")
     if f then
-        local ok, d = pcall(require("json").decode, f:read("*a"))
+        local ok, d = pcall(require("ks_json").decode, f:read("*a"))
         f:close()
         if ok and type(d) == "table" then data = scrub(d) end
     end
@@ -45,7 +45,7 @@ end
 local function save()
     local f = io.open(file() .. ".tmp", "wb")
     if not f then return end
-    f:write(require("json").encode(S.data()))
+    f:write(require("ks_json").encode(S.data()))
     f:close()
     os.rename(file() .. ".tmp", file())
 end
@@ -77,8 +77,8 @@ end
 -- Netwerk -------------------------------------------------------------------------------
 
 local token, tokenUntil
-local function json(v) return require("json").encode(v) end
-local function decode(s) local ok, v = pcall(require("json").decode, s); return ok and scrub(v) or nil end
+local function json(v) return require("ks_json").encode(v) end
+local function decode(s) local ok, v = pcall(require("ks_json").decode, s); return ok and scrub(v) or nil end
 
 local function auth(grant, body, c)
     local Net = require("ks_net")
@@ -236,11 +236,17 @@ function S.refresh(done)
 end
 
 --- Na een wijziging op de Kobo: versturen als er toch al wifi is, anders bij de volgende ronde.
+--- Na een wijziging: even later synchroniseren, als wifi toch al aan staat.
+--- Wacht tot je een tijdje niets hebt veranderd (zo wordt tien vinkjes één keer versturen)
+--- en gebeurt via de achtergrondrij, dus nooit midden in een tik.
+local function soonRun()
+    if not S.connected() or not require("ks_net").isOn() then return end
+    require("ks_net").background({ { name = "telefoon", fn = function() pcall(S.syncNow) end } })
+end
 function S.soon()
     if not S.connected() then return end
-    if require("ks_net").isOn() then
-        UIManager:scheduleIn(1, function() pcall(S.syncNow) end)
-    end
+    UIManager:unschedule(soonRun)
+    UIManager:scheduleIn(os.getenv("KS_TEST") and 1 or 20, soonRun)
 end
 
 -- Training en check-in ------------------------------------------------------------------
@@ -333,7 +339,7 @@ local function sendOpts(app)
         title = "Telefoon-app koppelen",
         mode = "koppel",
         onSubmit = function(text)
-            local ok, j = pcall(require("json").decode, text)
+            local ok, j = pcall(require("ks_json").decode, text)
             if not ok or type(j) ~= "table" or j.t ~= "koppel" then return false, "Dit is geen koppelbericht. Gebruik de koppelpagina." end
             local good, err = S.link(tostring(j.url or ""), tostring(j.key or ""), tostring(j.email or ""), tostring(j.pw or ""))
             if not good then return false, "Inloggen lukte niet: " .. tostring(err) end

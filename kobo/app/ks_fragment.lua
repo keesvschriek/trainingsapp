@@ -33,7 +33,7 @@ function F.frags(id)
     if loaded[id] then return loaded[id] end
     local f = io.open(file(id), "rb")
     if not f then return nil end
-    local ok, d = pcall(require("json").decode, f:read("*a"))
+    local ok, d = pcall(require("ks_json").decode, f:read("*a"))
     f:close()
     if ok and type(d) == "table" and type(d.frags) == "table" and d.v == F.V then loaded[id] = d.frags; return d.frags end
     return nil
@@ -90,7 +90,7 @@ end
 local function store(book, frags)
     local f = io.open(file(book.id) .. ".tmp", "wb")
     if not f then return false, "Kon niet opslaan." end
-    f:write(require("json").encode({ v = F.V, frags = frags }))
+    f:write(require("ks_json").encode({ v = F.V, frags = frags }))
     f:close()
     os.rename(file(book.id) .. ".tmp", file(book.id))
     loaded[book.id] = frags
@@ -101,7 +101,7 @@ function F.fetch(book)
     local Net = require("ks_net")
     local ok, body = Net.get(F.PAGES .. book.id .. ".json")
     if ok then
-        local good, d = pcall(require("json").decode, body)
+        local good, d = pcall(require("ks_json").decode, body)
         if good and type(d) == "table" and type(d.frags) == "table" and #d.frags >= 5 and d.v == F.V then return store(book, d.frags) end
     end
     local url = F.BASE .. book.id .. "/pg" .. book.id .. ".txt"

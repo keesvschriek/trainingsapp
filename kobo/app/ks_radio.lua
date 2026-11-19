@@ -18,7 +18,7 @@ function R.data()
     if cache then return cache end
     local f = io.open(file(), "rb")
     if f then
-        local ok, d = pcall(require("json").decode, f:read("*a"))
+        local ok, d = pcall(require("ks_json").decode, f:read("*a"))
         f:close()
         if ok and type(d) == "table" then cache = d end
     end
@@ -29,7 +29,7 @@ local function save(d)
     cache = d
     local f = io.open(file() .. ".tmp", "wb")
     if not f then return end
-    f:write(require("json").encode(d))
+    f:write(require("ks_json").encode(d))
     f:close()
     os.rename(file() .. ".tmp", file())
 end
@@ -64,40 +64,52 @@ end
 
 local function urn(y, m, d, n) return ("anp:%04d:%02d:%02d:%d:mpeg21:ocr"):format(y, m, d, n) end
 
---- Berichten van één dag ophalen. Geeft lijst van {n, paras} (leeg als die dag er niet is).
-function R.fetchDay(y, m, d)
+local UA = { ["User-Agent"] = "KeesStudy/1.0 (Kobo e-reader, persoonlijk gebruik)" }
+local BACK = { 80, 75, 70, 85, 60 }
+
+--- Vandaag ophalen in stappen: één bericht per stap. 80 jaar geleden, of 75, 70, 85 of 60 als die dag ontbreekt.
+--- Geeft een functie die true teruggeeft zolang er nog een bericht komt (zie ks_net.background).
+function R.stepper()
     local Net = require("ks_net")
-    local out = {}
-    local misses = 0
-    for n = 1, R.MAX do
-        local ok, body = Net.get(R.BASE .. urn(y, m, d, n), { ["User-Agent"] = "KeesStudy/1.0 (Kobo e-reader, persoonlijk gebruik)" })
+    local t = os.date("*t")
+    local today = os.date("%Y-%m-%d")
+    local bi, n, misses, items = 1, 1, 0, {}
+    local finished = not R.due()
+    return function()
+        if finished then return false end
+        local y = t.year - BACK[bi]
+        local ok, body = Net.get(R.BASE .. urn(y, t.month, t.day, n), UA)
         if ok and body:find("<text") then
             misses = 0
             local paras = R.clean(body)
-            if #paras > 0 then out[#out + 1] = { n = n, paras = paras } end
+            if #paras > 0 then items[#items + 1] = { n = n, paras = paras } end
         else
             misses = misses + 1
-            if misses >= 2 then break end
         end
+        n = n + 1
+        if misses < 2 and n <= R.MAX then return true end
+        -- deze dag klaar
+        if #items > 0 then
+            save({ date = today, year = y, back = BACK[bi], items = items, at = os.time() })
+            finished = true
+            return false
+        end
+        bi, n, misses = bi + 1, 1, 0
+        if bi > #BACK then
+            save({ date = today, items = {}, at = os.time() })
+            finished = true
+            return false
+        end
+        return true
     end
-    return out
 end
 
---- Vandaag ophalen: 80 jaar geleden, of 75 of 70 als die dag ontbreekt.
+--- In één keer (als je zelf op Ophalen tikt).
 function R.fetchNow()
-    local t = os.date("*t")
-    local today = os.date("%Y-%m-%d")
+    local step = R.stepper()
+    while step() do end
     local d = R.data()
-    if d.date == today and d.items and #d.items > 0 then return true end
-    for _, back in ipairs({ 80, 75, 70, 85, 60 }) do
-        local y = t.year - back
-        local items = R.fetchDay(y, t.month, t.day)
-        if #items > 0 then
-            save({ date = today, year = y, back = back, items = items, at = os.time() })
-            return true
-        end
-    end
-    save({ date = today, items = {}, at = os.time() })
+    if d.items and #d.items > 0 then return true end
     return false, "Geen radioberichten gevonden voor deze dag."
 end
 

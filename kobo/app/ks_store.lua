@@ -102,9 +102,10 @@ function Store.backup()
     if lfs.attributes(file(), "mode") ~= "file" then return end
     if lfs.attributes(backupDir(), "mode") ~= "directory" then lfs.mkdir(backupDir()) end
     local target = backupDir() .. "/" .. os.date("%Y-%m-%d") .. ".lua"
+    if lfs.attributes(target, "mode") == "file" then return end -- vandaag al gedaan (scheelt inlezen bij elke start)
     local okRead, data = pcall(dofile, file())
     if not okRead or type(data) ~= "table" then return end -- kapot bestand nooit als back-up bewaren
-    if lfs.attributes(target, "mode") ~= "file" then copy(file(), target) end
+    copy(file(), target)
     local list = Store.backups()
     for i = 8, #list do os.remove(backupDir() .. "/" .. list[i] .. ".lua") end
 end

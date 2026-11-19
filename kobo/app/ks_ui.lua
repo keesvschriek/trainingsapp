@@ -450,6 +450,7 @@ function UI.page(body, footer)
     -- past het niet, dan meldt de pagina dat; ks_main bouwt hem dan compacter opnieuw
     local need = UI.px(UI.TOPPAD) + body:getSize().h + (footer and (footer:getSize().h + UI.px(30 + 14)) or M)
     if need > H then UI.overflow = true end
+    UI.need = need
     if footer then
         local fh = footer:getSize().h
         table.insert(over, FrameContainer:new{

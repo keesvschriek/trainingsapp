@@ -2,7 +2,7 @@
 -- vergelijkt per bestand de md5 en downloadt alleen wat veranderd is.
 
 local DataStorage = require("datastorage")
-local json = require("json")
+local json = require("ks_json")
 local lfs = require("libs/libkoreader-lfs")
 local md5 = require("ffi/MD5")
 local Net = require("ks_net")

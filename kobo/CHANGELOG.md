@@ -2,6 +2,15 @@
 
 Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je in de app bij Bijwerken via wifi.
 
+## Sneller en zonder haperen
+- Ophalen gaat nu in kleine stappen, alleen als je een paar seconden niets aanraakt. De ochtendronde hield de Kobo eerder tot een halve minuut vast
+- Na afvinken of een notitie wacht de sync tot je klaar bent, in plaats van na elke tik
+- Volle schermen worden niet meer telkens opnieuw kleiner gebouwd: de app onthoudt wat past
+- Gegevens lezen gaat tot tien keer sneller (kaart, quiz, nieuws)
+- Kees Study opgeruimd: Schaken en Puzzels hebben een eigen mapje. Dubbele regels uit Groei gehaald
+- Instellingen past weer op één scherm. Volledig verversen staat nu bij Scherm, de cloud-back-up bij Bijwerken en back-ups
+- Woordzoeker: niveaus en thema's als knoppen. Tijdlijn per bladzijde
+
 ## Jouw Kamer: meer context
 - De hele motietekst: waarom (constaterende, overwegende) en wat de Kamer vraagt
 - Na je stem: wie de motie indienden en wat het kabinet ervan vond (ontraden, oordeel Kamer, overbodig of ondersteuning beleid)

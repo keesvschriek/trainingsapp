@@ -72,7 +72,7 @@ function L.fetch(done)
     require("ks_net").online(function()
         local ok, body = require("ks_net").get(L.URL, { Accept = "application/json" })
         if not ok then return done(false, body) end
-        local good, j = pcall(require("json").decode, body)
+        local good, j = pcall(require("ks_json").decode, body)
         if not good or type(j) ~= "table" or type(j.puzzle) ~= "table" or type(j.game) ~= "table" then return done(false, "Onverwacht antwoord van Lichess.") end
         local pz = j.puzzle
         if type(j.game.pgn) ~= "string" or type(pz.solution) ~= "table" then return done(false, "Puzzel onvolledig.") end

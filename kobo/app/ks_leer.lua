@@ -327,8 +327,9 @@ function L.q(app)
     end
     local b = L.box(fact.id)
     local level = ({ mc = "meerkeuze", rev = "andersom", type = "zelf typen", recall = "zelf ophalen" })[s.form]
-    local items = { UI.header(s.title, function() app.lr = nil; app:back() end,
-        ("Vraag %d van %d · %s · %s"):format(s.i, #s.list, b and ("vak " .. b.b) or "nieuw", level)) }
+    -- de kop blijft gelijk tijdens het antwoord (een fout antwoord komt achteraan erbij, dat telt pas bij de volgende vraag)
+    if not s.result or not s.sub then s.sub = ("Vraag %d van %d · %s · %s"):format(s.i, #s.list, b and ("vak " .. b.b) or "nieuw", level) end
+    local items = { UI.header(s.title, function() app.lr = nil; app:back() end, s.sub) }
     local prompt = s.form == "rev" and fact.rq or (s.prompt or fact.q)
     table.insert(items, UI.vspace(6))
     table.insert(items, UI.card(UI.text(prompt, { font = "serif", size = #prompt > 90 and 22 or 26, width = W - UI.px(56), bg = UI.FILL }), { fill = true, border = 0, pad = UI.px(24) }))

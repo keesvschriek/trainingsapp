@@ -1,7 +1,7 @@
 -- Quizlogica: vragen laden, kiezen, records bijhouden en nieuwe pakketten ophalen.
 
 local DataStorage = require("datastorage")
-local json = require("json")
+local json = require("ks_json")
 local Store = require("ks_store")
 
 local Q = {}

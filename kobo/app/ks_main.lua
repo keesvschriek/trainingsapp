@@ -17,6 +17,12 @@ function App:handleEvent(ev)
     return InputContainer.handleEvent(self, ev)
 end
 
+--- Bij elk tekenen opnieuw bijhouden welke tikvlakken er staan (anders groeit de lijst elke minuut met de klok).
+function App:paintTo(bb, x, y)
+    UI.painted = {}
+    InputContainer.paintTo(self, bb, x, y)
+end
+
 function App:onSuspend() pcall(function() require("ks_system").onSuspend() end) end
 function App:onResume() pcall(function() require("ks_system").onResume() end) end
 
@@ -71,21 +77,36 @@ function App:home()
     self:render("page")
 end
 
+--- Per scherm onthouden bij welke poging het paste. Dan hoeft een vol scherm de volgende keer
+--- niet eerst groot, dan compact en dan steeds kleiner gebouwd te worden (scheelt op de Kobo veel tijd).
+local fit = setmetatable({}, { __mode = "k" })
+
 --- Bouw het huidige scherm opnieuw zonder het al naar het scherm te sturen.
 function App:rebuild()
     local builder = self.stack[#self.stack]
     if not builder then return end
-    -- Bouwen; past het scherm niet met de gekozen lettergrootte, dan stapje kleiner (alleen voor dit scherm)
+    -- Bouwen; past het scherm niet met de gekozen lettergrootte, dan stapje kleiner (alleen voor dit scherm).
+    -- Poging 1 normaal, 2 compactere lijstregels, 3 en verder elke keer 6% kleinere letters.
     local base = UI.scale
+    local known = fit[builder]
+    local first = (known and known.scale == base) and known.attempt or 1
     local ok, w
-    -- eerst lijstregels compacter, daarna pas kleinere letters
-    for attempt = 1, 7 do
+    for attempt = first, 7 do
         UI.painted = {}
         UI.overflow = false
         UI.noShrink = false
+        UI.need = nil
+        UI.compact = attempt >= 2
+        UI.scale = base * 0.94 ^ math.max(0, attempt - 2)
         ok, w = pcall(builder, self)
-        if not ok or not UI.overflow or UI.noShrink or UI.scale < 0.75 then break end
-        if attempt == 1 then UI.compact = true else UI.scale = UI.scale * 0.94 end
+        if not ok or not UI.overflow or UI.noShrink or UI.scale < 0.75 then
+            if ok then
+                -- ruim over (minder dan 85% gebruikt)? volgende keer een maat groter proberen
+                local roomy = UI.need and UI.need < UI.H() * 0.85
+                fit[builder] = { scale = base, attempt = (roomy and attempt > 1) and attempt - 1 or attempt }
+            end
+            break
+        end
     end
     UI.scale = base
     UI.compact = false
@@ -175,32 +196,48 @@ end
 
 local function remember(name) Store.set("last.module", name) end
 
---- Map "Kees Study": de leeronderdelen die er al waren.
+--- Map "Kees Study": leren en spelen. Schaken en puzzels hebben elk een eigen mapje, zodat alles op één scherm past.
 function M.studyFolder(app)
-    local ChessUI = require("ks_chessui")
     local QuizUI = require("ks_quizui")
     local items = {
-        UI.header("Kees Study", function() app:back() end, "Schaken, quiz, leerkaarten, topografie en puzzels"),
+        UI.header("Kees Study", function() app:back() end, "Leren, schaken, kaarten en puzzels"),
         UI.row("Leerlijnen", safe(require("ks_leer").summary, "NAVO, Defensie, Geschiedenis, Topografie"), "›", function() remember("Leerlijnen"); app:go(require("ks_leer").home) end, nil, "school"),
+        UI.row("Leerkaarten", safe(require("ks_cards").summary, ""), "›", function() remember("Leerkaarten"); app:go(require("ks_cards").home) end, nil, "brain"),
+        UI.row("Quiz", safe(QuizUI.summary, ""), "›", function() remember("Quiz"); app:go(QuizUI.home) end, nil, "help"),
+        UI.row("Schaken", "Lessen, tegen de computer en de puzzel van de dag", "›", function() app:go(M.chessFolder) end, nil, "chess"),
+        UI.row("Topografie op de kaart", "Landen aanwijzen en herkennen, per werelddeel", "›", function() remember("Topografie"); app:go(require("ks_mapui").menu) end, nil, "earth"),
+        UI.row("Tijdreis", safe(require("ks_tijdreis").summary, ""), "›", function() remember("Tijdreis"); app.trMap = nil; app:go(require("ks_tijdreis").page) end, nil, "map"),
+        UI.row("Wikirace", safe(require("ks_wikirace").summary, ""), "›", function() remember("Wikirace"); require("ks_wikirace").start(app) end, nil, "web"),
+        UI.row("Puzzels", "Woordzoeker en tijdlijn", "›", function() app:go(M.puzzleFolder) end, nil, "list_checks"),
+    }
+    return UI.page(UI.vgroup(items))
+end
+
+--- Mapje Schaken.
+function M.chessFolder(app)
+    local ChessUI = require("ks_chessui")
+    return UI.page(UI.vgroup({
+        UI.header("Schaken", function() app:back() end),
         UI.row("Schaken leren", safe(ChessUI.summary, ""), "›", function() remember("Schaken leren"); app:go(ChessUI.lessonList) end, nil, "chess"),
         UI.row("Tegen de computer", safe(require("ks_play").summary, ""), "›", function()
             remember("Tegen de computer")
             local g = Store.get("play.game")
             app:go((g and not g.over) and require("ks_play").game or require("ks_play").menu)
         end, nil, "chess"),
-        UI.row("Schaakpuzzel van de dag", "Van Lichess, ook zonder wifi op te lossen", "›", function() app:go(require("ks_lichess").page) end, nil, "target"),
-        UI.row("Quiz", safe(QuizUI.summary, ""), "›", function() remember("Quiz"); app:go(QuizUI.home) end, nil, "help"),
-        UI.row("Leerkaarten", safe(require("ks_cards").summary, ""), "›", function() remember("Leerkaarten"); app:go(require("ks_cards").home) end, nil, "brain"),
-        UI.row("Topografie op de kaart", "Landen aanwijzen en herkennen, per werelddeel", "›", function() remember("Topografie"); app:go(require("ks_mapui").menu) end, nil, "earth"),
-        UI.row("Tijdreis", safe(require("ks_tijdreis").summary, ""), "›", function() remember("Tijdreis"); app.trMap = nil; app:go(require("ks_tijdreis").page) end, nil, "map"),
-        UI.row("Wikirace", safe(require("ks_wikirace").summary, ""), "›", function() remember("Wikirace"); require("ks_wikirace").start(app) end, nil, "web"),
+        UI.row("Puzzel van de dag", "Van Lichess, ook zonder wifi op te lossen", "›", function() app:go(require("ks_lichess").page) end, nil, "target"),
+    }))
+end
+
+--- Mapje Puzzels.
+function M.puzzleFolder(app)
+    return UI.page(UI.vgroup({
+        UI.header("Puzzels", function() app:back() end),
         UI.row("Woordzoeker", "Willekeurige woorden of een geschiedenisthema", "›", function()
             local g = Store.get("ws.game")
             app:go(g and g.grid and require("ks_puzzles").wordsearch or require("ks_puzzles").themes)
         end, nil, "list_checks"),
         UI.row("Tijdlijn", "Grote gebeurtenissen, en zet ze op volgorde", "›", function() app:go(require("ks_puzzles").timeline) end, nil, "history"),
-    }
-    return UI.page(UI.vgroup(items))
+    }))
 end
 
 --- Map "Lezen": fragmenten, te lezen, en je eigen boeken.
@@ -232,8 +269,6 @@ function M.growFolder(app)
         UI.row("Dag afsluiten", safe(require("ks_avond").summary, ""), "›", function() app:go(require("ks_avond").page) end, nil, "moon"),
         UI.row("Dagtekst", "Vandaag: " .. tostring(who), "›", function() remember("Dagtekst"); app:go(D.page) end, nil, "quote"),
         UI.row("Gewoontes", ("%d van %d gedaan vandaag"):format(done or 0, total or 0), "›", function() remember("Gewoontes"); app:go(H.page) end, nil, "list_checks"),
-        UI.row("Weekoverzicht", "Training, gewoontes en schermtijd van deze week", "›", function() app:go(require("ks_week").page) end, nil, "calendar"),
-        UI.row("Op deze dag", safe(require("ks_otd").summary, ""), "›", function() app.otdPg = 1; app:go(require("ks_otd").page) end, nil, "history"),
     }
     return UI.page(UI.vgroup(items))
 end
@@ -431,11 +466,15 @@ local function homePage(app)
         return UI.vgroup({ top, UI.vspan(fill), g }), topH + g:getSize().h
     end
 
+    -- begin bij de compactheid die de vorige keer paste (scheelt bouwen), met ruimte over een stap terug
     local body
-    for level = 0, 3 do
+    for level = M.homeLevel or 0, 3 do
         local h
         body, h = build(level)
-        if h <= space then break end
+        if h <= space or level == 3 then
+            M.homeLevel = (h < space * 0.9 and level > 0) and level - 1 or level
+            break
+        end
     end
     return UI.page(body)
 end
@@ -509,7 +548,11 @@ function M.updatePage(app)
     table.insert(items, UI.vspace(18))
     table.insert(items, UI.text("Wifi gaat vanzelf aan als dat nodig is. Je voortgang blijft bewaard.", { size = 16, color = UI.INK2, width = UI.INNER() }))
     table.insert(items, UI.vspace(18))
-    table.insert(items, UI.row("Back-ups van je voortgang", "Elke dag een kopie, 7 dagen bewaard", "›", function() app:go(require("ks_system").backupPage) end, nil, "history"))
+    table.insert(items, UI.row("Back-ups op de Kobo", "Elke dag een kopie, 7 dagen bewaard", "›", function() app:go(require("ks_system").backupPage) end, nil, "history"))
+    do
+        local l = safe(require("ks_backup").last)
+        table.insert(items, UI.row("Back-up in de cloud", l and ("Laatste: " .. os.date("%d-%m %H:%M", l.at)) or "Nog geen back-up", "›", function() app.bkMsg = nil; app:go(require("ks_backup").page) end, nil, "download"))
+    end
     return UI.page(UI.vgroup(items))
 end
 

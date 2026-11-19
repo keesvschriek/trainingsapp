@@ -42,7 +42,7 @@ function T.search(q)
     local function enc(s) return (s:gsub("[^%w%-%._~]", function(c) return ("%%%02X"):format(c:byte()) end)) end
     local ok, body = require("ks_net").get(T.PDOK .. "?rows=1&fl=weergavenaam,centroide_rd&q=" .. enc(q))
     if not ok then return nil, "Zoeken lukte niet." end
-    local good, j = pcall(require("json").decode, body)
+    local good, j = pcall(require("ks_json").decode, body)
     local doc = good and type(j) == "table" and type(j.response) == "table" and type(j.response.docs) == "table" and j.response.docs[1]
     if not doc or type(doc.centroide_rd) ~= "string" then return nil, "Niets gevonden voor \"" .. q .. "\"." end
     local x, y = doc.centroide_rd:match("POINT%(([%d%.%-]+) ([%d%.%-]+)%)")

@@ -51,7 +51,7 @@ function N.data()
     if cache then return cache end
     local f = io.open(file(), "rb")
     if f then
-        local ok, d = pcall(require("json").decode, f:read("*a"))
+        local ok, d = pcall(require("ks_json").decode, f:read("*a"))
         f:close()
         if ok and type(d) == "table" then cache = d end
     end
@@ -61,7 +61,7 @@ end
 local function save()
     local f = io.open(file() .. ".tmp", "wb")
     if not f then return end
-    f:write(require("json").encode(cache))
+    f:write(require("ks_json").encode(cache))
     f:close()
     os.rename(file() .. ".tmp", file())
 end
@@ -133,12 +133,19 @@ function N.parse(xml, feed)
 end
 
 --- Haal alle gekozen rubrieken op. Moet al online zijn.
-function N.fetchNow()
+--- Nieuws ophalen in stappen: één rubriek per stap. Geeft een functie die true teruggeeft zolang er nog een rubriek komt.
+--- Aan het eind staat in res: ok, err.
+function N.stepper(res)
+    res = res or {}
     local Net = require("ks_net")
     local en = N.enabled()
-    local items, seen, errs, got = {}, {}, {}, 0
-    for _, f in ipairs(N.FEEDS) do
-        if en[f.id] then
+    local list = {}
+    for _, f in ipairs(N.FEEDS) do if en[f.id] then list[#list + 1] = f end end
+    local items, seen, errs, got, i = {}, {}, {}, 0, 0
+    return function()
+        i = i + 1
+        local f = list[i]
+        if f then
             local ok, body = Net.get(f.url)
             if ok then
                 got = got + 1
@@ -149,45 +156,67 @@ function N.fetchNow()
             else
                 table.insert(errs, f.name)
             end
+            if i < #list then return true end
         end
+        if got == 0 then
+            res.ok, res.err = false, "Kon het nieuws niet ophalen."
+            return false
+        end
+        local d = N.data()
+        local name, key = N.edition()
+        d.items, d.at, d.edition, d.key = items, os.time(), name, key
+        d.read = {}
+        save()
+        res.ok, res.err = true, #errs > 0 and ("Niet gelukt: " .. table.concat(errs, ", ")) or nil
+        return false
     end
-    if got == 0 then return false, "Kon het nieuws niet ophalen." end
-    local d = N.data()
-    local name, key = N.edition()
-    d.items, d.at, d.edition, d.key = items, os.time(), name, key
-    d.read = {}
-    save()
-    return true, #errs > 0 and ("Niet gelukt: " .. table.concat(errs, ", ")) or nil
+end
+
+function N.fetchNow()
+    local res = {}
+    local step = N.stepper(res)
+    while step() do end
+    return res.ok, res.err
+end
+
+--- De ronde: eerst het nieuws (done wordt dan al aangeroepen), daarna de rest op de achtergrond.
+--- Elke stap is hooguit een paar verzoeken; tussendoor kun je gewoon tikken (zie ks_net).
+function N.roundJobs(done, quiet)
+    local now = not quiet -- zelf op Ophalen getikt: het nieuws meteen
+    local res = {}
+    local jobs = {}
+    local function add(name, fn, direct) jobs[#jobs + 1] = { name = name, fn = fn, now = direct } end
+    local function try(fn) return function() pcall(fn) end end
+    add("nieuws", N.stepper(res), now)
+    add("nieuws klaar", function() if done then done(res.ok, res.err) end end, now)
+    -- training van intervals.icu
+    add("training", try(function() local S = require("ks_sport"); if S.connected() then S.fetchNow() end end))
+    -- stemmingen en Kamervragen (elke zes uur)
+    local K = require("ks_kamer")
+    local kDue = K.due()
+    if kDue then
+        add("stemmingen", try(K.fetchNow))
+        add("kamervragen", try(K.fetchVragen))
+    end
+    -- Jouw Kamer: de eerste keer een paar stemmingsdagen terug, daarna vijf moties met hun tekst
+    add("jouw kamer", try(function() if #Store.get("jk.pool", {}) < 5 then require("ks_jouwkamer").fill() end end))
+    add("moties", require("ks_jouwkamer").prefetchStep(5))
+    -- radionieuws van 80 jaar geleden: één bericht per stap
+    add("radio", require("ks_radio").stepper())
+    add("wetten", try(function() local Wt = require("ks_wetten"); if Wt.due() then Wt.fetchNow() end end))
+    add("wikirace", try(function() require("ks_wikirace").prepare() end))
+    add("op deze dag", try(function() local O = require("ks_otd"); if O.due() then O.fetchNow() end end))
+    add("rooster", try(function() local R = require("ks_rooster"); if R.due() then R.fetchNow() end end))
+    add("telefoon", try(function() local Sync = require("ks_sync"); if Sync.due() then Sync.syncNow() end end))
+    add("te lezen", try(function() local RD = require("ks_reading"); if RD.due() then RD.fetchNow() end end))
+    add("fragment", try(function() require("ks_fragment").autoFetch() end))
+    return jobs
 end
 
 function N.refresh(done, quiet)
-    require("ks_net").online(function()
-        local ok, err = N.fetchNow()
-        -- in dezelfde wifi-sessie ook de sporttraining bijwerken
-        if require("ks_sport").connected() then pcall(require("ks_sport").fetchNow) end
-        -- en de laatste stemmingen in de Tweede Kamer
-        local K = require("ks_kamer")
-        if K.due() then pcall(K.fetchAll) end
-        -- Jouw Kamer: de eerste keer een paar stemmingsdagen terug ophalen
-        pcall(function() local J = require("ks_jouwkamer"); if #require("ks_store").get("jk.pool", {}) < 5 then J.fill() end; J.prefetch(5) end)
-        -- radionieuws van 80 jaar geleden (ANP, KB)
-        pcall(function() local Radio = require("ks_radio"); if Radio.due() then Radio.fetchNow() end end)
-        -- Staatsblad van de afgelopen week en de Wikirace van vandaag
-        pcall(function() local Wt = require("ks_wetten"); if Wt.due() then Wt.fetchNow() end end)
-        pcall(function() require("ks_wikirace").prepare() end)
-        -- vandaag in de geschiedenis en je rooster
-        local O = require("ks_otd")
-        if O.due() then pcall(O.fetchNow) end
-        local R = require("ks_rooster")
-        if R.due() then pcall(R.fetchNow) end
-        -- te lezen en het fragment van de dag (hooguit één boek per keer)
-        local Sync = require("ks_sync")
-        if Sync.due() then pcall(Sync.syncNow) end
-        local RD = require("ks_reading")
-        if RD.due() then pcall(RD.fetchNow) end
-        pcall(require("ks_fragment").autoFetch)
-        done(ok, err)
-    end, { quiet = quiet, onFail = function(msg) done(false, msg) end })
+    local called = false
+    local function once(ok, err) if not called then called = true; if done then done(ok, err) end end end
+    require("ks_net").background(N.roundJobs(once, quiet), { quiet = quiet, front = not quiet, onFail = function(msg) once(false, msg) end })
 end
 
 --- Moet de editie van nu nog opgehaald worden? (alleen ochtend en avond automatisch)

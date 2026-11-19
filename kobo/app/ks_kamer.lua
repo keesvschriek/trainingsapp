@@ -19,7 +19,7 @@ function K.data()
     if cache then return cache end
     local f = io.open(file(), "rb")
     if f then
-        local ok, d = pcall(require("json").decode, f:read("*a"))
+        local ok, d = pcall(require("ks_json").decode, f:read("*a"))
         f:close()
         if ok and type(d) == "table" then cache = d end
     end
@@ -30,7 +30,7 @@ local function save(d)
     cache = d
     local f = io.open(file() .. ".tmp", "wb")
     if not f then return end
-    f:write(require("json").encode(d))
+    f:write(require("ks_json").encode(d))
     f:close()
     os.rename(file() .. ".tmp", file())
 end
@@ -40,7 +40,7 @@ local function enc(s) return (s:gsub("[^%w%-%._~%(%)%$=&/,:;%?]", function(c) re
 local function get(path)
     local ok, body, code = require("ks_net").get(K.BASE .. enc(path), { Accept = "application/json;odata.metadata=none" })
     if not ok then return nil, body end
-    local good, j = pcall(require("json").decode, body)
+    local good, j = pcall(require("ks_json").decode, body)
     if not good or type(j) ~= "table" then return nil, "Onverwacht antwoord van de Tweede Kamer." end
     return j
 end

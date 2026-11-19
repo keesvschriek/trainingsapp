@@ -4,7 +4,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local json = require("json")
+local json = require("ks_json")
 
 local SEA = Blitbuffer.Color8(0xD8)
 local LAND = Blitbuffer.COLOR_WHITE

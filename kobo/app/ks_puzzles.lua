@@ -262,24 +262,34 @@ end
 
 function P.themes(app)
     local d = data()
+    local W = UI.INNER()
+    local function start(game) app.ws = game; app.wsLast = nil; Store.set("ws.game", app.ws); app:replace(P.wordsearch) end
     local items = { UI.header("Woordzoeker", function() app:back() end, "Willekeurige woorden, of een thema waarbij je bij elk woord leest wat erachter zit.") }
-    UI.rowPad = 20
-    table.insert(items, UI.section("Willekeurige woorden (" .. #allWords() .. " in de lijst)", UI.INNER()))
-    for i, L in ipairs(P.LEVELS) do
-        table.insert(items, UI.row(L.name, L.sub, "›", function()
-            app.ws = P.randomGame(i); app.wsLast = nil; Store.set("ws.game", app.ws)
-            app:replace(P.wordsearch)
-        end))
+    -- willekeurig: drie niveaus naast elkaar
+    table.insert(items, UI.section("Willekeurige woorden, " .. #allWords() .. " in de lijst", W))
+    local lv = {}
+    for i, L in ipairs(P.LEVELS) do lv[#lv + 1] = { L.name, function() start(P.randomGame(i)) end, primary = i == 2 } end
+    table.insert(items, UI.buttonRow(lv))
+    table.insert(items, UI.vspace(6))
+    local subs = {}
+    for _, L in ipairs(P.LEVELS) do subs[#subs + 1] = L.name .. ": " .. L.sub:lower() end
+    table.insert(items, UI.text(table.concat(subs, ". ") .. ".", { size = 15, color = UI.INK2, width = W }))
+    table.insert(items, UI.vspace(18))
+    -- thema's in twee kolommen
+    table.insert(items, UI.section("Geschiedenis", W))
+    for i = 1, #d.themes, 2 do
+        local pair = {}
+        for j = i, math.min(i + 1, #d.themes) do
+            local idx = j
+            pair[#pair + 1] = { d.themes[j].name, function() start(newGame(idx)) end, small = true }
+        end
+        if #pair == 2 then
+            table.insert(items, UI.buttonRow(pair))
+        else
+            table.insert(items, UI.button(pair[1][1], pair[1][2], { small = true, width = math.floor((W - UI.px(12)) / 2) }))
+        end
+        table.insert(items, UI.vspace(10))
     end
-    table.insert(items, UI.vspace(10))
-    table.insert(items, UI.section("Geschiedenis", UI.INNER()))
-    for i, th in ipairs(d.themes) do
-        table.insert(items, UI.row(th.name, #th.words .. " woorden", "›", function()
-            app.ws = newGame(i); app.wsLast = nil; Store.set("ws.game", app.ws)
-            app:replace(P.wordsearch)
-        end))
-    end
-    UI.rowPad = nil
     return UI.page(UI.vgroup(items))
 end
 
@@ -299,22 +309,38 @@ function P.timeline(app)
     local d = data()
     local era = app.tlEra or 6
     local e = ERAS[era]
-    local items = { UI.header("Tijdlijn", function() app.tlEra = nil; app:back() end, e[1]) }
+    local items = { UI.header("Tijdlijn", function() app.tlEra = nil; app.tlPg = nil; app:back() end, e[1]) }
     local names = {}
     for i, x in ipairs(ERAS) do names[i] = x[4] end
-    table.insert(items, UI.segmented(names, era, function(i) app.tlEra = i; app:refresh() end))
+    table.insert(items, UI.segmented(names, era, function(i) app.tlEra = i; app.tlPg = 1; app:refresh() end))
     table.insert(items, UI.vspace(16))
+    local list = {}
+    for _, ev in ipairs(d.events) do if ev[1] >= e[2] and ev[1] <= e[3] then list[#list + 1] = ev end end
+    -- zeven per bladzijde, zodat alles op normale grootte past
+    local per = 7
+    local np = math.max(1, math.ceil(#list / per))
+    local pg = math.min(app.tlPg or 1, np)
+    app.tlPg = pg
     local yearW = UI.px(110)
-    for _, ev in ipairs(d.events) do
-        if ev[1] >= e[2] and ev[1] <= e[3] then
-            table.insert(items, UI.hgroup({
-                UI.box(UI.text(yearText(ev[1]), { font = "display", size = 20 }), yearW),
-                UI.vgroup({ UI.text(ev[2], { size = 19, font = "medium", width = W - yearW }), UI.text(ev[3], { size = 16, color = UI.INK2, width = W - yearW }) }),
-            }, "top"))
-            table.insert(items, UI.vspace(12))
-        end
+    for i = (pg - 1) * per + 1, math.min(#list, pg * per) do
+        local ev = list[i]
+        table.insert(items, UI.hgroup({
+            UI.box(UI.text(yearText(ev[1]), { font = "display", size = 20 }), yearW),
+            UI.vgroup({ UI.text(ev[2], { size = 19, font = "medium", width = W - yearW }), UI.text(ev[3], { size = 16, color = UI.INK2, width = W - yearW, height = UI.px(44) }) }),
+        }, "top"))
+        table.insert(items, UI.vspace(12))
     end
-    local footer = UI.button("Speel: zet ze op volgorde", function() app.tlGame = nil; app:go(P.order) end, { width = W, primary = true, icon = "play" })
+    local play = function() app.tlGame = nil; app:go(P.order) end
+    local footer
+    if np > 1 then
+        footer = UI.buttonRow({
+            { "Vorige", function() app.tlPg = pg - 1; app:refresh() end, disabled = pg <= 1 },
+            { "Speel", play, primary = true, icon = "play" },
+            { "Verder " .. pg .. "/" .. np, function() app.tlPg = pg + 1; app:refresh() end, disabled = pg >= np },
+        })
+    else
+        footer = UI.button("Speel: zet ze op volgorde", play, { width = W, primary = true, icon = "play" })
+    end
     return UI.page(UI.vgroup(items), footer)
 end
 

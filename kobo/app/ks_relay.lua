@@ -85,7 +85,7 @@ function R.start(opts)
         local ok, body = require("ks_net").get(R.NTFY .. sess.topic .. "/json?poll=1&since=" .. sess.since)
         if ok and type(body) == "string" then
             for line in body:gmatch("[^\n]+") do
-                local good, m = pcall(require("json").decode, line)
+                local good, m = pcall(require("ks_json").decode, line)
                 if good and type(m) == "table" and m.event == "message" and type(m.message) == "string" then
                     local text = R.decrypt(code, m.message)
                     if text then

@@ -31,7 +31,7 @@ local function api(params)
     local ok, body = require("ks_net").get(WR.API .. "?format=json&formatversion=2&redirects=1&" .. params,
         { ["User-Agent"] = "KeesStudy/1.0 (Kobo e-reader, persoonlijk gebruik)" })
     if not ok then return nil, body end
-    local good, j = pcall(require("json").decode, body)
+    local good, j = pcall(require("ks_json").decode, body)
     if not good or type(j) ~= "table" then return nil, "Onverwacht antwoord van Wikipedia." end
     return j
 end

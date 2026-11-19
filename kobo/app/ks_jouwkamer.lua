@@ -109,6 +109,26 @@ J.APPRECIATIE = {
     ["Overbodig"] = "het kabinet vindt de motie overbodig, omdat het al gebeurt",
 }
 
+--- Hetzelfde in stappen: één motie per stap (twee verzoeken), hooguit n.
+function J.prefetchStep(n)
+    local left, tried = n or 5, {}
+    return function()
+        if left <= 0 then return false end
+        local pool = Store.get("jk.pool", {})
+        for i = #pool, 1, -1 do
+            local p = pool[i]
+            if not p.det and not tried[p.id] and #(p.topics or {}) > 0 then
+                tried[p.id] = true
+                pcall(J.enrich, p)
+                Store.set("jk.pool", pool)
+                left = left - 1
+                return left > 0
+            end
+        end
+        return false
+    end
+end
+
 --- Nieuwe moties toevoegen aan de voorraad (na elke Kamer-ronde).
 function J.addPool(items, datum)
     local pool = Store.get("jk.pool", {})
@@ -125,8 +145,8 @@ function J.addPool(items, datum)
                 nv = it.nv, nt = it.nt, datum = datum, topics = topics(it) })
         end
     end
-    -- hooguit 150 bewaren, de nieuwste
-    while #pool > 150 do table.remove(pool, 1) end
+    -- hooguit 100 bewaren, de nieuwste
+    while #pool > 100 do table.remove(pool, 1) end
     Store.set("jk.pool", pool)
 end
 
