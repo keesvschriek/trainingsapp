@@ -53,10 +53,11 @@ describe('rustdagen en automatische setgrootte', () => {
     expect(autoSetSize(undefined, 20)).toBe(20);
   });
 
-  it('borst-dag en testdag zijn rustdagen voor push-ups; testweek bevat de maxtest', () => {
+  it('duwdag en testdag zijn rustdagen voor push-ups; testweek bevat de maxtest', () => {
     const week1 = mondayOfWeek(1);
     const wed = addDaysForTest(week1, 2);
-    expect(restReason(planForDay(wed).items)).toMatch(/Borst-dag/);
+    expect(restReason(planForDay(wed).items)).toMatch(/Duwdag/);
+    expect(restReason(planForDay(addDaysForTest(mondayOfWeek(2), 4)).items)).toMatch(/Duwdag/);
     expect(restReason(planForDay(week1).items)).toBeNull();
     const test = mondayOfWeek(9);
     expect(planForDay(test).items.map(i => i.slotId)).toContain('test-pushups');

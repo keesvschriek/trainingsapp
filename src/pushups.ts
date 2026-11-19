@@ -46,7 +46,7 @@ export function goalStreak(byDay: Map<ISODate, Metric[]>, goal: number, today: I
 /** Waarom vandaag geen push-ups tussendoor, of null als het gewoon een push-updag is. */
 export function restReason(items: PlannedItem[]): string | null {
   if (items.some(i => i.slotId === 'test-pushups')) return 'Testdag: vandaag geen sets tussendoor, dan ben je fris voor je maxtest.';
-  if (items.some(i => i.slotId === 'kracht-borst')) return 'Borst-dag: sla de sets tussendoor vandaag over, dan haal je meer uit je training.';
+  if (items.some(i => i.slotId === 'kracht-borst')) return 'Duwdag: sla de sets tussendoor vandaag over, dan haal je meer uit je training.';
   return null;
 }
 

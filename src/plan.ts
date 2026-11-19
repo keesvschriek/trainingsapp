@@ -249,16 +249,20 @@ interface WeekSpec {
   days: PlannedItem[][];
 }
 
-function standard(o: { level: number; tue: PlannedItem; thu: PlannedItem; sat: PlannedItem; sun?: PlannedItem[]; light?: boolean; note?: string }): WeekSpec {
+// Woensdag KB Pure, vrijdag duwen en heupen: zo zit de zware swingdag niet vlak voor de lange zaterdag.
+// Week 1 houdt de oude volgorde, omdat duwen en heupen op woensdag 18 november al gedaan is.
+function standard(o: { level: number; tue: PlannedItem; thu: PlannedItem; sat: PlannedItem; sun?: PlannedItem[]; light?: boolean; note?: string; oldOrder?: boolean }): WeekSpec {
+  const wed: StrengthDay = o.oldOrder ? 'borst' : 'mix';
+  const fri: StrengthDay = o.oldOrder ? 'mix' : 'borst';
   return {
     light: o.light,
     note: o.note,
     days: [
       [strengthItem('rug', o.level, o.light)],
       [o.tue],
-      [strengthItem('borst', o.level, o.light)],
+      [strengthItem(wed, o.level, o.light)],
       [o.thu],
-      [strengthItem('mix', o.level, o.light)],
+      [strengthItem(fri, o.level, o.light)],
       [o.sat],
       o.sun ?? [free()],
     ],
@@ -267,7 +271,7 @@ function standard(o: { level: number; tue: PlannedItem; thu: PlannedItem; sat: P
 
 function block1Week(w: number): WeekSpec {
   switch (w) {
-    case 1: return standard({ level: 0, tue: easy(35), thu: easy(40), sat: long(90, 'weg') });
+    case 1: return standard({ level: 0, tue: easy(35), thu: easy(40), sat: long(90, 'weg'), oldOrder: true });
     case 2: return standard({ level: 0, tue: easy(40), thu: easy(45), sat: long(95, 'trail') });
     case 3: return standard({ level: 0, tue: easy(45, true), thu: commute(), sat: long(95, 'weg') });
     case 4: return standard({ level: 0, tue: easy(40), thu: easy(40), sat: long(75, 'weg'), sun: [rest()], light: true, note: 'Lichte week.' });

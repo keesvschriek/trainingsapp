@@ -37,6 +37,15 @@ describe('schema', () => {
     expect(plannedRunMinutes(1)).toBe(165);
   });
 
+  it('vanaf week 2 KB Pure op woensdag en duwen en heupen op vrijdag', () => {
+    expect(planForWeek(1)[2].items[0].slotId).toBe('kracht-borst');
+    expect(planForWeek(1)[4].items[0].slotId).toBe('kracht-mix');
+    for (const n of [2, 3, 5]) {
+      expect(planForWeek(n)[2].items[0].slotId).toBe('kracht-mix');
+      expect(planForWeek(n)[4].items[0].slotId).toBe('kracht-borst');
+    }
+  });
+
   it('krachttraining heeft uitgeschreven oefeningen en geen boksen', () => {
     for (let w = 1; w <= 40; w++) {
       planForWeek(w).flatMap(d => d.items).forEach(i => {
