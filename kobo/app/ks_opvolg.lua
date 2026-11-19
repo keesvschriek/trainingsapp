@@ -126,7 +126,7 @@ end
 local function ask(title, hint, onText, opts)
     local InputDialog = require("ui/widget/inputdialog")
     local dlg
-    dlg = InputDialog:new{
+    dlg = require("ks_ui").inputDialog{
         title = title,
         input = "",
         input_hint = hint,

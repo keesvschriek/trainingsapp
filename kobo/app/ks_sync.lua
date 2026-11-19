@@ -451,7 +451,7 @@ function S.donePage(app)
     table.insert(items, UI.Tap:new{ label = "Notitie", callback = function()
         local InputDialog = require("ui/widget/inputdialog")
         local dlg
-        dlg = InputDialog:new{ title = "Notitie bij de training", input = app.doneNote or "", allow_newline = true,
+        dlg = require("ks_ui").inputDialog{ title = "Notitie bij de training", input = app.doneNote or "", allow_newline = true,
             buttons = { { { text = "Annuleren", id = "close", callback = function() UIManager:close(dlg) end },
                 { text = "Klaar", is_enter_default = true, callback = function() app.doneNote = dlg:getInputText(); UIManager:close(dlg); app:refresh() end } } } }
         UIManager:show(dlg)

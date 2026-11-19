@@ -294,7 +294,7 @@ local function connectPage(app)
     local footer = UI.button("Sleutel invullen", function()
         local InputDialog = require("ui/widget/inputdialog")
         local dlg
-        dlg = InputDialog:new{
+        dlg = require("ks_ui").inputDialog{
             title = "API key van intervals.icu",
             input = "",
             buttons = { {

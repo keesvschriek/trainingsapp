@@ -188,13 +188,37 @@ function Tap:paintTo(bb, x, y)
     table.insert(UI.painted, self)
     InputContainer.paintTo(self, bb, x, y)
 end
+--- Een knop uitvoeren zonder dat een fout de hele Kobo-app laat afsluiten.
+--- Bij een fout: in het logboek, en UI.onError (ks_main) toont een melding en tekent het scherm opnieuw.
+function UI.run(fn, ...)
+    if not fn then return end
+    local ok, err = xpcall(fn, debug.traceback, ...)
+    if not ok then
+        require("logger").warn("Kees Personal fout:", err)
+        if UI.onError then pcall(UI.onError, err) end
+    end
+end
+
+--- Invoerscherm van KOReader, maar met knoppen die bij een fout niet de app laten afsluiten.
+function UI.inputDialog(o)
+    for _, row in ipairs(o.buttons or {}) do
+        for _, b in ipairs(row) do
+            if b.callback then
+                local cb = b.callback
+                b.callback = function() UI.run(cb) end
+            end
+        end
+    end
+    return require("ui/widget/inputdialog"):new(o)
+end
+
 function Tap:onTapIt()
-    if self.callback then self.callback() end
+    UI.run(self.callback)
     return true
 end
 function Tap:onHoldIt()
-    if self.hold then self.hold() return true end
-    if self.callback then self.callback() end
+    if self.hold then UI.run(self.hold) return true end
+    UI.run(self.callback)
     return true
 end
 UI.Tap = Tap

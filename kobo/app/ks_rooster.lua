@@ -219,7 +219,7 @@ end
 local function askLink(app)
     local InputDialog = require("ui/widget/inputdialog")
     local dlg
-    dlg = InputDialog:new{
+    dlg = require("ks_ui").inputDialog{
         title = "Plak of typ je iCal-link uit Zermelo",
         input = "",
         buttons = { {

@@ -78,7 +78,9 @@ function R.stepper()
     return function()
         if finished then return false end
         local y = t.year - BACK[bi]
-        local ok, body = Net.get(R.BASE .. urn(y, t.month, t.day, n), UA)
+        local ok, body, code = Net.get(R.BASE .. urn(y, t.month, t.day, n), UA)
+        -- geen verbinding (geen antwoord van de server): stoppen zonder iets op te slaan, de volgende ronde probeert het opnieuw
+        if not ok and not code then finished = true; return false end
         if ok and body:find("<text") then
             misses = 0
             local paras = R.clean(body)

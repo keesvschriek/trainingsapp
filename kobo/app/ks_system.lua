@@ -117,7 +117,7 @@ function Sys.reading()
     return R and R.instance ~= nil
 end
 
-local function tick()
+local function tickInner()
     if Sys.reading() then
         -- in de lezer telt elke tik (zie inputHook); wel in slaap na de ingestelde tijd
         local mins = Sys.sleepMinutes()
@@ -126,7 +126,6 @@ local function tick()
             UIManager:suspend()
         end
         state.lastTick = os.time()
-        UIManager:scheduleIn(61 - os.date("*t").sec, tick)
         return
     end
     Sys.account()
@@ -146,7 +145,12 @@ local function tick()
             Sys.refreshBar()
         end
     end
-    -- volgende keer net na de volgende minuutwissel
+end
+
+-- Elke minuut, net na de minuutwissel. Een fout hierin mag de klok (en het slapen) nooit stilzetten.
+local function tick()
+    local ok, err = pcall(tickInner)
+    if not ok then require("logger").warn("Kees Personal fout in klok:", err) end
     UIManager:scheduleIn(61 - os.date("*t").sec, tick)
 end
 
@@ -195,8 +199,7 @@ function Sys.afterFetch()
     if #app.stack <= 1 then app:render("ui") else Sys.refreshBar() end
 end
 
-function Sys.autoRound()
-    UIManager:unschedule(Sys.autoRound)
+local function autoRound()
     local ok, due = pcall(function() return require("ks_news").due() end)
     if not ok or not due or Sys.busy or require("ks_net").busy() then return end
     -- niet midden in iets: wacht tot je even niets aanraakt (en niet in een boek leest)
@@ -210,6 +213,15 @@ function Sys.autoRound()
         Sys.busy = nil
         Sys.afterFetch()
     end, true)
+end
+
+function Sys.autoRound()
+    UIManager:unschedule(Sys.autoRound)
+    local ok, err = pcall(autoRound)
+    if not ok then
+        Sys.busy = nil
+        require("logger").warn("Kees Personal fout in ronde:", err)
+    end
 end
 
 function Sys.onResume()

@@ -48,10 +48,10 @@ end
 function App:onSwipePage(_, ges)
     if ges.direction == "west" then
         local t = findTap(NEXT)
-        if t then t.callback() return true end
+        if t then UI.run(t.callback) return true end
     elseif ges.direction == "east" then
         local t = findTap(PREV)
-        if t then t.callback() return true end
+        if t then UI.run(t.callback) return true end
         if #self.stack > 1 then self:back() return true end
     end
 end
@@ -567,6 +567,12 @@ function M.run(dir)
     app.stack = { homePage }
     app[1] = homePage(app)
     UI.onRefresh = function() require("ks_system").quickSync(app) end
+    -- fout in een knop: melden in de statusbalk en het scherm opnieuw tekenen in plaats van afsluiten
+    UI.onError = function()
+        local Sys = require("ks_system")
+        Sys.note, Sys.noteUntil = "Dat ging mis. Je voortgang is veilig.", os.time() + 8
+        app:render("ui")
+    end
     UI.onHome = function() app:home() end
     UI.onLight = function() require("ks_light").showPanel(app) end
     UIManager:show(app, "full")

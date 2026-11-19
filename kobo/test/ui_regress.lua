@@ -99,7 +99,17 @@ end)
 for _ = 1, 40 do add(function() end) end
 shot("home_na")
 
+-- een knop met een fout mag de app niet laten afsluiten (verwacht: precies één fout gemeld, app werkt door)
+add(function(c)
+    local UI = require("ks_ui")
+    c.app():go(function(a) return UI.page(UI.vgroup({ UI.header("Test", function() a:back() end), UI.button("Kapot", function() error("testfout") end) })) end)
+end)
+press("Kapot")
+shot("na_fout")
+press("‹ Terug")
+add(function(c) c.app():home() end)
+shot("home_eind")
 add(function()
-    print(("KSTEST klaar: %d schermen, %d fouten"):format(schermen, fouten))
+    print(("KSTEST klaar: %d schermen, %d fouten (1 verwacht van de testknop)"):format(schermen, fouten))
 end)
 return s

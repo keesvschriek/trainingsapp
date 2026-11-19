@@ -12,6 +12,8 @@ Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je i
 - Woordzoeker: niveaus en thema's als knoppen. Tijdlijn per bladzijde
 - Lange titels in lijsten (zoals een Staatsblad-besluit) hooguit drie regels, zodat Te lezen weer vol op een bladzijde past
 - Leerlijnen: de kop blijft gelijk als je antwoordt (een fout antwoord telt pas bij de volgende vraag mee)
+- Gaat er iets mis achter een knop, dan sluit de app niet meer af: je ziet een melding en het scherm blijft staan
+- Radionieuws: zonder verbinding wordt de dag niet meer als leeg onthouden, de volgende ronde probeert het opnieuw
 
 ## Jouw Kamer: meer context
 - De hele motietekst: waarom (constaterende, overwegende) en wat de Kamer vraagt

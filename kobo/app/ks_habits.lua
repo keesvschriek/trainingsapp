@@ -194,7 +194,7 @@ function H.edit(app)
     local footer = UI.button("Eigen gewoonte typen", function()
         local InputDialog = require("ui/widget/inputdialog")
         local dlg
-        dlg = InputDialog:new{
+        dlg = require("ks_ui").inputDialog{
             title = "Nieuwe gewoonte",
             input = "",
             buttons = { {
