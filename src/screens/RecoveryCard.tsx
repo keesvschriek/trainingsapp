@@ -61,6 +61,16 @@ export function RecoveryCard() {
     await save('moves', { id: newId(), week: weekOf(date), op: 'shift', a: (diffDays(date, mondayOf(date)) + 7) % 7, at: Date.now() });
   }
 
+  // Na twaalf uur geen grote vragenlijst meer op Vandaag: alleen een regel om hem toch in te vullen
+  if (!checkin && !editing && new Date().getHours() >= 12) {
+    return (
+      <div className="card spread">
+        <span className="muted">Check-in vandaag niet gedaan</span>
+        <button className="btn small secondary" onClick={() => setEditing(true)}>Invullen</button>
+      </div>
+    );
+  }
+
   if (!checkin || editing) {
     return (
       <div className="card">

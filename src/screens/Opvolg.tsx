@@ -194,8 +194,13 @@ export function OpvolgScreen() {
         <button className="btn" onClick={() => setSheet('add')}>{Icon.plus} Punt</button>
         <button className="btn secondary" onClick={() => setSheet('meeting')}>Overleg</button>
       </div>
-      <h2>Filter</h2>
-      <GroupChips value={group} onChange={setGroup} />
+      {/* filteren heeft pas zin als er iets te filteren is */}
+      {(group || sortOpen(all).length > 3) && (
+        <>
+          <h2>Filter</h2>
+          <GroupChips value={group} onChange={setGroup} />
+        </>
+      )}
       {open.length === 0 && <p className="empty">Geen open punten{group ? ` bij ${group}` : ''}.</p>}
       {parts.map(([label, list]) =>
         list.length ? (

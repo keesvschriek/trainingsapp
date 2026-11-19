@@ -370,7 +370,7 @@ function Sys.screenPage(app)
     local fe = Store.get("set.fullevery2", 0)
     local feList, feCur = { 0, 4, 8, 15 }, 1
     for i, v in ipairs(feList) do if v == fe then feCur = i end end
-    table.insert(items, UI.segmented({ "Nooit", "Na 4 schermen", "Na 8", "Na 15" }, feCur, function(i)
+    table.insert(items, UI.segmented({ "Nooit", "Na 4", "Na 8", "Na 15" }, feCur, function(i)
         Store.set("set.fullevery2", feList[i])
         app:refresh()
     end))

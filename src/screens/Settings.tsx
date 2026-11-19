@@ -382,7 +382,7 @@ function PushupSection() {
               onBlur={e => void setSetting('pushupSet', num(e.target.value, 1, 200))} aria-label="Aantal per set" />
           </label>
         )}
-        <p className="muted small" style={{ marginBottom: 0 }}>Houd elke set ruim onder je maximum, ongeveer de helft. Dan herstel je snel genoeg om het elke dag te doen. Op je borst-dag en op de testdag sla je ze over.</p>
+        <p className="muted small" style={{ marginBottom: 0 }}>Houd elke set ruim onder je maximum, ongeveer de helft. Dan herstel je snel genoeg om het elke dag te doen. Op de dag van duwen en heupen en op de testdag sla je ze over.</p>
       </div>
     </>
   );

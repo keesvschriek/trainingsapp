@@ -152,7 +152,13 @@ function R.list()
     local all = meta()
     for name in lfs.dir(dir) do
         if name:match("%.json$") then
-            local m = all[name] or {}
+            local m = all[name]
+            if not m then
+                -- gegevens kwijt (bijvoorbeeld na een teruggezette back-up): titel uit het stuk zelf halen en weer onthouden
+                local d = R.load(name)
+                m = { title = d and d.title, sub = d and d.sub, src = d and d.kind == "Wikipedia" and "wiki" or nil }
+                if d then setMeta(name, m) end
+            end
             table.insert(out, { name = name, title = m.title or name, sub = m.sub or "", date = m.date, words = m.words,
                 new = m.new, done = m.done, wiki = m.src == "wiki", mtime = lfs.attributes(dir .. "/" .. name, "modification") or 0 })
         end
@@ -261,14 +267,19 @@ function R.page(app)
     end
     if app.readMsg then table.insert(items, UI.text(app.readMsg, { size = 17, font = "bold", width = W })) end
     local head = UI.vgroup(items)
-    local per = 1
-    if #rows > 0 then
-        local avail = UI.H() - UI.px(UI.TOPPAD) - head:getSize().h - UI.px(60 + 50)
-        per = math.max(1, math.floor(avail / rows[1]:getSize().h))
+    -- bladzijden vullen op echte hoogte: korte regels passen er meer op dan een lange titel
+    local avail = UI.H() - UI.px(UI.TOPPAD) - head:getSize().h - UI.px(60 + 50)
+    local pages, cur, used = {}, {}, 0
+    for _, r in ipairs(rows) do
+        local h = r:getSize().h
+        if #cur > 0 and used + h > avail then pages[#pages + 1] = cur; cur, used = {}, 0 end
+        cur[#cur + 1] = r
+        used = used + h
     end
-    local np = math.max(1, math.ceil(#rows / per))
+    if #cur > 0 then pages[#pages + 1] = cur end
+    local np = math.max(1, #pages)
     local pg = math.max(1, math.min(app.readPg or 1, np))
-    for i = (pg - 1) * per + 1, math.min(#rows, pg * per) do table.insert(items, rows[i]) end
+    for _, r in ipairs(pages[pg] or {}) do table.insert(items, r) end
     local footer = UI.buttonRow({
         { "Ophalen", function()
             app.readMsg = "Bezig met ophalen..."

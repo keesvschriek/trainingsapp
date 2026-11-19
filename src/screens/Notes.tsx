@@ -64,8 +64,12 @@ export function NotesScreen() {
   return (
     <>
       <button className="btn" onClick={() => setSheet('new')}>{Icon.plus} Notitie</button>
-      <input className="mt" value={q} placeholder="Zoeken" onChange={e => setQ(e.target.value)} />
-      <FolderChips value={folder} onChange={setFolder} all />
+      {all.length > 0 && (
+        <>
+          <input className="mt" value={q} placeholder="Zoeken" onChange={e => setQ(e.target.value)} />
+          <FolderChips value={folder} onChange={setFolder} all />
+        </>
+      )}
       {list.length === 0 && <p className="empty">{all.length ? 'Niets gevonden.' : 'Nog geen notities. Ook op de Kobo kun je ze maken en lezen.'}</p>}
       {list.length > 0 && (
         <div className="card">

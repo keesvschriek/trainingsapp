@@ -10,6 +10,8 @@ Bovenaan staat steeds de nieuwste versie. De punten onder de eerste kop zie je i
 - Kees Study opgeruimd: Schaken en Puzzels hebben een eigen mapje. Dubbele regels uit Groei gehaald
 - Instellingen past weer op één scherm. Volledig verversen staat nu bij Scherm, de cloud-back-up bij Bijwerken en back-ups
 - Woordzoeker: niveaus en thema's als knoppen. Tijdlijn per bladzijde
+- Lange titels in lijsten (zoals een Staatsblad-besluit) hooguit drie regels, zodat Te lezen weer vol op een bladzijde past
+- Leerlijnen: de kop blijft gelijk als je antwoordt (een fout antwoord telt pas bij de volgende vraag mee)
 
 ## Jouw Kamer: meer context
 - De hele motietekst: waarom (constaterende, overwegende) en wat de Kamer vraagt

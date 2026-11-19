@@ -322,10 +322,13 @@ function UI.row(title, sub, right, callback, width, icon)
     local iconW = icon and UI.px(26 + 18) or 0
     local textW = width - rightW - iconW - UI.px(6)
     local left = VerticalGroup:new{ align = "left" }
-    table.insert(left, UI.text(title, { size = 20, width = textW, font = "medium" }))
+    -- titel hooguit drie regels en bijschrift hooguit twee, anders met ...
+    -- (een lange titel, zoals een Staatsblad-besluit, duwt de rest anders van het scherm)
+    local function lineH(size) return math.ceil(1.3 * Screen:scaleBySize(math.floor(size * UI.scale * UI.TYPE + 0.5))) end
+    table.insert(left, UI.text(title, { size = 20, width = textW, font = "medium", height = 3 * lineH(20) + 2 }))
     if sub and sub ~= "" then
         table.insert(left, UI.vspace(3))
-        table.insert(left, UI.text(sub, { size = 16, color = UI.INK2, width = textW }))
+        table.insert(left, UI.text(sub, { size = 16, color = UI.INK2, width = textW, height = 2 * lineH(16) + 2 }))
     end
     local pad = UI.compact and math.min(14, UI.rowPad or 26) or (UI.rowPad or 26)
     local h = math.max(left:getSize().h, icon and UI.px(26) or 0) + UI.px(pad)
