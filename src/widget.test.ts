@@ -12,7 +12,7 @@ describe('widget', () => {
     expect(ds.title).toMatch(/Kracht/);
     expect(ds.sub).toMatch(/oefeningen/);
     const run = days.find(d => d.items.some(i => i.kind === 'run' && !i.optional) && !d.items.some(i => i.kind === 'strength'))!;
-    expect(describeDay(run.items, run.status).sub).toMatch(/LTHR/);
+    expect(describeDay(run.items, run.status).sub).toMatch(/147-162 slagen/);
     const before = planForDay(addDays(mon, -1));
     expect(describeDay(before.items, before.status).title).toBe('Nog niet begonnen');
   });

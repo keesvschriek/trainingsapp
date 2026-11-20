@@ -254,3 +254,18 @@ describe('drukke week halverwege', () => {
     expect(rest.map(i => i.slotId)).toEqual(['run-long']); // kracht en loop zijn al gedaan, alleen de lange loop blijft
   });
 });
+
+describe('rustig lopen op drempel', () => {
+  it('rustige zone uit drempel 184 en 4:53', async () => {
+    const { easyHr, easyPace } = await import('./zones');
+    expect(easyHr()).toEqual([147, 162]);
+    expect(easyPace()).toEqual(['6:00', '6:40']);
+  });
+  it('elke gewone week precies één loop met versnellingen', () => {
+    for (let n = 2; n <= 30; n++) {
+      if (isTestWeek(n) || weekSpec(n).light || !planForWeek(n).some(d => d.items.some(i => i.slotId === 'run-easy'))) continue;
+      const runs = planForWeek(n).flatMap(d => d.items).filter(i => i.detail?.includes('versnellen'));
+      expect(runs.length, `week ${n}`).toBe(1);
+    }
+  });
+});

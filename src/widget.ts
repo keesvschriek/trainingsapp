@@ -1,3 +1,4 @@
+import { easyText } from './zones';
 import { registerPlugin } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { db, alive, getSetting, save, type Metric } from './db';
@@ -46,7 +47,7 @@ export function describeDay(items: PlannedItem[], status: 'voor' | 'actief'): Om
   if (!main) return { title: 'Rust', sub: '' };
   const parts: string[] = [];
   if (main.minutes && main.kind !== 'rest') parts.push(`${main.minutes} min`);
-  if (main.kind === 'run') parts.push(main.slotId === 'run-quality' && main.title.startsWith('Tempo') ? '90-96% LTHR' : '80-88% LTHR rustig');
+  if (main.kind === 'run') parts.push(main.slotId === 'run-quality' && main.title.startsWith('Tempo') ? '90-96% LTHR' : easyText());
   if (main.kind === 'strength' && main.exercises) parts.push(`${main.exercises.length} oefeningen`);
   const more = training.filter(i => i !== main && !i.optional).length;
   if (more) parts.push(`+ ${more} meer`);

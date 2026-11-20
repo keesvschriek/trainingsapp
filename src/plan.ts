@@ -1,3 +1,4 @@
+import { easyText } from './zones';
 import { addDays, diffDays, inRange, mondayOf, type ISODate } from './dates';
 import type { Block, Move } from './db';
 
@@ -161,14 +162,14 @@ const strengthItem = (day: StrengthDay, level: number, light = false): PlannedIt
 // Looptrainingen
 // ---------------------------------------------------------------------------
 
+const STRIDES = 'Sluit af met 6 keer 20 sec soepel versnellen, 1 min wandelen tussendoor.';
+
 const easy = (minutes: number, strides = false): PlannedItem => ({
   slotId: 'run-easy',
   kind: 'run',
-  title: 'Rustige loop',
+  title: strides ? 'Rustige loop met versnellingen' : 'Rustige loop',
   minutes,
-  detail: strides
-    ? 'Zone 2, je kunt in hele zinnen praten. Sluit af met 6 keer 20 sec soepel versnellen, 1 min wandelen tussendoor.'
-    : 'Zone 2, je kunt in hele zinnen praten.',
+  detail: `Rustig: ${easyText()}, je kunt in hele zinnen praten.${strides ? ' ' + STRIDES : ''}`,
 });
 
 const commute = (): PlannedItem => ({
@@ -208,7 +209,7 @@ const long = (minutes: number, terrain: 'weg' | 'trail'): PlannedItem => ({
   kind: 'run',
   title: `Lange loop (${terrain})`,
   minutes,
-  detail: terrain === 'trail' ? 'Rustig. Heuvels omhoog mag stevig, omlaag rustig.' : 'Rustig, je moet kunnen praten.',
+  detail: terrain === 'trail' ? `Rustig (${easyText()}). Heuvels omhoog mag stevig, omlaag rustig.` : `Rustig: ${easyText()}, je moet kunnen praten.`,
 });
 
 const optionalEasy = (minutes: number): PlannedItem => ({ ...easy(minutes), slotId: 'run-extra', title: 'Extra rustige loop', optional: true });
@@ -252,6 +253,12 @@ interface WeekSpec {
 // Woensdag KB Pure, vrijdag duwen en heupen: zo zit de zware swingdag niet vlak voor de lange zaterdag.
 // Week 1 houdt de oude volgorde, omdat duwen en heupen op woensdag 18 november al gedaan is.
 function standard(o: { level: number; tue: PlannedItem; thu: PlannedItem; sat: PlannedItem; sun?: PlannedItem[]; light?: boolean; note?: string; oldOrder?: boolean }): WeekSpec {
+  // Eén rustige loop per week met versnellingen: dinsdag, anders donderdag (niet in een lichte week)
+  const hasStrides = (i: PlannedItem) => !!i.detail?.includes('versnellen');
+  if (!o.light && !hasStrides(o.tue) && !hasStrides(o.thu)) {
+    if (o.tue.slotId === 'run-easy') o = { ...o, tue: easy(o.tue.minutes ?? 40, true) };
+    else if (o.thu.slotId === 'run-easy') o = { ...o, thu: easy(o.thu.minutes ?? 40, true) };
+  }
   const wed: StrengthDay = o.oldOrder ? 'borst' : 'mix';
   const fri: StrengthDay = o.oldOrder ? 'mix' : 'borst';
   return {
